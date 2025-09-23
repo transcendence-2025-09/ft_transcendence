@@ -1,9 +1,9 @@
 {
-    "name": "backend",
-    "version": "0.0.1",
-    "scripts": {
-        "dev": "echo backend dev",
-        "build": "echo backend build"
-    },
-    "devDependencies": {}
+	"name": "backend",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "echo backend dev",
+		"build": "echo backend build"
+	},
+	"devDependencies": {}
 }

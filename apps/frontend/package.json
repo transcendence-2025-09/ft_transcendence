@@ -1,9 +1,9 @@
 {
-    "name": "frontend",
-    "version": "0.0.1",
-    "scripts": {
-        "dev": "echo frontend dev",
-        "build": "echo frontend build"
-    },
-    "devDependencies": {}
+	"name": "frontend",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "echo frontend dev",
+		"build": "echo frontend build"
+	},
+	"devDependencies": {}
 }
