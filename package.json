@@ -1,0 +1,21 @@
+{
+    "name": "ft_transcendence",
+    "version": "0.0.1",
+    "private": true,
+    "engines": {
+        "node": "22"
+    },
+    "packageManager": "pnpm@10.17.1",
+    "volta": {
+        "node": "22.19.0",
+        "pnpm": "10.17.1"
+    },
+    "scripts": {
+        "dev": "turbo run dev",
+        "build": "turbo run build"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.2.4",
+        "turbo": "2.5.6"
+    }
+}
