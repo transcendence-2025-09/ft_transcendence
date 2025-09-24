@@ -2,5 +2,12 @@ pre-commit:
   parallel: true
   commands:
     biome:
-      glob: "*.{js,jsx,ts,tsx,json}"
+      glob: "**/*.{js,jsx,ts,tsx,json}"
+      run: pnpm check:fix -- {staged_files}
+
+pre-push:
+  parallel: true
+  commands:
+    biome:
+      glob: "**/*.{js,jsx,ts,tsx,json}"
       run: pnpm check:fix -- {staged_files}
