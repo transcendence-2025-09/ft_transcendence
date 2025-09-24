@@ -10,4 +10,4 @@ pre-push:
   commands:
     biome:
       glob: "**/*.{js,jsx,ts,tsx,json}"
-      run: pnpm check:fix -- {staged_files}
+      run: pnpm check:fix -- {push_files}
