@@ -1,4 +1,5 @@
 import { fetchHealth } from "./example";
+import { redirectTo42Auth, handleAuthCallback } from "./features";
 import { componentFactory } from "./factory/componentFactory";
 import { eh } from "./factory/elementFactory";
 import "../style.css";
@@ -39,3 +40,23 @@ toggleBtn.addEventListener("click", () => {
     toggleBtn.textContent = "Hide";
   }
 });
+
+// --- 簡易的なルーター ---
+const path = window.location.pathname;
+if (path === "/auth/callback") {
+  root.innerHTML = "<p>Authenticating, please wait...</p>";
+  handleAuthCallback();
+} else if (path === "/dashboard") {
+  const token = localStorage.getItem("auth_token")
+  root.innerHTML = `<h1>Your token is: ${token}</h1>`;
+} else {
+  const signInButton = eh(
+    "button",
+    { className: "px-4 py-2 bg-blue-600 text-white rounded" },
+    "Sign in with 42",
+  );
+  signInButton.addEventListener("click", redirectTo42Auth);
+  
+  root.appendChild(signInButton);
+}
+
