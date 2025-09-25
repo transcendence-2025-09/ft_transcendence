@@ -1,6 +1,7 @@
 import "./style.css";
 import viteLogo from "/vite.svg";
 import { setupCounter } from "./counter.ts";
+import { fetchHealth } from "./example";
 import typescriptLogo from "./typescript.svg";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
@@ -22,3 +23,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 `;
 
 setupCounter(document.querySelector<HTMLButtonElement>("#counter")!);
+
+const status = await fetchHealth();
+console.log("Health status:", status);
