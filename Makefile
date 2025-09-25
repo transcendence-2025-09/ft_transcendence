@@ -9,3 +9,5 @@ setup:
 	volta install pnpm@${shell jq -r '.volta.pnpm' ./package.json}
 
 	pnpm install && pnpm build
+
+	ln -s ${PWD}/.env ${PWD}/apps/frontend/.env
