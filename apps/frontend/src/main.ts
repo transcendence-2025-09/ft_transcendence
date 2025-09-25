@@ -1,7 +1,7 @@
 import { fetchHealth } from "./example";
-import { redirectTo42Auth, handleAuthCallback } from "./features";
 import { componentFactory } from "./factory/componentFactory";
 import { eh } from "./factory/elementFactory";
+import { handleAuthCallback, redirectTo42Auth } from "./features";
 import "../style.css";
 
 const status = await fetchHealth();
@@ -47,7 +47,7 @@ if (path === "/auth/callback") {
   root.innerHTML = "<p>Authenticating, please wait...</p>";
   handleAuthCallback();
 } else if (path === "/dashboard") {
-  const token = localStorage.getItem("auth_token")
+  const token = localStorage.getItem("auth_token");
   root.innerHTML = `<h1>Your token is: ${token}</h1>`;
 } else {
   const signInButton = eh(
@@ -56,7 +56,6 @@ if (path === "/auth/callback") {
     "Sign in with 42",
   );
   signInButton.addEventListener("click", redirectTo42Auth);
-  
+
   root.appendChild(signInButton);
 }
-

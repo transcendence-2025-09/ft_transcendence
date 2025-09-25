@@ -13,4 +13,4 @@ export async function authTestRoute(fastify: FastifyInstance) {
     // Simulate a successful login
     return { token: "fake-jwt-token" };
   });
-};
+}

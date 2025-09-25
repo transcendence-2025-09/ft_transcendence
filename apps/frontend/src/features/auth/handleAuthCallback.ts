@@ -1,36 +1,36 @@
 export async function handleAuthCallback(): Promise<void> {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const state = params.get("state");
 
-    if (!code || !state) {
-        window.location.href = "/";
+  if (!code || !state) {
+    window.location.href = "/";
+  }
+
+  // CSRF対策のため、保存しておいたstateと照合
+  const savedState = sessionStorage.getItem("oauth_state");
+  sessionStorage.removeItem("oauth_state");
+  if (!savedState || !state || savedState !== state) {
+    window.location.href = "/";
+  }
+
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    const { token } = await response.json();
+    if (token) {
+      localStorage.setItem("auth_token", token);
+      window.location.href = "/dashboard";
+    } else {
+      window.location.href = "/";
     }
-
-    // CSRF対策のため、保存しておいたstateと照合
-    const savedState = sessionStorage.getItem("oauth_state");
-    sessionStorage.removeItem("oauth_state");
-    if (!savedState || !state || savedState !== state) {
-        window.location.href = "/";
-    }
-
-    try {
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code }),
-        });
-
-        const { token } = await response.json();
-        if (token) {
-            localStorage.setItem("auth_token", token);
-            window.location.href = "/dashboard";
-        } else {
-            window.location.href = "/";
-        }
-    } catch (_error) {
-        window.location.href = "/";
-    }
-};
+  } catch (_error) {
+    window.location.href = "/";
+  }
+}
