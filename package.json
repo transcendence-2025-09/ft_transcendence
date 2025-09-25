@@ -13,8 +13,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "check": "biome check . --max-diagnostics=none",
-    "check:fix": "biome check . --fix --max-diagnostics=none",
+    "check": "biome check . --max-diagnostics=none --error-on-warnings",
+    "check:fix": "biome check . --fix --max-diagnostics=none --error-on-warnings",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
