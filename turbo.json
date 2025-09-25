@@ -8,6 +8,9 @@
     },
     "build": {
       "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     }
   },
   "ui": "tui"
