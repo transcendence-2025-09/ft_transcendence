@@ -1,8 +1,8 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 
 async function routes(fastify: FastifyInstance) {
-  fastify.get("/", async (request: FastifyRequest) => {
-    return { hello: "world" };
+  fastify.get("/api/health", async (_request: FastifyRequest) => {
+    return { status: "ok" };
   });
 }
 
