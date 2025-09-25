@@ -1,12 +1,13 @@
 import { fetchHealth } from "./example";
-import { eh } from "./factory/elementFactory";
 import { componentFactory } from "./factory/componentFactory";
+import { eh } from "./factory/elementFactory";
 import "../style.css";
 
 const status = await fetchHealth();
 console.log("Health status:", status);
 
-const root = document.querySelector("#app")!;
+const root = document.querySelector<HTMLElement>("#app")!;
+if (!root) throw new Error("#app not found");
 
 // 1) 表示/非表示を切り替える対象のコンポーネント
 const divEl = eh<"div">(

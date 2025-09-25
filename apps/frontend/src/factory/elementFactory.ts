@@ -13,13 +13,13 @@ export const eh = <K extends TagName>(
   props?: PropsType,
   ...children: ChildType[]
 ): HTMLElementTagNameMap[K] => {
-  let el: HTMLElementTagNameMap[K] = document.createElement(type);
+  const el: HTMLElementTagNameMap[K] = document.createElement(type);
 
   //propsの処理
   if (props) {
     for (const [key, value] of Object.entries(props)) {
-      if (value == null || value == undefined || value == false) continue;
-      else if (value == true) {
+      if (value === null || value === undefined || value === false) continue;
+      else if (value === true) {
         el.setAttribute(key, "");
       } else if (key === "className") {
         el.setAttribute("class", String(value));
