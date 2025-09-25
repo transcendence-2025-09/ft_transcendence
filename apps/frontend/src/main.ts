@@ -6,7 +6,7 @@ import "../style.css";
 const status = await fetchHealth();
 console.log("Health status:", status);
 
-const root = document.querySelector<HTMLElement>("#app")!;
+const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");
 
 // 1) 表示/非表示を切り替える対象のコンポーネント
