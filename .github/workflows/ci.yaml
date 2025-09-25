@@ -1,0 +1,28 @@
+name: CI
+
+on: 
+    pull_request:
+    workflow_dispatch:
+    push:
+        branches:
+        - main
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run Typecheck
+        run: pnpm typecheck
+      - name: Run Biome Check
+        run: pnpm check
+      - name: Run Build
+        run: pnpm build
