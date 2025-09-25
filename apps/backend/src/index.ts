@@ -1,22 +1,7 @@
-import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
+import { buildApp } from "./buildApp.js";
 
-async function routes(fastify: FastifyInstance) {
-  fastify.get("/api/health", async (_request: FastifyRequest) => {
-    return { status: "ok" };
-  });
-}
-
-async function buildApp(): Promise<FastifyInstance> {
-  const fastify: FastifyInstance = Fastify({
-    logger: true,
-  });
-
-  fastify.register(routes);
-
-  return fastify;
-}
-
-async function start(): Promise<void> {
+async function main(): Promise<void> {
   try {
     const app: FastifyInstance = await buildApp();
     await app.listen({ port: 3000 });
@@ -26,4 +11,4 @@ async function start(): Promise<void> {
   }
 }
 
-start();
+main();
