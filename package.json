@@ -14,7 +14,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check": "biome check . --max-diagnostics=none",
-    "check:fix": "biome check . --fix --max-diagnostics=none"
+    "check:fix": "biome check . --fix --max-diagnostics=none",
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
