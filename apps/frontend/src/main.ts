@@ -4,6 +4,7 @@ import { setupCounter } from "./counter.ts";
 import { fetchHealth } from "./example";
 import typescriptLogo from "./typescript.svg";
 
+// biome-ignore lint/style/noNonNullAssertion: 削除予定
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <a href="https://vite.dev" target="_blank">
@@ -22,6 +23,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </div>
 `;
 
+// biome-ignore lint/style/noNonNullAssertion: 削除予定
 setupCounter(document.querySelector<HTMLButtonElement>("#counter")!);
 
 const status = await fetchHealth();
