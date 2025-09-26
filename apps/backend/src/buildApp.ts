@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { authTestRoute } from "./auth/authTest.js";
+import { authRoute } from "./auth/authRoute.js";
 import { healthRoute } from "./health/index.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -8,7 +8,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   fastify.register(healthRoute);
-  fastify.register(authTestRoute);
+  fastify.register(authRoute);
 
   return fastify;
 }
