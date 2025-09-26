@@ -1,14 +1,16 @@
 //この型がcomponentFactoryが返すオブジェクトの型。
 //描画されるHTMLElementのelとそのmount, unmountを制御するmethodがプロパティとして存在する
-export type ElComponent = {
-  el: HTMLElement;
+export type ElComponent<T extends HTMLElement = HTMLElement> = {
+  el: T;
   mount: (target: Element, anchor?: Node | null) => void;
   unmount: () => void;
 };
 
 //実際にコンポーネントを作成するアロー関数。
 //先にelementFactoryでelを作っておいて引数に渡す
-export const componentFactory = (el: HTMLElement): ElComponent => {
+export const componentFactory = <T extends HTMLElement = HTMLElement>(
+  el: T,
+): ElComponent<T> => {
   let mounted = false;
   let savedAnchor: Node | null = null;
 
