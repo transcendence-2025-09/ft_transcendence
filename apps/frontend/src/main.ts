@@ -1,8 +1,14 @@
 import { fetchHealth } from "./example";
-import { componentFactory } from "./factory/componentFactory";
 import { eh } from "./factory/elementFactory";
 import { handleAuthCallback, redirectTo42Auth } from "./features";
 import "../style.css";
+import { Footer } from "./components/footer";
+import { Header } from "./components/header";
+import type { ElComponent } from "./factory/componentFactory";
+import { layoutFactory } from "./factory/layoutFactory";
+import { mainSlotFactory } from "./factory/mainSlotFactory";
+import { About } from "./pages/about";
+import { Home } from "./pages/main";
 
 const status = await fetchHealth();
 console.log("Health status:", status);
@@ -10,38 +16,31 @@ console.log("Health status:", status);
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");
 
-// 1) 表示/非表示を切り替える対象のコンポーネント
-const divEl = eh<"div">(
-  "div",
-  { className: "text-gray-100 bg-blue-600 p-4 rounded" },
-  "Hello World",
-  eh<"p">("p", {}, "This p tag"),
-);
-const divComp = componentFactory(divEl);
+//  header,footerは外部で定義してimportする
+const header: ElComponent = Header;
+const footer: ElComponent = Footer;
+//mainはここでファクトリーを呼び出して生成
+const main = mainSlotFactory();
 
-// 2) トグル用ボタン（factoryで作成）
-const toggleBtn = eh<"button">(
-  "button",
-  { className: "mt-4 px-3 py-1 bg-gray-800 text-white rounded" },
-  "Hide",
-);
+//layoutも作ってそこにheader, main, footerを突っ込む
+const layout = layoutFactory({ header, main, footer });
+layout.mount(root);
 
-// 3) 初期マウント：コンポーネントを表示、ボタンも設置
-root.appendChild(toggleBtn);
-divComp.mount(root, toggleBtn);
+// 初期ページを表示
+layout.setPage(Home);
 
-// 4) ボタン押下で mount/unmount を切り替え
-toggleBtn.addEventListener("click", () => {
-  if (root.contains(divComp.el)) {
-    divComp.unmount();
-    toggleBtn.textContent = "Show";
-  } else {
-    divComp.mount(root);
-    toggleBtn.textContent = "Hide";
-  }
+// ヘッダー内ボタンにページ切替ハンドラを付与
+const nav = header.el.querySelector("nav");
+nav?.addEventListener("click", (e) => {
+  const btn = (e.target as HTMLElement)?.closest(
+    "button[data-page]",
+  ) as HTMLButtonElement | null;
+  if (!btn) return;
+  const p = btn.dataset.page;
+  if (p === "home") layout.setPage(Home);
+  else if (p === "about") layout.setPage(About);
 });
 
-// --- 簡易的なルーター ---
 const path = window.location.pathname;
 if (path === "/auth/callback") {
   root.innerHTML = "<p>Authenticating, please wait...</p>";

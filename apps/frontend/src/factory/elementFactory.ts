@@ -8,6 +8,7 @@ export type ChildType = string | number | Node;
 
 //型ジェネリクスを使って作成する要素ごとに違う型で生成する。propsはtailwindcssのclassNameとかを同じような感じで追加できる。
 //他の属性も可能。childには再帰的にchを呼び出して追加していけるし、普通にテキストの追加もできる
+//ehはelementHelperの略です
 export const eh = <K extends TagName>(
   type: K,
   props?: PropsType,
