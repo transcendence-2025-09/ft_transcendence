@@ -11,3 +11,4 @@ setup:
 	pnpm install && pnpm build
 
 	ln -s ${PWD}/.env ${PWD}/apps/frontend/.env
+	ln -s ${PWD}/.env ${PWD}/apps/backend/.env
