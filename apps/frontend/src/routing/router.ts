@@ -1,8 +1,6 @@
 import type { ElComponent } from "../factory/componentFactory";
-import type { RouteCtx } from "./routeList";
-import type { Params } from "./routeList";
 import type { Layout } from "../factory/layoutFactory";
-import type { Route } from "./routeList";
+import type { Params, Route, RouteCtx } from "./routeList";
 
 export type RouteProps = {
   routes: Route[];

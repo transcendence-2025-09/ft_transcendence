@@ -1,7 +1,7 @@
 import type { ElComponent } from "../factory/componentFactory";
-import { Home } from "../pages/main";
-import { About } from "../pages/about";
 import { NotFound } from "../pages/404";
+import { About } from "../pages/about";
+import { Home } from "../pages/main";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
