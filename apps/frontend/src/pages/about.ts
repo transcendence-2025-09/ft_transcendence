@@ -10,7 +10,17 @@ const textEl = eh<"div">(
   "Switch via header buttons.",
 );
 
+const linkEl = eh<"a">(
+  "a",
+  { href: "/", className: "text-blue-500", target: "_self" },
+  "Home Page",
+);
 const Title: ElComponent = componentFactory(titleEl);
 const Text: ElComponent = componentFactory(textEl);
+const Link: ElComponent = componentFactory(linkEl);
 
-export const About = pageFactory([Title, Text]);
+export const About = pageFactory([Title, Text, Link]);
+
+// export const AboutFactory = () => {
+//   return pageFactory([Title, Text]);
+// };
