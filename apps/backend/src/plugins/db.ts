@@ -7,11 +7,23 @@ import sqlite3 from "sqlite3";
 
 async function setupSqlite(): Promise<Database> {
   const db = await open({
-    filename: path.join(process.cwd(), "src", "database", "storage", "database.sqlite"),
+    filename: path.join(
+      process.cwd(),
+      "src",
+      "database",
+      "storage",
+      "database.sqlite",
+    ),
     driver: sqlite3.Database,
   });
 
-  const schemaPath = path.join(process.cwd(), "src", "database", "sql", "schema.sql");
+  const schemaPath = path.join(
+    process.cwd(),
+    "src",
+    "database",
+    "sql",
+    "schema.sql",
+  );
   const schema = await fs.readFile(schemaPath, "utf-8");
   await db.exec(schema);
 
