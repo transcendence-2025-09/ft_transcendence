@@ -19,8 +19,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
-    "turbo": "2.5.6",
-    "lefthook": "1.13.3"
+    "lefthook": "1.13.3",
+    "turbo": "2.5.6"
   },
   "lefthook": {
     "version": "1.13.3"
