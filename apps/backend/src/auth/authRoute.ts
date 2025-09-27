@@ -1,5 +1,6 @@
 import "dotenv/config";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { registerUser } from "../database/user/registerUser.js";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchUserData } from "./utils/fetchUserData.js";
 
@@ -21,10 +22,20 @@ export async function authRoute(fastify: FastifyInstance) {
       return reply.status(500).send({ error: "Failed to fetch user data" });
     }
 
-    // 仮
-    const joinedUserData = `${userData.id}.${userData.login}.${userData.email}`;
+    const result = await registerUser(fastify.db, {
+      name: userData.login,
+      email: userData.email,
+      ft_id: userData.id,
+    });
 
-    // ここでJWTを生成して返す
+    if (!result) {
+      return reply.status(500).send({ error: "Failed to register user" });
+    }
+
+    // demo用コード
+    const users = await fastify.db.all("SELECT * FROM users");
+    console.log(users);
+    const joinedUserData = `${userData.id}.${userData.login}.${userData.email}`;
 
     return { token: joinedUserData };
   });

@@ -27,6 +27,17 @@ async function setupSqlite(): Promise<Database> {
   const schema = await fs.readFile(schemaPath, "utf-8");
   await db.exec(schema);
 
+  // MEMO: devの場合のみ実行とかでもいいかも
+  const seedPath = path.join(
+    process.cwd(),
+    "src",
+    "database",
+    "sql",
+    "seed.sql",
+  );
+  const seed = await fs.readFile(seedPath, "utf-8");
+  await db.exec(seed);
+
   return db;
 }
 
