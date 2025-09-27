@@ -8,6 +8,8 @@ export type ElComponent<T extends HTMLElement = HTMLElement> = {
 
 //実際にコンポーネントを作成するアロー関数。
 //先にelementFactoryでelを作っておいて引数に渡す
+
+//この先ctxを受け取れるようにする必要あり。
 export const componentFactory = <T extends HTMLElement = HTMLElement>(
   el: T,
 ): ElComponent<T> => {
