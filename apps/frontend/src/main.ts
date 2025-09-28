@@ -1,4 +1,3 @@
-// import { fetchHealth } from "./example";
 import { eh } from "./factory/elementFactory";
 import { handleAuthCallback, redirectTo42Auth } from "./features";
 import "../style.css";
@@ -10,9 +9,6 @@ import { mainSlotFactory } from "./factory/mainSlotFactory";
 import { routeList } from "./routing/routeList";
 import type { RouteProps } from "./routing/router";
 import { createRouter } from "./routing/router";
-
-// const status = await fetchHealth();
-// console.log("Health status:", status);
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");
