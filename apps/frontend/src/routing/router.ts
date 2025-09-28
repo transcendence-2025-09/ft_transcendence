@@ -116,20 +116,79 @@ export const createRouter = (props: RouteProps) => {
     return pathname;
   };
 
+  //URLが動的パターンの場合はregexpに変換しておく
+  //ここではroutingに登録してある"/user/:id"みたいな文字列を登録しておくことで、
+  //実際に"/user/124"みたいなURLがきたらそれに対応できるようにする。
+  const compilePattern = (
+    path: string,
+  ): { regex: RegExp; keys: string[] } | null => {
+    if (path === "*" || path === "/*") return null;
+
+    // "/user/:id -> ["user", ":id"]"みたいな感じに分割する
+    const segments = path.split("/").filter(Boolean);
+    const keys: string[] = [];
+
+    //各セグメントを正規化する
+    const parts: string[] = segments.map((seg, i) => {
+      if (seg === "*") {
+        const isLast = i === segments.length - 1;
+        return isLast ? "(?:/.*)?" : "/.*";
+      }
+
+      if (seg.startsWith(":")) {
+        const optional = seg.endsWith("?");
+        const name = seg.slice(1, optional ? -1 : undefined);
+        if (!name) throw new Error(`Invalid param in "${path}"`);
+        keys.push(name);
+
+        const cap = "([^/]+)";
+        return optional ? `(?:/${cap})?` : `/${cap}`;
+      }
+
+      return "/" + seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    });
+
+    const pattern = "^" + (parts.join("") || "/") + "$";
+    return { regex: new RegExp(pattern), keys };
+  };
+
+  //動的ルーティングの実装
+  //実際のurlとroutesに登録してあるpathとの動的マッチングを行う。
+  const dynamicMatch = (pathname: string, routePath: string): Params | null => {
+    const compiled = compilePattern(routePath);
+    if (!compiled) return null;
+    const m = compiled.regex.exec(pathname);
+    if (!m) return null;
+
+    const params: Params = {};
+    for (let i = 0; i < compiled.keys.length; ++i) {
+      const raw = m[i + 1];
+      if (raw !== undefined) params[compiled.keys[i]] = decodeURIComponent(raw);
+    }
+    return params;
+  };
+
   //propsのroutes配列からpathnameに一致するものを探してRouteオブジェクトを返す。
   //あとparamsに関してはURLオブジェクトから取って来れないからこの返り値に入れておく
   const matchRoute = (
     pathname: string,
     routes: Route[],
   ): { route: Route; params: Params } => {
+    console.log(pathname);
     const params: Params = {};
-    const found: Route = routes.find((r) => r.path === pathname) as Route;
-    if (found) return { route: found, params: params };
-    //routesの最後は必ずnot foundにしておく
-    else {
-      const notFound: Route = routes.at(-1) as Route;
-      return { route: notFound, params: params };
+    const foundStatic: Route = routes.find((r) => r.path === pathname) as Route;
+    if (foundStatic) return { route: foundStatic, params: params };
+
+    for (let i = 0; i < routes.length - 1; ++i) {
+      const r = routes[i];
+      if (!/[:*]/.test(r.path)) continue;
+      const p = dynamicMatch(pathname, r.path);
+      if (p) return { route: r, params: p };
     }
+
+    //routesの最後は必ずnot foundにしておく
+    const notFound: Route = routes.at(-1) as Route;
+    return { route: notFound, params: params };
   };
 
   return { init, navigate };

@@ -2,6 +2,7 @@ import type { ElComponent } from "../factory/componentFactory";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
+import { User } from "../pages/user";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
@@ -33,6 +34,11 @@ export const routeList: Route[] = [
     name: "About",
     path: "/about",
     viewFactory: () => About,
+  },
+  {
+    name: "user",
+    path: "/user/:id",
+    viewFactory: (ctx: RouteCtx) => User(ctx),
   },
   {
     name: "not found",
