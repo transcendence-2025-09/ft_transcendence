@@ -1,5 +1,7 @@
 import "dotenv/config";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import jwt from "jsonwebtoken";
+import { getUserWithFtId } from "../database/user/getUserWithFtId.js";
 import { registerUser } from "../database/user/registerUser.js";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchUserData } from "./utils/fetchUserData.js";
@@ -32,11 +34,22 @@ export async function authRoute(fastify: FastifyInstance) {
       return reply.status(500).send({ error: "Failed to register user" });
     }
 
-    // demo用コード
-    const users = await fastify.db.all("SELECT * FROM users");
-    console.log(users);
-    const joinedUserData = `${userData.id}.${userData.login}.${userData.email}`;
+    const user = await getUserWithFtId(fastify.db, userData.id);
+    if (!user) {
+      return reply
+        .status(500)
+        .send({ error: "Failed to get user after registration" });
+    }
 
-    return { token: joinedUserData };
+    console.log(user);
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return reply.status(500).send();
+    }
+    const jwtPayload = { id: user.id, name: user.name };
+    const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
+
+    return { token };
   });
 }
