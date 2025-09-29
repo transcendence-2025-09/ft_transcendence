@@ -9,7 +9,10 @@ export interface User {
 
 export type RegisterUserInput = Omit<User, "id">;
 
-export async function registerUser(db: Database, user: RegisterUserInput): Promise<boolean> {
+export async function registerUser(
+  db: Database,
+  user: RegisterUserInput,
+): Promise<boolean> {
   const { name, email, ft_id } = user;
   if (!name || !email || !ft_id) {
     return false;
