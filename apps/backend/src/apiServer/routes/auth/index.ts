@@ -1,11 +1,14 @@
 import "dotenv/config";
+import {
+  type FastifyPluginAsyncTypebox,
+  Type,
+} from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
+import { getUserWithFtId } from "src/database/user/getUserWithFtId.js";
+import { registerUser } from "src/database/user/registerUser.js";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchUserData } from "./utils/fetchUserData.js";
-import { type FastifyPluginAsyncTypebox, Type } from "@fastify/type-provider-typebox";
-import { registerUser } from "src/database/user/registerUser.js";
-import { getUserWithFtId } from "src/database/user/getUserWithFtId.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
@@ -41,7 +44,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         email: userData.email,
         ft_id: userData.id,
       });
-      
+
       if (!result) {
         return reply.status(500).send({ error: "Failed to register user" });
       }
@@ -69,7 +72,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       });
 
       return reply.status(200).send();
-    });
+    },
+  );
 };
 
 export default plugin;
