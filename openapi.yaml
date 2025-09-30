@@ -34,13 +34,6 @@ paths:
                 - code
       responses:
         '200':
-          description: 成功時にJWTトークンを返します。
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: 発行されたJWTトークン
+          description: 成功時、JWTトークンをhttpOnly cookieに設定します。
+
 
