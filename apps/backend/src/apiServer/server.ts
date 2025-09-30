@@ -2,12 +2,16 @@ import Fastify, { type FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import serviceApp from "./app.js";
 
-async function server(): Promise<void> {
+export async function server(): Promise<void> {
   const app: FastifyInstance = Fastify({
     logger: true,
   });
 
   app.register(fp(serviceApp));
+
+  app.ready(() => {
+    console.log(app.printRoutes());
+  });
 
   try {
     await app.listen({ port: 3000 });
@@ -16,5 +20,3 @@ async function server(): Promise<void> {
     process.exit(1);
   }
 }
-
-server();

@@ -5,12 +5,11 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
-import { getUserWithFtId } from "src/database/user/getUserWithFtId.js";
-import { registerUser } from "src/database/user/registerUser.js";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchUserData } from "./utils/fetchUserData.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+  const { usersRepository } = fastify;
   fastify.post(
     "/login",
     {
@@ -32,6 +31,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request: FastifyRequest, reply) => {
+      console.log("Login request received");
       const { code } = request.body as { code?: string };
       const accessToken = await exchangeToken(code ?? "");
       const userData = await fetchUserData(accessToken ?? "");
@@ -39,7 +39,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(500).send({ error: "Failed to fetch user data" });
       }
 
-      const result = await registerUser(fastify.db, {
+      const result = await usersRepository.createUser({
         name: userData.login,
         email: userData.email,
         ft_id: userData.id,
@@ -49,7 +49,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(500).send({ error: "Failed to register user" });
       }
 
-      const user = await getUserWithFtId(fastify.db, userData.id);
+      const user = await usersRepository.findByFtId(userData.id);
       if (!user) {
         return reply
           .status(500)
