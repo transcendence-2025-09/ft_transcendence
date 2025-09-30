@@ -23,12 +23,11 @@ export async function handleAuthCallback(): Promise<void> {
       body: JSON.stringify({ code }),
     });
 
-    const { token } = await response.json();
-    if (token) {
-      localStorage.setItem("auth_token", token);
-      window.location.href = "/dashboard";
-    } else {
+    if (!response.ok) {
       window.location.href = "/";
+      return;
+    } else {
+      window.location.href = "/dashboard";
     }
   } catch (_error) {
     window.location.href = "/";
