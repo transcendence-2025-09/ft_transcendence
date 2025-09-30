@@ -12,21 +12,20 @@ type User = {
   name: string;
   email: string;
   ft_id: number;
-}
+};
 
 type CreateUser = {
   name: string;
   email: string;
   ft_id: number;
-}
+};
 
 export function createUsersRepository(fastify: FastifyInstance) {
   return {
     async findByFtId(ft_id: number): Promise<User | null> {
-      const user = await fastify.db.get(
-        "SELECT * FROM users WHERE ft_id = ?",
-        [ft_id],
-      );
+      const user = await fastify.db.get("SELECT * FROM users WHERE ft_id = ?", [
+        ft_id,
+      ]);
       return user || null;
     },
 
@@ -41,13 +40,10 @@ export function createUsersRepository(fastify: FastifyInstance) {
       } catch {
         return false;
       }
-    }
-  }
+    },
+  };
 }
 
 export default fp(async (fastify) => {
-  fastify.decorate(
-    "usersRepository",
-    createUsersRepository(fastify),
-  );
+  fastify.decorate("usersRepository", createUsersRepository(fastify));
 });
