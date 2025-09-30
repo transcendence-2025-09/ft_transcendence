@@ -55,8 +55,7 @@ if (path === "/auth/callback") {
   root.innerHTML = "<p>Authenticating, please wait...</p>";
   handleAuthCallback();
 } else if (path === "/dashboard") {
-  const token = localStorage.getItem("auth_token");
-  root.innerHTML = `<h1>Your token is: ${token}</h1>`;
+  root.innerHTML = `<h1>dashboard</h1>`;
 } else {
   const signInButton = eh(
     "button",

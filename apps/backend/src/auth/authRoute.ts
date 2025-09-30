@@ -50,6 +50,14 @@ export async function authRoute(fastify: FastifyInstance) {
     const jwtPayload = { id: user.id, name: user.name };
     const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
 
-    return { token };
+    reply.setCookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    });
+
+    return reply.status(200).send();
   });
 }
