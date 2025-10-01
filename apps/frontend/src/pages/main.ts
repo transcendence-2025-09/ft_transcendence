@@ -5,6 +5,112 @@ import { pageFactory } from "../factory/pageFactory";
 
 // import type { RouteCtx } from "../routing/routeList";
 
+// ポップアップでOAuth認証を処理する関数
+const handleOAuthWithPopup = async (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const clientId = import.meta.env.VITE_42_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_42_REDIRECT_URI;
+
+    // 環境変数の確認
+    if (!clientId || !redirectUri) {
+      reject(new Error("OAuth設定が不完全です。環境変数を確認してください。"));
+      return;
+    }
+
+    const state = crypto.randomUUID();
+
+    // セッションストレージに状態を保存
+    sessionStorage.setItem("oauth_state", state);
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: "public",
+      response_type: "code",
+      state: state,
+    });
+
+    const authUrl = `https://api.intra.42.fr/oauth/authorize?${params.toString()}`;
+
+    // ポップアップウィンドウを開く
+    const popup = window.open(
+      authUrl,
+      "42auth",
+      "width=500,height=600,scrollbars=yes,resizable=yes",
+    );
+
+    if (!popup) {
+      reject(new Error("ポップアップがブロックされました"));
+      return;
+    }
+
+    // ポップアップの監視
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        // ポップアップが閉じられた場合、認証が完了したかチェック
+        checkAuthResult(resolve, reject);
+      }
+    }, 1000);
+
+    // メッセージリスナー（認証完了通知用）
+    const messageListener = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data.type === "AUTH_SUCCESS") {
+        clearInterval(checkClosed);
+        popup.close();
+        window.removeEventListener("message", messageListener);
+        resolve();
+      } else if (event.data.type === "AUTH_ERROR") {
+        clearInterval(checkClosed);
+        popup.close();
+        window.removeEventListener("message", messageListener);
+        reject(new Error(event.data.error || "認証に失敗しました"));
+      }
+    };
+
+    window.addEventListener("message", messageListener);
+
+    // タイムアウト処理（30秒）
+    setTimeout(() => {
+      if (!popup.closed) {
+        clearInterval(checkClosed);
+        popup.close();
+        window.removeEventListener("message", messageListener);
+        reject(new Error("認証がタイムアウトしました"));
+      }
+    }, 30000);
+  });
+};
+
+// 認証結果をチェックする関数
+const checkAuthResult = async (
+  resolve: () => void,
+  reject: (error: Error) => void,
+) => {
+  try {
+    // バックエンドの /api/user/me エンドポイントで認証状態を確認
+    const response = await fetch("/api/user/me", {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const userData = await response.json();
+      console.log("認証成功:", userData);
+      resolve();
+      // 認証成功後、ダッシュボードにリダイレクト
+      window.location.href = "/dashboard";
+    } else {
+      reject(new Error("認証に失敗しました"));
+    }
+  } catch (error) {
+    console.error("認証状態確認エラー:", error);
+    reject(new Error("認証状態の確認に失敗しました"));
+  }
+};
+
 // 大きなタイトル
 const titleEl = eh<"h1">(
   "h1",
@@ -36,10 +142,38 @@ const containerEl = eh<"div">(
 const Container: ElComponent = componentFactory(containerEl);
 
 // Sign in ボタンにイベントリスナーを追加
-signInButtonEl.addEventListener("click", () => {
-  // 42 OAuth認証へのリダイレクトなどを実装
-  console.log("42でサインインします");
-  alert("42でサインインします");
+signInButtonEl.addEventListener("click", async () => {
+  // 既に処理中の場合は何もしない
+  if (signInButtonEl.disabled) return;
+
+  const originalText = signInButtonEl.textContent;
+  const originalClassName = signInButtonEl.className;
+
+  try {
+    // ボタンを無効化
+    signInButtonEl.disabled = true;
+    signInButtonEl.textContent = "サインイン中...";
+    signInButtonEl.className =
+      "bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg cursor-not-allowed opacity-50";
+
+    // ポップアップで42認証を処理
+    await handleOAuthWithPopup();
+
+    // 認証成功時の処理（この時点でリダイレクトされている可能性が高い）
+    console.log("認証が完了しました");
+  } catch (error) {
+    console.error("認証エラー:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "認証に失敗しました。もう一度お試しください。";
+    alert(errorMessage);
+
+    // ボタンを元に戻す
+    signInButtonEl.disabled = false;
+    signInButtonEl.textContent = originalText;
+    signInButtonEl.className = originalClassName;
+  }
 });
 
 export const Home = pageFactory([Container]);

@@ -103,7 +103,32 @@ const path = window.location.pathname;
 
 if (path === "/auth/callback") {
   root.innerHTML = "<p>Authenticating, please wait...</p>";
-  handleAuthCallback();
+
+  // ポップアップから開かれた場合の処理
+  if (window.opener) {
+    try {
+      await handleAuthCallback();
+      // 親ウィンドウに成功を通知
+      window.opener.postMessage(
+        { type: "AUTH_SUCCESS" },
+        window.location.origin,
+      );
+      window.close();
+    } catch (error) {
+      // 親ウィンドウにエラーを通知
+      window.opener.postMessage(
+        {
+          type: "AUTH_ERROR",
+          error: error instanceof Error ? error.message : "認証に失敗しました",
+        },
+        window.location.origin,
+      );
+      window.close();
+    }
+  } else {
+    // 通常のタブで開かれた場合の従来の処理
+    handleAuthCallback();
+  }
 } else if (path === "/dashboard") {
   const res = await fetch("/api/user/me", {
     method: "GET",
