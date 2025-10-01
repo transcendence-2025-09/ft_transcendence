@@ -145,10 +145,10 @@ export const createRouter = (props: RouteProps) => {
         return optional ? `(?:/${cap})?` : `/${cap}`;
       }
 
-      return "/" + seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return `/${seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`;
     });
 
-    const pattern = "^" + (parts.join("") || "/") + "$";
+    const pattern = `^${parts.join("") || "/"}$`;
     return { regex: new RegExp(pattern), keys };
   };
 
