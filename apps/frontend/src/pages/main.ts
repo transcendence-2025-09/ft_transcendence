@@ -5,39 +5,44 @@ import { pageFactory } from "../factory/pageFactory";
 
 // import type { RouteCtx } from "../routing/routeList";
 
-const titleEl = eh<"div">("div", { className: "p-4" }, "This is HOME page.");
-const textEl = eh<"div">(
-  "div",
-  { className: "p-4" },
-  "Mount / Unmount test is working",
+// 大きなタイトル
+const titleEl = eh<"h1">(
+  "h1",
+  { className: "text-6xl font-bold text-black mb-8" },
+  "Title",
 );
 
-const linkEl = eh<"a">(
-  "a",
-  { href: "/about", className: "text-blue-500", target: "_self" },
-  "About Page",
-);
-
-const buttonEl = eh<"button">(
+// Sign in with 42 ボタン
+const signInButtonEl = eh<"button">(
   "button",
   {
     className:
-      "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4",
+      "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200",
   },
-  "クリックしてね",
+  "Sign in with 42",
 );
 
-const Title: ElComponent = componentFactory(titleEl);
-const Text: ElComponent = componentFactory(textEl);
-const Link: ElComponent = componentFactory(linkEl);
-const Button: ElComponent = componentFactory(buttonEl);
+// 中央配置のコンテナ
+const containerEl = eh<"div">(
+  "div",
+  {
+    className:
+      "min-h-screen bg-white flex flex-col justify-center items-center",
+  },
+  titleEl,
+  signInButtonEl,
+);
 
-// ボタンにイベントリスナーを追加
-Button.el.addEventListener("click", () => {
-  alert("ボタンがクリックされました！");
+const Container: ElComponent = componentFactory(containerEl);
+
+// Sign in ボタンにイベントリスナーを追加
+signInButtonEl.addEventListener("click", () => {
+  // 42 OAuth認証へのリダイレクトなどを実装
+  console.log("42でサインインします");
+  alert("42でサインインします");
 });
 
-export const Home = pageFactory([Title, Text, Link, Button]);
+export const Home = pageFactory([Container]);
 
 // export const HomeFactory = (ctx: RouteCtx) => {
 //   return pageFactory([Title, Text, Link]);
