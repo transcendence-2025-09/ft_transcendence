@@ -48,8 +48,9 @@ const handleOAuthWithPopup = async (): Promise<void> => {
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
-        // ポップアップが閉じられた場合、認証が完了したかチェック
-        checkAuthResult(resolve, reject);
+        window.removeEventListener("message", messageListener);
+        // ポップアップが閉じられた場合、キャンセルと見なす
+        reject(new Error("認証がキャンセルされました"));
       }
     }, 1000);
 
@@ -61,7 +62,10 @@ const handleOAuthWithPopup = async (): Promise<void> => {
         clearInterval(checkClosed);
         popup.close();
         window.removeEventListener("message", messageListener);
-        resolve();
+        // 少し遅延を入れてからresolveして、確実にクッキーが設定されるのを待つ
+        setTimeout(() => {
+          resolve();
+        }, 100);
       } else if (event.data.type === "AUTH_ERROR") {
         clearInterval(checkClosed);
         popup.close();
@@ -82,33 +86,6 @@ const handleOAuthWithPopup = async (): Promise<void> => {
       }
     }, 30000);
   });
-};
-
-// 認証結果をチェックする関数
-const checkAuthResult = async (
-  resolve: () => void,
-  reject: (error: Error) => void,
-) => {
-  try {
-    // バックエンドの /api/user/me エンドポイントで認証状態を確認
-    const response = await fetch("/api/user/me", {
-      method: "GET",
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const userData = await response.json();
-      console.log("認証成功:", userData);
-      resolve();
-      // 認証成功後、ダッシュボードにリダイレクト
-      window.location.href = "/dashboard";
-    } else {
-      reject(new Error("認証に失敗しました"));
-    }
-  } catch (error) {
-    console.error("認証状態確認エラー:", error);
-    reject(new Error("認証状態の確認に失敗しました"));
-  }
 };
 
 // 大きなタイトル
@@ -159,8 +136,9 @@ signInButtonEl.addEventListener("click", async () => {
     // ポップアップで42認証を処理
     await handleOAuthWithPopup();
 
-    // 認証成功時の処理（この時点でリダイレクトされている可能性が高い）
+    // 認証成功時の処理 - メインウィンドウでダッシュボードにリダイレクト
     console.log("認証が完了しました");
+    window.location.href = "/dashboard";
   } catch (error) {
     console.error("認証エラー:", error);
     const errorMessage =
