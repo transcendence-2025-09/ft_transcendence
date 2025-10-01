@@ -20,8 +20,9 @@ const linkEl = eh<"a">(
 
 const buttonEl = eh<"button">(
   "button",
-  { 
-    className: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
+  {
+    className:
+      "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4",
   },
   "クリックしてね",
 );
@@ -32,7 +33,7 @@ const Link: ElComponent = componentFactory(linkEl);
 const Button: ElComponent = componentFactory(buttonEl);
 
 // ボタンにイベントリスナーを追加
-Button.el.addEventListener('click', () => {
+Button.el.addEventListener("click", () => {
   alert("ボタンがクリックされました！");
 });
 
