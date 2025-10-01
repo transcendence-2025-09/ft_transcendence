@@ -18,11 +18,25 @@ const linkEl = eh<"a">(
   "About Page",
 );
 
+const buttonEl = eh<"button">(
+  "button",
+  { 
+    className: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
+  },
+  "クリックしてね",
+);
+
 const Title: ElComponent = componentFactory(titleEl);
 const Text: ElComponent = componentFactory(textEl);
 const Link: ElComponent = componentFactory(linkEl);
+const Button: ElComponent = componentFactory(buttonEl);
 
-export const Home = pageFactory([Title, Text, Link]);
+// ボタンにイベントリスナーを追加
+Button.el.addEventListener('click', () => {
+  alert("ボタンがクリックされました！");
+});
+
+export const Home = pageFactory([Title, Text, Link, Button]);
 
 // export const HomeFactory = (ctx: RouteCtx) => {
 //   return pageFactory([Title, Text, Link]);
