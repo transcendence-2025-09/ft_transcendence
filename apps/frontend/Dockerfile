@@ -1,18 +1,37 @@
-FROM node:22-slim
+FROM node:22-slim AS base
 
-WORKDIR /app
+RUN corepack enable
 
-COPY apps/frontend/package.json ./package.json
-RUN npm install --no-fund --no-audit
+FROM base AS pruner
+WORKDIR /pruner
 
-COPY apps/frontend/. .
+COPY . ./
+RUN npx turbo@2.5.6 prune --scope=frontend --docker
 
-RUN npm run build
+FROM base AS builder
 
-RUN npm install --global http-server@14.1.1 --no-fund --no-audit
+ARG VITE_42_CLIENT_ID
+ARG VITE_42_REDIRECT_URI
 
-EXPOSE 5173 80
+WORKDIR /builder
+COPY --from=pruner /pruner/out/json ./
+COPY --from=pruner /pruner/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=pruner /pruner/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
+RUN pnpm install --no-frozen-lockfile
 
-CMD ["http-server", "dist", "-p", "80", "-a", "0.0.0.0"]
+COPY --from=pruner /pruner/out/full/ .
+RUN pnpm turbo run build
+
+FROM nginx:alpine
+
+# Copy built files to nginx html directory
+COPY --from=builder /builder/apps/frontend/dist /usr/share/nginx/html
+
+# Copy custom nginx configuration
+COPY --from=builder /builder/apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 5173
+
+CMD ["nginx", "-g", "daemon off;"]
 
 
