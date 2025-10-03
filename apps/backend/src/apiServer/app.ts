@@ -15,17 +15,20 @@ export default async function serviceApp(
   fastify: FastifyInstance,
   opts: FastifyPluginOptions,
 ) {
+  const isDev = process.env.NODE_ENV !== "production";
+  const baseDir = isDev ? "src/apiServer" : "dist/apiServer";
+
   await fastify.register(fastifyAutoload, {
-    dir: path.join(process.cwd(), "src/apiServer/plugins/external"),
+    dir: path.join(process.cwd(), `${baseDir}/plugins/external`),
   });
 
   fastify.register(fastifyAutoload, {
-    dir: path.join(process.cwd(), "src/apiServer/plugins/app"),
+    dir: path.join(process.cwd(), `${baseDir}/plugins/app`),
     options: { ...opts },
   });
 
   fastify.register(fastifyAutoload, {
-    dir: path.join(process.cwd(), "src/apiServer/routes"),
+    dir: path.join(process.cwd(), `${baseDir}/routes`),
     autoHooks: true,
     cascadeHooks: true,
     options: { ...opts },

@@ -3,10 +3,14 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "3000:3000"
     volumes:
-      - backend_db:/app/src/database/storage
+      - backend_db:/app/database/storage
     restart: unless-stopped
 
   frontend:
@@ -14,9 +18,10 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     environment:
-      - API_BASE_URL=http://backend:3000
+      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
+      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       - backend
     restart: unless-stopped
