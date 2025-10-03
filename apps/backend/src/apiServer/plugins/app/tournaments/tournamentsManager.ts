@@ -1,6 +1,6 @@
+import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import { randomUUID } from "node:crypto";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -63,8 +63,7 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
      */
     addReadyPlayer(tournamentId: string, userId: number): boolean {
       const tournament = tournaments.get(tournamentId);
-      if (!tournament)
-        return false;
+      if (!tournament) return false;
       tournament.readyPlayers.add(userId);
       if (tournament.readyPlayers.size >= tournament.maxPlayers)
         tournament.status = "ready";
@@ -98,8 +97,7 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
      */
     removeReadyPlayer(tournamentId: string, userId: number): boolean {
       const tournament = tournaments.get(tournamentId);
-      if (!tournament)
-        return false;
+      if (!tournament) return false;
       const removed = tournament.readyPlayers.delete(userId);
       if (removed && tournament.status === "ready")
         tournament.status = "waiting";
