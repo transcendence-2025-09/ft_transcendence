@@ -13,7 +13,6 @@ const handleOAuthWithPopup = async (): Promise<void> => {
 
     // 環境変数の確認
     if (!clientId || !redirectUri) {
-      console.error(`clientId: ${clientId}, redirectUri: ${redirectUri}`);
       reject(new Error("OAuth設定が不完全です。環境変数を確認してください。"));
       return;
     }
