@@ -5,6 +5,8 @@ services:
       dockerfile: apps/backend/Dockerfile
     environment:
       - NODE_ENV=production
+      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
+      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
       - CLIENT_SECRET=${CLIENT_SECRET}
       - JWT_SECRET=${JWT_SECRET}
     ports:
@@ -15,9 +17,9 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-    environment:
-      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
-      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
+      args:
+        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
+        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
     ports:
       - "5173:5173"
     depends_on:

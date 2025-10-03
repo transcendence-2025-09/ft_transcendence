@@ -10,6 +10,9 @@ RUN npx turbo@2.5.6 prune --scope=frontend --docker
 
 FROM base AS builder
 
+ARG VITE_42_CLIENT_ID
+ARG VITE_42_REDIRECT_URI
+
 WORKDIR /builder
 COPY --from=pruner /pruner/out/json ./
 COPY --from=pruner /pruner/out/pnpm-lock.yaml ./pnpm-lock.yaml
@@ -19,17 +22,13 @@ RUN pnpm install --no-frozen-lockfile
 COPY --from=pruner /pruner/out/full/ .
 RUN pnpm turbo run build
 
-RUN pnpm config set inject-workspace-packages=true
-RUN pnpm install --no-frozen-lockfile
-RUN pnpm deploy --filter frontend --prod /prod/frontend
-
 FROM nginx:alpine
 
 # Copy built files to nginx html directory
-COPY --from=builder /prod/frontend/dist /usr/share/nginx/html
+COPY --from=builder /builder/apps/frontend/dist /usr/share/nginx/html
 
 # Copy custom nginx configuration
-COPY --from=builder /prod/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /builder/apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 5173
 
