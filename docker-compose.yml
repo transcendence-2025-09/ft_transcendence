@@ -9,8 +9,6 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "3000:3000"
-    volumes:
-      - backend_db:/app/database/storage
     restart: unless-stopped
 
   frontend:
@@ -25,8 +23,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  backend_db:
-
-

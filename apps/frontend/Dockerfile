@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:22-slim as builder
 
 WORKDIR /app
 
@@ -9,10 +9,17 @@ COPY apps/frontend/. .
 
 RUN npm run build
 
-RUN npm install --global http-server@14.1.1 --no-fund --no-audit
+# Stage 2: Nginx for serving the built files
+FROM nginx:alpine
+
+# Copy built files to nginx html directory
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx configuration
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 5173
 
-CMD ["http-server", "dist", "-p", "5173", "-a", "0.0.0.0"]
+CMD ["nginx", "-g", "daemon off;"]
 
 
