@@ -139,8 +139,12 @@ async function mockLogin(): Promise<void> {
 
     // ポップアップ内のフォームにイベントリスナーを追加
     popup.addEventListener("load", () => {
-      const form = popup.document.getElementById("mockLoginForm") as HTMLFormElement;
-      const cancelBtn = popup.document.getElementById("cancelBtn") as HTMLButtonElement;
+      const form = popup.document.getElementById(
+        "mockLoginForm",
+      ) as HTMLFormElement;
+      const cancelBtn = popup.document.getElementById(
+        "cancelBtn",
+      ) as HTMLButtonElement;
 
       if (form) {
         form.addEventListener("submit", async (e) => {
