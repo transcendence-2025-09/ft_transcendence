@@ -3,8 +3,6 @@ import { componentFactory } from "../factory/componentFactory";
 import { eh } from "../factory/elementFactory";
 import { pageFactory } from "../factory/pageFactory";
 
-// import type { RouteCtx } from "../routing/routeList";
-
 // ポップアップでOAuth認証を処理する関数
 const handleOAuthWithPopup = async (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -88,6 +86,26 @@ const handleOAuthWithPopup = async (): Promise<void> => {
   });
 };
 
+async function mockLogin(): Promise<void> {
+  try {
+    const response = await fetch("/api/auth/mock-login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: "mock_dev_code",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Mock login failed");
+    }
+  } catch (error) {
+    console.error("Error during mock login:", error);
+  }
+}
+
 // 大きなタイトル
 const titleEl = eh<"h1">(
   "h1",
@@ -133,8 +151,12 @@ signInButtonEl.addEventListener("click", async () => {
     signInButtonEl.className =
       "bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg cursor-not-allowed opacity-50";
 
-    // ポップアップで42認証を処理
-    await handleOAuthWithPopup();
+    // 開発環境ではモック認証、本番環境では42認証
+    if (import.meta.env.DEV) {
+      await mockLogin();
+    } else {
+      await handleOAuthWithPopup();
+    }
 
     // 認証成功時の処理 - メインウィンドウでダッシュボードにリダイレクト
     console.log("認証が完了しました");
@@ -155,7 +177,3 @@ signInButtonEl.addEventListener("click", async () => {
 });
 
 export const Home = pageFactory([Container]);
-
-// export const HomeFactory = (ctx: RouteCtx) => {
-//   return pageFactory([Title, Text, Link]);
-// };

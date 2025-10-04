@@ -5,22 +5,17 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
-import mockAuthPlugin from "./mock.js";
-import { exchangeToken } from "./utils/exchangeToken.js";
-import { fetchUserData } from "./utils/fetchUserData.js";
+import { mockExchangeToken } from "./utils/mockExchangeToken.js";
+import { mockFetchUserData } from "./utils/mockFetchUserData.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
-  if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
-    await fastify.register(mockAuthPlugin);
-  }
-
   const { usersRepository } = fastify;
   fastify.post(
-    "/login",
+    "/mock-login",
     {
       schema: {
         body: Type.Object({
-          code: Type.String(),
+          code: Type.Optional(Type.String()),
         }),
         response: {
           200: Type.Object({
@@ -36,10 +31,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request: FastifyRequest, reply) => {
-      console.log("Login request received");
-      const { code } = request.body as { code?: string };
-      const accessToken = await exchangeToken(code ?? "");
-      const userData = await fetchUserData(accessToken ?? "");
+      console.log("Mock login request received");
+
+      const { code } = (request.body as { code?: string }) || {};
+      const mockCode = code || "mock_authorization_code";
+
+      const accessToken = await mockExchangeToken(mockCode);
+      const userData = await mockFetchUserData(accessToken ?? "");
+
       if (!userData) {
         return reply.status(500).send({ error: "Failed to fetch user data" });
       }
@@ -63,22 +62,25 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       const jwtSecret = process.env.JWT_SECRET;
       if (!jwtSecret) {
-        return reply.status(500).send();
+        return reply.status(500).send({ error: "JWT secret not configured" });
       }
+
       const jwtPayload = { id: user.id, name: user.name };
       const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
 
       reply.setCookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "strict",
         path: "/",
         expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
       });
 
-      return reply.status(200).send();
+      return reply.status(200).send({ message: "Mock login successful" });
     },
   );
+
+  console.log("Mock auth endpoint registered at POST /api/auth/mock-login");
 };
 
 export default plugin;
