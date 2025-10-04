@@ -1,4 +1,15 @@
-import type { UserData } from "./fetchUserData.js";
+import { z } from "zod";
+
+const userResponseSchema = z.object({
+  id: z.number(),
+  email: z.email(),
+  login: z.string(),
+  image: z.object({
+    link: z.url(),
+  }),
+});
+
+export type UserData = z.infer<typeof userResponseSchema>;
 
 /**
  * Development mock for fetchUserData

@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 import { mockExchangeToken } from "./utils/mockExchangeToken.js";
 import { mockFetchUserData } from "./utils/mockFetchUserData.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { usersRepository } = fastify;
   fastify.post(
     "/mock-login",
@@ -82,5 +82,3 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
   console.log("Mock auth endpoint registered at POST /api/auth/mock-login");
 };
-
-export default plugin;
