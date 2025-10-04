@@ -15,6 +15,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:prod": "NODE_ENV=production tsx watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit"

@@ -12,6 +12,7 @@
   },
   "scripts": {
     "dev": "turbo run dev",
+    "dev:prod": "turbo run dev:prod",
     "build": "turbo run build",
     "check": "biome check . --max-diagnostics=none --error-on-warnings",
     "check:fix": "biome check . --fix --max-diagnostics=none --error-on-warnings",
