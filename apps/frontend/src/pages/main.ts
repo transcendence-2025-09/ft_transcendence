@@ -87,23 +87,111 @@ const handleOAuthWithPopup = async (): Promise<void> => {
 };
 
 async function mockLogin(): Promise<void> {
-  try {
-    const response = await fetch("/api/auth/mock-login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        code: "mock_dev_code",
-      }),
+  return new Promise((resolve, reject) => {
+    // ポップアップ用のHTMLを作成
+    const popupHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Mock Login</title>
+        </head>
+        <body>
+          <div>
+            <h2>Mock Login</h2>
+            <form id="mockLoginForm">
+              <div>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+              </div>
+              <div>
+                <button type="submit">Submit</button>
+                <button type="button" id="cancelBtn">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // ポップアップウィンドウを開く
+    const popup = window.open(
+      "",
+      "mockauth",
+      "width=400,height=300,scrollbars=yes,resizable=yes",
+    );
+
+    if (!popup) {
+      reject(new Error("ポップアップがブロックされました"));
+      return;
+    }
+
+    // ポップアップにHTMLを書き込み
+    popup.document.write(popupHtml);
+    popup.document.close();
+
+    // ポップアップの監視
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        reject(new Error("認証がキャンセルされました"));
+      }
+    }, 1000);
+
+    // ポップアップ内のフォームにイベントリスナーを追加
+    popup.addEventListener("load", () => {
+      const form = popup.document.getElementById("mockLoginForm") as HTMLFormElement;
+      const cancelBtn = popup.document.getElementById("cancelBtn") as HTMLButtonElement;
+
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const username = formData.get("username") as string;
+
+          try {
+            const response = await fetch("/api/auth/mock-login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                username: username,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error("Mock login failed");
+            }
+
+            clearInterval(checkClosed);
+            popup.close();
+            resolve();
+          } catch (error) {
+            clearInterval(checkClosed);
+            popup.close();
+            reject(error);
+          }
+        });
+      }
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+          clearInterval(checkClosed);
+          popup.close();
+          reject(new Error("認証がキャンセルされました"));
+        });
+      }
     });
 
-    if (!response.ok) {
-      throw new Error("Mock login failed");
-    }
-  } catch (error) {
-    console.error("Error during mock login:", error);
-  }
+    // タイムアウト処理（30秒）
+    setTimeout(() => {
+      if (!popup.closed) {
+        clearInterval(checkClosed);
+        popup.close();
+        reject(new Error("認証がタイムアウトしました"));
+      }
+    }, 30000);
+  });
 }
 
 // 大きなタイトル

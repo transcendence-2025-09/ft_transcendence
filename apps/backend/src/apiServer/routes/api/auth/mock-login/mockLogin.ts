@@ -5,8 +5,6 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
-import { mockExchangeToken } from "./utils/mockExchangeToken.js";
-import { mockFetchUserData } from "./utils/mockFetchUserData.js";
 
 export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { usersRepository } = fastify;
@@ -15,7 +13,7 @@ export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         body: Type.Object({
-          code: Type.Optional(Type.String()),
+          username: Type.Optional(Type.String()),
         }),
         response: {
           200: Type.Object({
@@ -33,27 +31,23 @@ export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
     async (request: FastifyRequest, reply) => {
       console.log("Mock login request received");
 
-      const { code } = (request.body as { code?: string }) || {};
-      const mockCode = code || "mock_authorization_code";
+      const { username } = (request.body as { username?: string }) || {};
+      const mockUsername = username || "mockuser";
 
-      const accessToken = await mockExchangeToken(mockCode);
-      const userData = await mockFetchUserData(accessToken ?? "");
+      const id = Math.floor(10000 + Math.random() * 90000);
 
-      if (!userData) {
-        return reply.status(500).send({ error: "Failed to fetch user data" });
-      }
-
+      // Use provided username or fallback to mock data
       const result = await usersRepository.createUser({
-        name: userData.login,
-        email: userData.email,
-        ft_id: userData.id,
+        name: mockUsername,
+        email: `${mockUsername}@example.com`,
+        ft_id: id,
       });
 
       if (!result) {
         return reply.status(500).send({ error: "Failed to register user" });
       }
 
-      const user = await usersRepository.findByFtId(userData.id);
+      const user = await usersRepository.findByFtId(id);
       if (!user) {
         return reply
           .status(500)
