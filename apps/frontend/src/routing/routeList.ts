@@ -2,6 +2,8 @@ import type { ElComponent } from "../factory/componentFactory";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
+import { TournamentDetail } from "../pages/tournamentDetail";
+import { Tournaments } from "../pages/tournaments";
 import { User } from "../pages/user";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
@@ -34,6 +36,16 @@ export const routeList: Route[] = [
     name: "About",
     path: "/about",
     viewFactory: () => About,
+  },
+  {
+    name: "Tournaments",
+    path: "/tournaments",
+    viewFactory: () => Tournaments,
+  },
+  {
+    name: "TournamentDetail",
+    path: "/tournaments/:id",
+    viewFactory: (ctx: RouteCtx) => TournamentDetail(ctx),
   },
   {
     name: "user",
