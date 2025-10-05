@@ -237,14 +237,10 @@ components:
     Error:
       type: object
       properties:
-        success:
-          type: boolean
-          example: false
         error:
           type: string
           description: エラーメッセージ
       required:
-        - success
         - error
 
     User:
