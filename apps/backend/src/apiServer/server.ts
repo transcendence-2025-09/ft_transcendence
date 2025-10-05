@@ -3,6 +3,11 @@ import fp from "fastify-plugin";
 import serviceApp from "./app.js";
 
 export async function server(): Promise<void> {
+  if (!process.env.JWT_SECRET) {
+    console.error("JWT_SECRET is not set");
+    process.exit(1);
+  }
+
   const app: FastifyInstance = Fastify({
     logger: true,
   });
