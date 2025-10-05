@@ -8,10 +8,17 @@ declare module "fastify" {
   }
 }
 
+export type Player = {
+  userId: number;
+  alias: string;
+};
+
 export type Tournament = {
   id: string;
+  name: string;
+  hostId: number;
   maxPlayers: number;
-  readyPlayers: Set<number>;
+  players: Player[];
   status: "waiting" | "ready" | "in_progress" | "completed";
   createdAt: Date;
 };
@@ -22,14 +29,22 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
   return {
     /**
      * トーナメントを作成
-     * @param maxPlayers 準備完了に必要なプレイヤー数
+     * @param name トーナメント名
+     * @param hostId ホストのユーザーID
+     * @param maxPlayers 最大プレイヤー数
      * @returns 作成されたトーナメント
      */
-    createTournament(maxPlayers: number): Tournament {
+    createTournament(
+      name: string,
+      hostId: number,
+      maxPlayers: number = 2,
+    ): Tournament {
       const tournament: Tournament = {
         id: randomUUID(),
+        name,
+        hostId,
         maxPlayers,
-        readyPlayers: new Set<number>(),
+        players: [],
         status: "waiting",
         createdAt: new Date(),
       };
@@ -55,18 +70,26 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
     },
 
     /**
-     * プレイヤーを準備完了状態にする
-     * n人揃った場合、自動的にstatusを'ready'に変更
+     * プレイヤーをトーナメントに参加させる
      * @param tournamentId トーナメントID
      * @param userId ユーザーID
-     * @returns 成功した場合true、トーナメントが存在しない場合false
+     * @param alias プレイヤーのエイリアス名
+     * @returns 成功した場合true、トーナメントが存在しないか満員の場合false
      */
-    addReadyPlayer(tournamentId: string, userId: number): boolean {
+    joinTournament(
+      tournamentId: string,
+      userId: number,
+      alias: string,
+    ): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
-      tournament.readyPlayers.add(userId);
-      if (tournament.readyPlayers.size >= tournament.maxPlayers)
+      if (tournament.players.length >= tournament.maxPlayers) return false;
+      if (tournament.players.some((p) => p.userId === userId)) return false;
+
+      tournament.players.push({ userId, alias });
+      if (tournament.players.length >= tournament.maxPlayers) {
         tournament.status = "ready";
+      }
       return true;
     },
 
@@ -90,18 +113,19 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
     },
 
     /**
-     * プレイヤーの準備完了状態を解除
+     * トーナメントを開始する
      * @param tournamentId トーナメントID
-     * @param userId ユーザーID
-     * @returns 成功した場合true
+     * @param userId 開始を要求したユーザーID
+     * @returns 成功した場合true、ホストでない場合や準備不足の場合false
      */
-    removeReadyPlayer(tournamentId: string, userId: number): boolean {
+    startTournament(tournamentId: string, userId: number): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
-      const removed = tournament.readyPlayers.delete(userId);
-      if (removed && tournament.status === "ready")
-        tournament.status = "waiting";
-      return removed;
+      if (tournament.hostId !== userId) return false;
+      if (tournament.players.length < 2) return false;
+
+      tournament.status = "in_progress";
+      return true;
     },
   };
 }
