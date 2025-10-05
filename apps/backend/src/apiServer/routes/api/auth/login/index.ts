@@ -8,6 +8,19 @@ import jwt from "jsonwebtoken";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchUserData } from "./utils/fetchUserData.js";
 
+export interface JWTPayload {
+  id: number;
+  name: string;
+  iat?: number;
+  exp?: number;
+}
+
+declare module "fastify" {
+  interface FastifyRequest {
+    user: JWTPayload;
+  }
+}
+
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { usersRepository } = fastify;
   fastify.post(
@@ -60,7 +73,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!jwtSecret) {
         return reply.status(500).send();
       }
-      const jwtPayload = { id: user.id, name: user.name };
+      const jwtPayload: JWTPayload = { id: user.id, name: user.name };
       const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
 
       reply.setCookie("token", token, {

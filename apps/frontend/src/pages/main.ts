@@ -138,54 +138,52 @@ async function mockLogin(): Promise<void> {
     }, 1000);
 
     // ポップアップ内のフォームにイベントリスナーを追加
-    popup.addEventListener("load", () => {
-      const form = popup.document.getElementById(
-        "mockLoginForm",
-      ) as HTMLFormElement;
-      const cancelBtn = popup.document.getElementById(
-        "cancelBtn",
-      ) as HTMLButtonElement;
+    const form = popup.document.getElementById(
+      "mockLoginForm",
+    ) as HTMLFormElement;
+    const cancelBtn = popup.document.getElementById(
+      "cancelBtn",
+    ) as HTMLButtonElement;
 
-      if (form) {
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const formData = new FormData(form);
-          const username = formData.get("username") as string;
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const username = formData.get("username") as string;
 
-          try {
-            const response = await fetch("/api/auth/mock-login", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                username: username,
-              }),
-            });
+        try {
+          const response = await fetch("/api/auth/mock-login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: username,
+            }),
+          });
 
-            if (!response.ok) {
-              throw new Error("Mock login failed");
-            }
-
-            clearInterval(checkClosed);
-            popup.close();
-            resolve();
-          } catch (error) {
-            clearInterval(checkClosed);
-            popup.close();
-            reject(error);
+          if (!response.ok) {
+            throw new Error("Mock login failed");
           }
-        });
-      }
 
-      if (cancelBtn) {
-        cancelBtn.addEventListener("click", () => {
           clearInterval(checkClosed);
           popup.close();
-          reject(new Error("認証がキャンセルされました"));
-        });
-      }
-    });
+          resolve();
+        } catch (error) {
+          clearInterval(checkClosed);
+          popup.close();
+          reject(error);
+        }
+      });
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        clearInterval(checkClosed);
+        popup.close();
+        reject(new Error("認証がキャンセルされました"));
+      });
+    }
 
     // タイムアウト処理（30秒）
     setTimeout(() => {
