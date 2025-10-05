@@ -20,7 +20,7 @@ const main = mainSlotFactory();
 //layoutも作ってそこにheader, main, footerを突っ込む
 const layout = layoutFactory({ header, main, footer });
 
-// 動的ルーティング用のマッチング関数
+// 動的ルーティング
 function matchRoute(pathname: string, routes: Route[]): { route: Route; params: Params } {
   // 静的パスマッチング
   const staticMatch = routes.find((r) => r.path === pathname);
@@ -51,7 +51,6 @@ function matchRoute(pathname: string, routes: Route[]): { route: Route; params: 
     if (isMatch) return { route, params };
   }
 
-  // 404 (最後のルート)
   return { route: routes[routes.length - 1], params: {} };
 }
 
