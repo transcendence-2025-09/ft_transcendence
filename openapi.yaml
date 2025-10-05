@@ -12,6 +12,8 @@ tags:
     description: ユーザー関連API
   - name: game
     description: ゲーム関連API
+  - name: tournament
+    description: トーナメント関連API
 
 paths:
   /api/auth/login:
@@ -36,4 +38,280 @@ paths:
         '200':
           description: 成功時、JWTトークンをhttpOnly cookieに設定します。
 
+  /api/tournaments:
+    post:
+      tags:
+        - tournament
+      summary: トーナメント作成
+      description: 新しいトーナメントを作成します。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: トーナメント名
+              required:
+                - name
+      responses:
+        '200':
+          description: トーナメント作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tournamentId:
+                    type: string
+                    description: 作成されたトーナメントのID
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
+    get:
+      tags:
+        - tournament
+      summary: トーナメント一覧
+      description: 全トーナメントの一覧を取得します。
+      responses:
+        '200':
+          description: トーナメント一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    hostId:
+                      type: number
+                    maxPlayers:
+                      type: number
+                    currentPlayers:
+                      type: number
+                    status:
+                      type: string
+                      enum: [waiting, ready, in_progress, completed]
+                    createdAt:
+                      type: string
+                      format: date-time
+
+  /api/tournaments/{id}:
+    get:
+      tags:
+        - tournament
+      summary: トーナメント詳細
+      description: 指定されたトーナメントの詳細情報を取得します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+      responses:
+        '200':
+          description: トーナメント詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+        '404':
+          description: トーナメントが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tournaments/{id}/join:
+    post:
+      tags:
+        - tournament
+      summary: トーナメント参加
+      description: 指定されたトーナメントに参加します。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alias:
+                  type: string
+                  description: プレイヤーのエイリアス名
+              required:
+                - alias
+      responses:
+        '200':
+          description: 参加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  tournament:
+                    $ref: '#/components/schemas/Tournament'
+        '400':
+          description: 参加失敗（満員または既に参加済み）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+        '404':
+          description: トーナメントが見つかりません
+
+  /api/tournaments/{id}/start:
+    post:
+      tags:
+        - tournament
+      summary: トーナメント開始
+      description: トーナメントを開始します。作成者のみ実行可能。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+      responses:
+        '200':
+          description: 開始成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: プレイヤー不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+        '403':
+          description: 作成者以外は実行不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: トーナメントが見つかりません
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: エラーメッセージ
+      required:
+        - success
+        - error
+
+    User:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ユーザーID
+        name:
+          type: string
+          description: ユーザー名
+        email:
+          type: string
+          description: メールアドレス
+        ft_id:
+          type: number
+          description: 42 Intra ID
+      required:
+        - id
+        - name
+        - email
+        - ft_id
+
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: string
+          description: トーナメントID
+        name:
+          type: string
+          description: トーナメント名
+        hostId:
+          type: number
+          description: 作成者のユーザーID
+        maxPlayers:
+          type: number
+          description: 最大プレイヤー数
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: number
+              alias:
+                type: string
+            required:
+              - userId
+              - alias
+        status:
+          type: string
+          enum:
+            - waiting
+            - ready
+            - in_progress
+            - completed
+          description: トーナメントの状態
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+      required:
+        - id
+        - name
+        - hostId
+        - maxPlayers
+        - players
+        - status
+        - createdAt
