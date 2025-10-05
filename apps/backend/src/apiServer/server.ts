@@ -1,3 +1,4 @@
+import "dotenv/config";
 import Fastify, { type FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import serviceApp from "./app.js";
