@@ -2,6 +2,21 @@ import { componentFactory } from "../factory/componentFactory";
 import { pageFactory } from "../factory/pageFactory";
 import type { RouteCtx } from "../routing/routeList";
 
+type Player = {
+  userId: number;
+  alias: string;
+};
+
+type Tournament = {
+  id: string;
+  name: string;
+  hostId: number;
+  maxPlayers: number;
+  players: Player[];
+  status: "waiting" | "ready" | "in_progress" | "completed";
+  createdAt: string;
+};
+
 export function TournamentDetail(ctx: RouteCtx) {
   const tournamentId = ctx.params.id;
 
@@ -16,18 +31,21 @@ export function TournamentDetail(ctx: RouteCtx) {
     </div>
   `;
 
-  const detailContainer = el.querySelector("#tournamentDetail") as HTMLDivElement;
+  const detailContainer = el.querySelector(
+    "#tournamentDetail",
+  ) as HTMLDivElement;
 
   async function loadTournamentDetail() {
     try {
       const response = await fetch(`/api/tournaments/${tournamentId}`);
 
       if (!response.ok) {
-        detailContainer.innerHTML = '<p class="text-red-500">トーナメントが見つかりません</p>';
+        detailContainer.innerHTML =
+          '<p class="text-red-500">トーナメントが見つかりません</p>';
         return;
       }
 
-      const tournament = await response.json();
+      const tournament: Tournament = await response.json();
 
       detailContainer.innerHTML = `
         <div class="mb-6">
@@ -60,16 +78,21 @@ export function TournamentDetail(ctx: RouteCtx) {
 
         <div class="bg-white shadow rounded-lg p-6 mb-6">
           <h2 class="text-xl font-semibold mb-4">参加者一覧</h2>
-          ${tournament.players.length === 0
-            ? '<p class="text-gray-500">まだ参加者がいません</p>'
-            : `
+          ${
+            tournament.players.length === 0
+              ? '<p class="text-gray-500">まだ参加者がいません</p>'
+              : `
               <ul class="space-y-2">
-                ${tournament.players.map((p: any) => `
+                ${tournament.players
+                  .map(
+                    (p: Player) => `
                   <li class="flex items-center justify-between p-2 border rounded">
                     <span>${p.alias}</span>
-                    ${p.userId === tournament.hostId ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">ホスト</span>' : ''}
+                    ${p.userId === tournament.hostId ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">ホスト</span>' : ""}
                   </li>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
               </ul>
             `
           }
@@ -86,17 +109,17 @@ export function TournamentDetail(ctx: RouteCtx) {
       `;
 
       // 参加ボタン
-      const joinBtn = detailContainer.querySelector('#joinBtn');
+      const joinBtn = detailContainer.querySelector("#joinBtn");
       if (joinBtn) {
-        joinBtn.addEventListener('click', async () => {
-          const alias = prompt('プレイヤー名を入力してください:');
+        joinBtn.addEventListener("click", async () => {
+          const alias = prompt("プレイヤー名を入力してください:");
           if (!alias) return;
 
           try {
             const res = await fetch(`/api/tournaments/${tournamentId}/join`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify({ alias }),
             });
 
@@ -104,50 +127,50 @@ export function TournamentDetail(ctx: RouteCtx) {
               loadTournamentDetail();
             } else {
               const error = await res.json();
-              alert('参加に失敗しました: ' + error.error);
+              alert(`参加に失敗しました: ${error.error}`);
             }
-          } catch (error) {
-            alert('エラーが発生しました');
+          } catch (_error) {
+            alert("エラーが発生しました");
           }
         });
       }
 
       // 開始ボタン
-      const startBtn = detailContainer.querySelector('#startBtn');
+      const startBtn = detailContainer.querySelector("#startBtn");
       if (startBtn) {
-        startBtn.addEventListener('click', async () => {
-          if (!confirm('トーナメントを開始しますか？')) return;
+        startBtn.addEventListener("click", async () => {
+          if (!confirm("トーナメントを開始しますか？")) return;
 
           try {
             const res = await fetch(`/api/tournaments/${tournamentId}/start`, {
-              method: 'POST',
-              credentials: 'include',
+              method: "POST",
+              credentials: "include",
             });
 
             if (res.ok) {
               loadTournamentDetail();
             } else {
               const error = await res.json();
-              alert('開始に失敗しました: ' + error.error);
+              alert(`開始に失敗しました: ${error.error}`);
             }
-          } catch (error) {
-            alert('エラーが発生しました');
+          } catch (_error) {
+            alert("エラーが発生しました");
           }
         });
       }
-
     } catch (error) {
-      detailContainer.innerHTML = '<p class="text-red-500">エラーが発生しました</p>';
-      console.error('Failed to load tournament detail:', error);
+      detailContainer.innerHTML =
+        '<p class="text-red-500">エラーが発生しました</p>';
+      console.error("Failed to load tournament detail:", error);
     }
   }
 
   function getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      waiting: '待機中',
-      ready: '準備完了',
-      in_progress: '進行中',
-      completed: '完了',
+      waiting: "待機中",
+      ready: "準備完了",
+      in_progress: "進行中",
+      completed: "完了",
     };
     return labels[status] || status;
   }

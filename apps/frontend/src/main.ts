@@ -5,8 +5,8 @@ import { Header } from "./components/header";
 import type { ElComponent } from "./factory/componentFactory";
 import { layoutFactory } from "./factory/layoutFactory";
 import { mainSlotFactory } from "./factory/mainSlotFactory";
-import { routeList } from "./routing/routeList";
 import type { Params, Route } from "./routing/routeList";
+import { routeList } from "./routing/routeList";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");
@@ -21,7 +21,10 @@ const main = mainSlotFactory();
 const layout = layoutFactory({ header, main, footer });
 
 // 動的ルーティング
-function matchRoute(pathname: string, routes: Route[]): { route: Route; params: Params } {
+function matchRoute(
+  pathname: string,
+  routes: Route[],
+): { route: Route; params: Params } {
   // 静的パスマッチング
   const staticMatch = routes.find((r) => r.path === pathname);
   if (staticMatch) return { route: staticMatch, params: {} };

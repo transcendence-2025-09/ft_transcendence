@@ -1,6 +1,16 @@
 import { componentFactory } from "../factory/componentFactory";
 import { pageFactory } from "../factory/pageFactory";
 
+type Tournament = {
+  id: string;
+  name: string;
+  hostId: number;
+  maxPlayers: number;
+  currentPlayers: number;
+  status: "waiting" | "ready" | "in_progress" | "completed";
+  createdAt: string;
+};
+
 function createTournamentsPage() {
   const el = document.createElement("div");
   el.className = "container mx-auto p-8";
@@ -41,12 +51,18 @@ function createTournamentsPage() {
     </div>
   `;
 
-  const tournamentsList = el.querySelector("#tournamentsList") as HTMLDivElement;
-  const createTournamentBtn = el.querySelector("#createTournamentBtn") as HTMLButtonElement;
+  const tournamentsList = el.querySelector(
+    "#tournamentsList",
+  ) as HTMLDivElement;
+  const createTournamentBtn = el.querySelector(
+    "#createTournamentBtn",
+  ) as HTMLButtonElement;
   const createModal = el.querySelector("#createModal") as HTMLDivElement;
   const createBtn = el.querySelector("#createBtn") as HTMLButtonElement;
   const cancelBtn = el.querySelector("#cancelBtn") as HTMLButtonElement;
-  const tournamentNameInput = el.querySelector("#tournamentName") as HTMLInputElement;
+  const tournamentNameInput = el.querySelector(
+    "#tournamentName",
+  ) as HTMLInputElement;
 
   // トーナメント一覧取得
   async function loadTournaments() {
@@ -55,11 +71,14 @@ function createTournamentsPage() {
       const tournaments = await response.json();
 
       if (tournaments.length === 0) {
-        tournamentsList.innerHTML = '<p class="text-gray-500">トーナメントがありません</p>';
+        tournamentsList.innerHTML =
+          '<p class="text-gray-500">トーナメントがありません</p>';
         return;
       }
 
-      tournamentsList.innerHTML = tournaments.map((t: any) => `
+      tournamentsList.innerHTML = tournaments
+        .map(
+          (t: Tournament) => `
         <div class="border border-gray-300 rounded p-4 hover:shadow-lg transition-shadow cursor-pointer" data-id="${t.id}">
           <div class="flex justify-between items-start">
             <div>
@@ -70,69 +89,72 @@ function createTournamentsPage() {
             <span class="text-xs text-gray-500">${new Date(t.createdAt).toLocaleString()}</span>
           </div>
         </div>
-      `).join('');
+      `,
+        )
+        .join("");
 
       // クリックイベント追加
-      tournamentsList.querySelectorAll('[data-id]').forEach((card) => {
-        card.addEventListener('click', () => {
-          const id = card.getAttribute('data-id');
+      tournamentsList.querySelectorAll("[data-id]").forEach((card) => {
+        card.addEventListener("click", () => {
+          const id = card.getAttribute("data-id");
           window.location.href = `/tournaments/${id}`;
         });
       });
     } catch (error) {
-      tournamentsList.innerHTML = '<p class="text-red-500">エラーが発生しました</p>';
-      console.error('Failed to load tournaments:', error);
+      tournamentsList.innerHTML =
+        '<p class="text-red-500">エラーが発生しました</p>';
+      console.error("Failed to load tournaments:", error);
     }
   }
 
   function getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      waiting: '待機中',
-      ready: '準備完了',
-      in_progress: '進行中',
-      completed: '完了',
+      waiting: "待機中",
+      ready: "準備完了",
+      in_progress: "進行中",
+      completed: "完了",
     };
     return labels[status] || status;
   }
 
   // モーダル表示
-  createTournamentBtn.addEventListener('click', () => {
-    createModal.classList.remove('hidden');
+  createTournamentBtn.addEventListener("click", () => {
+    createModal.classList.remove("hidden");
   });
 
   // モーダル非表示
-  cancelBtn.addEventListener('click', () => {
-    createModal.classList.add('hidden');
-    tournamentNameInput.value = '';
+  cancelBtn.addEventListener("click", () => {
+    createModal.classList.add("hidden");
+    tournamentNameInput.value = "";
   });
 
   // トーナメント作成
-  createBtn.addEventListener('click', async () => {
+  createBtn.addEventListener("click", async () => {
     const name = tournamentNameInput.value.trim();
     if (!name) {
-      alert('トーナメント名を入力してください');
+      alert("トーナメント名を入力してください");
       return;
     }
 
     try {
-      const response = await fetch('/api/tournaments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const response = await fetch("/api/tournaments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name }),
       });
 
       if (response.ok) {
-        createModal.classList.add('hidden');
-        tournamentNameInput.value = '';
+        createModal.classList.add("hidden");
+        tournamentNameInput.value = "";
         loadTournaments();
       } else {
         const error = await response.json();
-        alert('作成に失敗しました: ' + error.error);
+        alert(`作成に失敗しました: ${error.error}`);
       }
     } catch (error) {
-      alert('エラーが発生しました');
-      console.error('Failed to create tournament:', error);
+      alert("エラーが発生しました");
+      console.error("Failed to create tournament:", error);
     }
   });
 
