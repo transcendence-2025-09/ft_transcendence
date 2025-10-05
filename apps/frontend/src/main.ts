@@ -6,6 +6,7 @@ import type { ElComponent } from "./factory/componentFactory";
 import { layoutFactory } from "./factory/layoutFactory";
 import { mainSlotFactory } from "./factory/mainSlotFactory";
 import { routeList } from "./routing/routeList";
+import type { Params, Route } from "./routing/routeList";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");
@@ -18,6 +19,41 @@ const main = mainSlotFactory();
 
 //layoutも作ってそこにheader, main, footerを突っ込む
 const layout = layoutFactory({ header, main, footer });
+
+// 動的ルーティング用のマッチング関数
+function matchRoute(pathname: string, routes: Route[]): { route: Route; params: Params } {
+  // 静的パスマッチング
+  const staticMatch = routes.find((r) => r.path === pathname);
+  if (staticMatch) return { route: staticMatch, params: {} };
+
+  // 動的パスマッチング
+  for (const route of routes) {
+    if (!route.path.includes(":")) continue;
+
+    const routeParts = route.path.split("/").filter(Boolean);
+    const pathParts = pathname.split("/").filter(Boolean);
+
+    if (routeParts.length !== pathParts.length) continue;
+
+    const params: Params = {};
+    let isMatch = true;
+
+    for (let i = 0; i < routeParts.length; i++) {
+      if (routeParts[i].startsWith(":")) {
+        const paramName = routeParts[i].slice(1);
+        params[paramName] = pathParts[i];
+      } else if (routeParts[i] !== pathParts[i]) {
+        isMatch = false;
+        break;
+      }
+    }
+
+    if (isMatch) return { route, params };
+  }
+
+  // 404 (最後のルート)
+  return { route: routes[routes.length - 1], params: {} };
+}
 
 // ルーティング設定（カスタムナビゲーション用）
 
@@ -63,10 +99,8 @@ const handleNavigation = async (pathname: string, pushState = true) => {
     const query = u.searchParams;
 
     // ルートを見つけてページを設定
-    const route =
-      routeList.find((r) => r.path === normPath) ||
-      routeList[routeList.length - 1];
-    const ctx = { params: {}, query };
+    const { route, params } = matchRoute(normPath, routeList);
+    const ctx = { params, query };
     const page = route.viewFactory(ctx);
     layout.setPage(page);
 
@@ -136,7 +170,13 @@ if (path === "/auth/callback") {
   });
   if (res.status === 200) {
     const data = await res.json();
-    root.innerHTML = `<h1>dashboard</h1><p>Welcome, ${data.name}!</p>`;
+    root.innerHTML = `
+      <h1>dashboard</h1>
+      <p>Welcome, ${data.name}!</p>
+      <a href="/tournaments" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        トーナメント一覧
+      </a>
+    `;
   }
 } else {
   // 通常のページルーティング（ルートページ含む）
