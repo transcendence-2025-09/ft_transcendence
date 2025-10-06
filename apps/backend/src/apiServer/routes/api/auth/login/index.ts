@@ -10,7 +10,6 @@ import { fetchUserData } from "./utils/fetchUserData.js";
 
 export interface JWTPayload {
   id: number;
-  name: string;
   iat?: number;
   exp?: number;
 }
@@ -52,17 +51,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(500).send({ error: "Failed to fetch user data" });
       }
 
-      const result = await usersRepository.createUser({
+      const user = await usersRepository.createUser({
         name: userData.login,
         email: userData.email,
         ft_id: userData.id,
       });
 
-      if (!result) {
-        return reply.status(500).send({ error: "Failed to register user" });
-      }
-
-      const user = await usersRepository.findByFtId(userData.id);
       if (!user) {
         return reply
           .status(500)
@@ -73,7 +67,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!jwtSecret) {
         return reply.status(500).send();
       }
-      const jwtPayload: JWTPayload = { id: user.id, name: user.name };
+      const jwtPayload: JWTPayload = { id: user.id };
       const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
 
       reply.setCookie("token", token, {
