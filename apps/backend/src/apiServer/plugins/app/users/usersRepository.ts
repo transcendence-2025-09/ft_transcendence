@@ -41,7 +41,7 @@ export function createUsersRepository(fastify: FastifyInstance) {
       const user = await fastify.db.get("SELECT * FROM users WHERE ft_id = ?", [
         ft_id,
       ]);
-      return user || null; 
+      return user || null;
     },
   };
 }
