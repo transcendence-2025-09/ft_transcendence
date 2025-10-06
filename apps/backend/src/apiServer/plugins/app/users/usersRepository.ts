@@ -29,6 +29,13 @@ export function createUsersRepository(fastify: FastifyInstance) {
       return user || null;
     },
 
+    async findById(id: number): Promise<User | null> {
+      const user = await fastify.db.get("SELECT * FROM users WHERE id = ?", [
+        id,
+      ]);
+      return user || null;
+    },
+
     async createUser(data: CreateUser) {
       const { name, email, ft_id } = data;
       try {
