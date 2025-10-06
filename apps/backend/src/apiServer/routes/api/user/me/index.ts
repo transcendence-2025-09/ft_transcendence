@@ -12,6 +12,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           200: Type.Object({
             id: Type.Number(),
             name: Type.String(),
+            email: Type.String(),
+            ft_id: Type.Number(),
           }),
           400: Type.Object({
             error: Type.String(),
@@ -28,6 +30,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       return reply.status(200).send({
         id: user.id,
         name: user.name,
+        email: user.email,
+        ft_id: user.ft_id,
       });
     },
   );
