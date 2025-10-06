@@ -38,6 +38,69 @@ paths:
         '200':
           description: 成功時、JWTトークンをhttpOnly cookieに設定します。
 
+  /api/user/me:
+    get:
+      tags:
+        - user
+      summary: 現在のユーザー情報取得
+      description: JWTトークンから現在ログイン中のユーザー情報を取得します。
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: ユーザー情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: ユーザーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/user/{id}:
+    get:
+      tags:
+        - user
+      summary: 指定ユーザー情報取得
+      description: 指定されたIDのユーザー情報を取得します。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザーID
+      responses:
+        '200':
+          description: ユーザー情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/tournaments:
     post:
       tags:
@@ -233,6 +296,17 @@ paths:
           description: トーナメントが見つかりません
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: JWTトークンをhttpOnly cookieで送信
+    testUserAuth:
+      type: http
+      scheme: bearer
+      description: テスト用のBearerトークン認証
+
   schemas:
     Error:
       type: object

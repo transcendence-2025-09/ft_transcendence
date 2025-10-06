@@ -5,6 +5,7 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
+import type { JWTPayload } from "../login/index.js";
 
 export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { usersRepository } = fastify;
@@ -36,18 +37,12 @@ export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       const id = Math.floor(10000 + Math.random() * 90000);
 
-      // Use provided username or fallback to mock data
-      const result = await usersRepository.createUser({
+      const user = await usersRepository.createUser({
         name: mockUsername,
         email: `${mockUsername}@example.com`,
         ft_id: id,
       });
 
-      if (!result) {
-        return reply.status(500).send({ error: "Failed to register user" });
-      }
-
-      const user = await usersRepository.findByFtId(id);
       if (!user) {
         return reply
           .status(500)
@@ -59,7 +54,7 @@ export const pluginMockLogin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(500).send({ error: "JWT secret not configured" });
       }
 
-      const jwtPayload = { id: user.id, name: user.name };
+      const jwtPayload: JWTPayload = { id: user.id };
       const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
 
       reply.setCookie("token", token, {

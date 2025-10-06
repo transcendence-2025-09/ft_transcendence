@@ -12,19 +12,26 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           200: Type.Object({
             id: Type.Number(),
             name: Type.String(),
+            email: Type.String(),
+            ft_id: Type.Number(),
           }),
-          401: Type.Object({
+          400: Type.Object({
             error: Type.String(),
           }),
         },
       },
     },
     async (request, reply) => {
-      // ここでrequest.user.idでDBから取得を想定
+      const user = await fastify.usersRepository.findById(request.user.id);
+      if (!user) {
+        return reply.status(400).send({ error: "User not found" });
+      }
 
       return reply.status(200).send({
-        id: request.user.id,
-        name: request.user.name,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        ft_id: user.ft_id,
       });
     },
   );
