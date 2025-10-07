@@ -79,7 +79,7 @@ export const createRouter = (props: RouteProps) => {
     if (route.viewFactory) {
       try {
         const pageOrPromise = route.viewFactory(ctx);
-        if (layoutMode == "none") {
+        if (layoutMode === "none") {
           //layoutのマウント状況を監視
           if (mountedLayout) {
             props.layout.unmount();

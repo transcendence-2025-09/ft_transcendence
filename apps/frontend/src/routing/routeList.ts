@@ -1,12 +1,12 @@
 import type { ElComponent } from "../factory/componentFactory";
+import { componentFactory } from "../factory/componentFactory";
+import { handleAuthCallback } from "../features";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
 import { TournamentDetail } from "../pages/tournamentDetail";
 import { Tournaments } from "../pages/tournaments";
 import { User } from "../pages/user";
-import { handleAuthCallback } from "../features";
-import { componentFactory } from "../factory/componentFactory";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
@@ -39,7 +39,7 @@ export type Route = {
   viewFactory?: ViewFactory;
   action?: (
     ctx: RouteCtx,
-  ) => void | Promise<void | RedirectResult> | RedirectResult;
+  ) => undefined | Promise<undefined | RedirectResult> | RedirectResult;
 };
 
 //これはテストようなので実際はpageコンポーネントで別ファイルとして定義した方がいい
