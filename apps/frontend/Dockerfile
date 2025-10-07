@@ -33,5 +33,3 @@ COPY --from=builder /builder/apps/frontend/nginx.conf /etc/nginx/conf.d/default.
 EXPOSE 5173
 
 CMD ["nginx", "-g", "daemon off;"]
-
-

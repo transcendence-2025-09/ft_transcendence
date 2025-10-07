@@ -1,4 +1,6 @@
 import type { ElComponent } from "../factory/componentFactory";
+import { componentFactory } from "../factory/componentFactory";
+import { handleAuthCallback } from "../features";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
@@ -16,44 +18,119 @@ export type RouteCtx = {
 };
 
 // ctxはこの後個人ページなど人によって違うデータをdatabaseから引っ張ってきて表示する場合などにctxを使ってcomponentを作る
-export type ViewFactory = (ctx: RouteCtx) => ElComponent;
+export type ViewFactory = (ctx: RouteCtx) => ElComponent | Promise<ElComponent>;
+
+//Redirect用のオブジェクト。これを見てリダイレクト先を決定する
+export type RedirectResult = { redirect: string; replace?: boolean };
+
+//routeに入れるメタ情報
+export type RouteMeta = {
+  title?: string;
+  layout?: "none" | "app";
+  protected?: boolean;
+  loading?: ElComponent;
+};
 
 //pathとそれに対応するpage factoryを持つオブジェクトのtype
+//navigateしてviewFactoryを呼ぶ間にonEnterが発火
 export type Route = {
-  name: string;
+  meta: RouteMeta;
   path: string;
-  viewFactory: ViewFactory;
+  viewFactory?: ViewFactory;
+  action?: (
+    ctx: RouteCtx,
+  ) => undefined | Promise<undefined | RedirectResult> | RedirectResult;
+};
+
+//これはテストようなので実際はpageコンポーネントで別ファイルとして定義した方がいい
+const Dashboard = (name: string): ElComponent => {
+  const el = document.createElement("div");
+  el.innerHTML = `
+    <h1>dashboard</h1>
+    <p>Welcome, ${name}!</p>
+    <a href="/tournaments" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      トーナメント一覧
+    </a>
+  `;
+  return componentFactory(el);
 };
 
 //pageを追加するときはここにどんどん追加していく。not foundは必ず1番下に記述すること
 export const routeList: Route[] = [
   {
-    name: "Home",
+    meta: { title: "Home", layout: "none", protected: false },
     path: "/",
     viewFactory: () => Home,
   },
   {
-    name: "About",
+    meta: { title: "about" },
     path: "/about",
     viewFactory: () => About,
   },
   {
-    name: "Tournaments",
+    meta: { title: "tournament" },
     path: "/tournaments",
     viewFactory: () => Tournaments,
   },
   {
-    name: "TournamentDetail",
+    meta: { title: "tournamentDetail" },
     path: "/tournaments/:id",
     viewFactory: (ctx: RouteCtx) => TournamentDetail(ctx),
   },
   {
-    name: "user",
+    meta: { title: "user" },
     path: "/user/:id",
     viewFactory: (ctx: RouteCtx) => User(ctx),
   },
   {
-    name: "not found",
+    meta: { title: "dashboard", protected: true, layout: "app" },
+    path: "/dashboard",
+    viewFactory: async () => {
+      const res = await fetch("/api/user/me", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Unorthorized");
+      const data = await res.json();
+      return Dashboard(data.name ?? "User");
+    },
+  },
+  {
+    meta: { title: "Authenticating...", layout: "none" },
+    path: "/auth/callback",
+    action: async (_ctx) => {
+      try {
+        await handleAuthCallback();
+        if (window.opener) {
+          window.opener.postMessage(
+            { type: "AUTH_SUCCESS" },
+            window.location.origin,
+          );
+          window.close();
+          return;
+        } else {
+          return { redirect: "/dashboard", replace: true };
+        }
+      } catch (err: unknown) {
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "AUTH_ERROR",
+              error:
+                err instanceof Error ? err.message : "Authentication Failed",
+            },
+            window.location.origin,
+          );
+          window.close();
+          return;
+        } else {
+          return { redirect: "/dashboard", replace: true };
+        }
+      }
+    },
+  },
+  {
+    meta: { title: "not found" },
     path: "*",
     viewFactory: () => NotFound,
   },
