@@ -7,8 +7,20 @@ export type RouteProps = {
   layout: Layout;
   basePath?: string;
   onNavigateError: () => void;
+  rootEl: HTMLElement;
 };
 
+const ensureAuth = async (): Promise<boolean> => {
+  try {
+    const res = await fetch("/api/user/me", {
+      method: "GET",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
 //createRouterでやっている処理
 //init -> aタグのクリック時の処理を奪ってnavigateを呼び出す処理に上書き. browser back処理を加える。初回描画の実行
 //navigate -> この先login formなどを作って、ユーザーを作った後に画面遷移をするときはnavigateを呼び出す
@@ -18,6 +30,88 @@ export type RouteProps = {
 //と呼び出せばOK
 export const createRouter = (props: RouteProps) => {
   let isInit: boolean = false;
+  let mountedLayout = false;
+  let currentRootPage: ElComponent | null = null;
+  //layoutの有無によってlayout.setPageかrootに直接マウントかを制御する
+  const renderForRoot = async (url: URL, { replace = false } = {}) => {
+    //basepathのそとはエラー
+    if (props.basePath && !url.pathname.startsWith(props.basePath)) return;
+
+    const path = normalizePath(stripBase(url.pathname, props.basePath));
+    const query = url.searchParams;
+    const { route, params } = matchRoute(path, props.routes);
+    const ctx: RouteCtx = { params, query };
+
+    //routeにactionを定義している場合はそれを最優先
+    if (route.action) {
+      const res = await route.action(ctx);
+      if (res && typeof res === "object" && "redirect" in res) {
+        return navigate(res.redirect, { replace: !!res.replace });
+      }
+      return;
+    }
+
+    //未ログインの場合はloginにリダイレクト
+    if (route.meta.protected) {
+      const ok = await ensureAuth();
+      if (!ok) {
+        const next = url.pathname + (url.search || "");
+        //login後に前の画面に戻ってくるための処理をしておくが、あとで調整してもいい
+        return navigate(`/login?next=${encodeURIComponent(next)}`, {
+          replace: true,
+        });
+      }
+    }
+
+    //既定はapp（レイアウトがある状態？）ここは検討の余地あり
+    const layoutMode = route.meta.layout ?? "app";
+
+    //urlの組み立て
+    const basePrefix =
+      props.basePath && props.basePath !== "/" ? props.basePath : "";
+    const qs = url.searchParams.toString(); // ← 生のクエリ文字列
+    const searchStr = qs ? `?${qs}` : ""; // ← ? を付けるかどうか決定
+    const href = basePrefix + path + searchStr; // ← これを push/replace に使う
+
+    if (replace) history.replaceState(null, "", href);
+    else history.pushState(null, "", href);
+
+    if (route.viewFactory) {
+      try {
+        const pageOrPromise = route.viewFactory(ctx);
+        if (layoutMode == "none") {
+          //layoutのマウント状況を監視
+          if (mountedLayout) {
+            props.layout.unmount();
+            mountedLayout = false;
+          }
+          //現在のpageをunmountっ
+          if (currentRootPage) {
+            currentRootPage.unmount();
+            currentRootPage = null;
+          }
+          const page = await pageOrPromise;
+          //root要素に直接マウント
+          page.mount(props.rootEl);
+          //currentRootPageをセットしておく
+          currentRootPage = page;
+        } else {
+          //rootElをlayoutにマウント
+          if (!mountedLayout) {
+            props.layout.mount(props.rootEl);
+            mountedLayout = true;
+          }
+          if (currentRootPage) {
+            currentRootPage.unmount();
+            currentRootPage = null;
+          }
+          props.layout.setPage(pageOrPromise);
+        }
+      } catch (_e) {
+        props.onNavigateError();
+      }
+    }
+  };
 
   const init = () => {
     if (isInit) return;
@@ -40,30 +134,21 @@ export const createRouter = (props: RouteProps) => {
       const href = a.getAttribute("href");
       if (!href || href.startsWith("http")) return;
       ev.preventDefault();
-      navigate(href);
+      const url: URL = new URL(href, location.origin);
+      renderForRoot(url, { replace: false });
     });
 
     //browser backの処理
     //browser backの処理では履歴の更新をしない（pushStateを実行しない)
     window.addEventListener("popstate", () => {
-      const u = new URL(location.href);
-      const path = normalizePath(stripBase(u.pathname, props.basePath));
-      const query = u.searchParams;
-      const match = matchRoute(path, props.routes);
-      const ctx: RouteCtx = { params: match.params, query: query };
-      const page = match.route.viewFactory(ctx);
-      props.layout.setPage(page);
+      const url: URL = new URL(location.href);
+      renderForRoot(url, { replace: true });
     });
 
     //初回描画
     //こっちも同じでnavigateを呼ぶと履歴の更新が行われるのでただの描画処理のみ行う
-    const u = new URL(location.href);
-    const path = normalizePath(stripBase(u.pathname, props.basePath));
-    const query = u.searchParams;
-    const match = matchRoute(path, props.routes);
-    const ctx: RouteCtx = { params: match.params, query: query };
-    const page = match.route.viewFactory(ctx);
-    props.layout.setPage(page);
+    const url: URL = new URL(location.href);
+    renderForRoot(url, { replace: true });
   };
 
   const navigate = async (url: string, { replace = false } = {}) => {
@@ -84,20 +169,25 @@ export const createRouter = (props: RouteProps) => {
     );
 
     //urlの履歴の追加
-    const href =
-      (props.basePath !== "/" ? props.basePath : "") +
-      normPath +
-      (u.search || "");
+    const basePrefix =
+      props.basePath && props.basePath !== "/" ? props.basePath : "";
+    const qs = u.searchParams.toString();
+    const searchStr = qs ? `?${qs}` : "";
+    const href = basePrefix + normPath + searchStr;
+
     if (replace) history.replaceState(null, "", href);
     else history.pushState(null, "", href);
 
     //実際にviewFactoryを呼び出してpageを作ったら、setPageに渡してmountする
-    try {
-      const ctx: RouteCtx = { params: match.params, query: query };
-      const page: ElComponent = match.route?.viewFactory(ctx);
-      props.layout.setPage(page);
-    } catch (_e) {
-      props.onNavigateError();
+    if (match.route.viewFactory) {
+      try {
+        const ctx: RouteCtx = { params: match.params, query: query };
+        const page: ElComponent | Promise<ElComponent> =
+          match.route?.viewFactory(ctx);
+        props.layout.setPage(page);
+      } catch (_e) {
+        props.onNavigateError();
+      }
     }
   };
 

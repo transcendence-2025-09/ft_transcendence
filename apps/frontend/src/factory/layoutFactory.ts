@@ -9,7 +9,7 @@ export type LayoutProps = {
 };
 
 export type Layout = ElComponent & {
-  setPage: (page: ElComponent) => void;
+  setPage: (page: ElComponent | Promise<ElComponent>) => void;
 };
 
 //propsとして渡されるmainはmainFactoryで作られたもの。layoutの中ではsetPageでページを変更する。
@@ -44,10 +44,16 @@ export const layoutFactory = (props: LayoutProps): Layout => {
       mounted = false;
     },
 
-    setPage(next: ElComponent) {
-      if (currentPage) currentPage.unmount();
-      next.mount(props.main.el, props.main.slotAnchor);
-      currentPage = next;
+    setPage(next: ElComponent | Promise<ElComponent>) {
+      if (currentPage) {
+        currentPage.unmount();
+        currentPage = null;
+      }
+      Promise.resolve(next).then((resolved) => {
+        resolved.mount(props.main.el, props.main.slotAnchor);
+        //非同期が終わった要素だけ代入
+        currentPage = resolved;
+      });
     },
   };
 };
