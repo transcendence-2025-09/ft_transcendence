@@ -1,8 +1,8 @@
-import type { ElComponent } from "../factory/componentFactory";
-import { componentFactory } from "../factory/componentFactory";
-import { eh } from "../factory/elementFactory";
-import { pageFactory } from "../factory/pageFactory";
-import type { RouteCtx } from "../routing/routeList";
+import type { ElComponent } from "../../factory/componentFactory";
+import { componentFactory } from "../../factory/componentFactory";
+import { eh } from "../../factory/elementFactory";
+import { pageFactory } from "../../factory/pageFactory";
+import type { RouteCtx } from "../../routing/routeList";
 
 export const User = (ctx: RouteCtx): ElComponent => {
   console.log(ctx.params);
