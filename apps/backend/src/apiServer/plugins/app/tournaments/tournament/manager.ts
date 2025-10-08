@@ -1,31 +1,7 @@
 import { randomUUID } from "node:crypto";
-import type { FastifyInstance } from "fastify";
-import fp from "fastify-plugin";
+import type { Tournament } from "../types.js";
 
-declare module "fastify" {
-  interface FastifyInstance {
-    tournamentsManager: ReturnType<typeof createTournamentsManager>;
-  }
-}
-
-export type Player = {
-  userId: number;
-  alias: string;
-};
-
-export type Tournament = {
-  id: string;
-  name: string;
-  hostId: number;
-  maxPlayers: number;
-  players: Player[];
-  status: "waiting" | "ready" | "in_progress" | "completed";
-  createdAt: Date;
-};
-
-export function createTournamentsManager(_fastify: FastifyInstance) {
-  const tournaments = new Map<string, Tournament>();
-
+export function createTournamentManager(tournaments: Map<string, Tournament>) {
   return {
     /**
      * トーナメントを作成
@@ -46,6 +22,7 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
         maxPlayers,
         players: [],
         status: "waiting",
+        matches: [],
         createdAt: new Date(),
       };
       tournaments.set(tournament.id, tournament);
@@ -111,25 +88,5 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
     deleteTournament(tournamentId: string): boolean {
       return tournaments.delete(tournamentId);
     },
-
-    /**
-     * トーナメントを開始する
-     * @param tournamentId トーナメントID
-     * @param userId 開始を要求したユーザーID
-     * @returns 成功した場合true、ホストでない場合や準備不足の場合false
-     */
-    startTournament(tournamentId: string, userId: number): boolean {
-      const tournament = tournaments.get(tournamentId);
-      if (!tournament) return false;
-      if (tournament.hostId !== userId) return false;
-      if (tournament.players.length < 4) return false;
-
-      tournament.status = "in_progress";
-      return true;
-    },
   };
 }
-
-export default fp(async (fastify) => {
-  fastify.decorate("tournamentsManager", createTournamentsManager(fastify));
-});
