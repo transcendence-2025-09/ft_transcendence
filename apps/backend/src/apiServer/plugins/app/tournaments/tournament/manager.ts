@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Tournament } from "../types.js";
 
-export function createTournamentManager(
-  tournaments: Map<string, Tournament>,
-) {
+export function createTournamentManager(tournaments: Map<string, Tournament>) {
   return {
     /**
      * トーナメントを作成

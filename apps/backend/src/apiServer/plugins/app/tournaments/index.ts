@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import type { Tournament } from "./types.js";
-import { createTournamentManager } from "./tournament/manager.js";
 import { createMatchManager } from "./match/manager.js";
+import { createTournamentManager } from "./tournament/manager.js";
+import type { Tournament } from "./types.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -16,7 +16,7 @@ declare module "fastify" {
  * - プレイヤーの参加管理
  * - マッチの生成・進行・結果登録
  */
-export function createTournamentsManager(fastify: FastifyInstance) {
+export function createTournamentsManager(_fastify: FastifyInstance) {
   // トーナメントストレージ（メモリ上のMap）
   const tournaments = new Map<string, Tournament>();
 
