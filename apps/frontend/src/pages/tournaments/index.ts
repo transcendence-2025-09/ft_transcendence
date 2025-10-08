@@ -1,5 +1,5 @@
-import { componentFactory } from "../factory/componentFactory";
-import { pageFactory } from "../factory/pageFactory";
+import { componentFactory } from "../../factory/componentFactory";
+import { pageFactory } from "../../factory/pageFactory";
 
 type Tournament = {
   id: string;

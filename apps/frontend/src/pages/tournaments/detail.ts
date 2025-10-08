@@ -1,6 +1,6 @@
-import { componentFactory } from "../factory/componentFactory";
-import { pageFactory } from "../factory/pageFactory";
-import type { RouteCtx } from "../routing/routeList";
+import { componentFactory } from "../../factory/componentFactory";
+import { pageFactory } from "../../factory/pageFactory";
+import type { RouteCtx } from "../../routing/routeList";
 
 type Player = {
   userId: number;

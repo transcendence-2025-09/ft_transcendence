@@ -37,7 +37,7 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
     createTournament(
       name: string,
       hostId: number,
-      maxPlayers: number = 2,
+      maxPlayers: number = 4,
     ): Tournament {
       const tournament: Tournament = {
         id: randomUUID(),
@@ -122,7 +122,7 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
       if (tournament.hostId !== userId) return false;
-      if (tournament.players.length < 2) return false;
+      if (tournament.players.length < 4) return false;
 
       tournament.status = "in_progress";
       return true;
