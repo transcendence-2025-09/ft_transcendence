@@ -15,6 +15,32 @@ export const PlayerSchema = Type.Object({
   alias: Type.String(),
 });
 
+export const MatchStatusSchema = Type.Union([
+  Type.Literal("pending"),
+  Type.Literal("in_progress"),
+  Type.Literal("completed"),
+]);
+
+export const MatchRoundSchema = Type.Union([
+  Type.Literal("semifinals"),
+  Type.Literal("finals"),
+  Type.Literal("third_place"),
+]);
+
+export const MatchSchema = Type.Object({
+  id: Type.String(),
+  round: MatchRoundSchema,
+  player1: PlayerSchema,
+  player2: PlayerSchema,
+  status: MatchStatusSchema,
+  score: Type.Optional(
+    Type.Object({
+      player1: Type.Number(),
+      player2: Type.Number(),
+    }),
+  ),
+});
+
 export const TournamentSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
