@@ -295,6 +295,150 @@ paths:
         '404':
           description: トーナメントが見つかりません
 
+  /api/tournaments/{id}/matches:
+    get:
+      tags:
+        - tournament
+      summary: 対戦カード一覧取得
+      description: トーナメントの対戦カード（マッチ）一覧を取得します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+      responses:
+        '200':
+          description: 対戦カード一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Match'
+        '404':
+          description: トーナメントが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tournaments/{id}/matches/{matchId}/start:
+    post:
+      tags:
+        - tournament
+      summary: 試合開始
+      description: 試合のstatusをin_progressに更新します。フロントエンドは/game/:matchIdにリダイレクトし、直接ゲームサーバーに接続してWebRTCシグナリングを開始します。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: マッチID
+      responses:
+        '200':
+          description: 試合開始成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  matchId:
+                    type: string
+                    description: マッチID
+        '404':
+          description: トーナメントまたはマッチが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+
+  /api/tournaments/{id}/matches/{matchId}/result:
+    post:
+      tags:
+        - tournament
+      summary: 試合結果登録
+      description: フロントエンドから試合結果を受信して保存します。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: マッチID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                winnerId:
+                  type: number
+                  description: 勝者のユーザーID
+                score:
+                  type: object
+                  properties:
+                    player1:
+                      type: number
+                      description: プレイヤー1のスコア
+                    player2:
+                      type: number
+                      description: プレイヤー2のスコア
+                  required:
+                    - player1
+                    - player2
+              required:
+                - winnerId
+                - score
+      responses:
+        '200':
+          description: 結果登録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  match:
+                    $ref: '#/components/schemas/Match'
+        '404':
+          description: トーナメントまたはマッチが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+
 components:
   securitySchemes:
     cookieAuth:
@@ -385,3 +529,62 @@ components:
         - players
         - status
         - createdAt
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: string
+          description: マッチID
+        round:
+          type: string
+          enum:
+            - semifinals
+            - finals
+            - third_place
+          description: ラウンド
+        player1:
+          type: object
+          properties:
+            userId:
+              type: number
+            alias:
+              type: string
+          required:
+            - userId
+            - alias
+        player2:
+          type: object
+          properties:
+            userId:
+              type: number
+            alias:
+              type: string
+          required:
+            - userId
+            - alias
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - completed
+          description: 試合状態
+        score:
+          type: object
+          properties:
+            player1:
+              type: number
+              description: プレイヤー1のスコア
+            player2:
+              type: number
+              description: プレイヤー2のスコア
+          required:
+            - player1
+            - player2
+      required:
+        - id
+        - round
+        - player1
+        - player2
+        - status
