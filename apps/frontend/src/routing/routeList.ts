@@ -7,6 +7,7 @@ import { Home } from "../pages/main";
 import { pongPage } from "../pages/pong";
 import { Tournaments } from "../pages/tournaments";
 import { TournamentDetail } from "../pages/tournaments/detail";
+import { TournamentSemifinal } from "../pages/tournaments/semifinal";
 import { User } from "../pages/user/user";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
@@ -82,6 +83,11 @@ export const routeList: Route[] = [
     meta: { title: "tournamentDetail" },
     path: "/tournaments/:id",
     viewFactory: (ctx: RouteCtx) => TournamentDetail(ctx),
+  },
+  {
+    meta: { title: "tournamentSemifinal" },
+    path: "/tournaments/:id/semifinal",
+    viewFactory: (ctx: RouteCtx) => TournamentSemifinal(ctx),
   },
   {
     meta: { title: "user" },
