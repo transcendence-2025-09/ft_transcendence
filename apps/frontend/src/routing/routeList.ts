@@ -9,8 +9,6 @@ import { Tournaments } from "../pages/tournaments";
 import { TournamentDetail } from "../pages/tournaments/detail";
 import { User } from "../pages/user/user";
 
-
-
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
 
