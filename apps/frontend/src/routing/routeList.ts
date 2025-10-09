@@ -5,9 +5,11 @@ import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
 import { pongPage } from "../pages/pong";
-import { TournamentDetail } from "../pages/tournaments/detail";
 import { Tournaments } from "../pages/tournaments";
+import { TournamentDetail } from "../pages/tournaments/detail";
 import { User } from "../pages/user/user";
+
+
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
