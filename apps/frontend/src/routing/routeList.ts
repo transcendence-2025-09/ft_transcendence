@@ -4,6 +4,7 @@ import { handleAuthCallback } from "../features";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
+import { pongPage } from "../pages/pong";
 import { TournamentDetail } from "../pages/tournamentDetail";
 import { Tournaments } from "../pages/tournaments";
 import { User } from "../pages/user";
@@ -66,6 +67,11 @@ export const routeList: Route[] = [
     meta: { title: "about" },
     path: "/about",
     viewFactory: () => About,
+  },
+  {
+    meta: { title: "pong" },
+    path: "/pong",
+    viewFactory: () => pongPage,
   },
   {
     meta: { title: "tournament" },
