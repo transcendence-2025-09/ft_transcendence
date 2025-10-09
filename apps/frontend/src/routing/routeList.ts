@@ -5,7 +5,7 @@ import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
 import { pongPage } from "../pages/pong";
-import { TournamentDetail } from "../pages/tournamentDetail";
+import { TournamentDetail } from "../pages/tournaments/detail";
 import { Tournaments } from "../pages/tournaments";
 import { User } from "../pages/user/user";
 
