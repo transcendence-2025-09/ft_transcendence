@@ -7,7 +7,8 @@ import { Home } from "../pages/main";
 import { pongPage } from "../pages/pong";
 import { TournamentDetail } from "../pages/tournamentDetail";
 import { Tournaments } from "../pages/tournaments";
-import { User } from "../pages/user";
+import { TournamentDetail } from "../pages/tournaments/detail";
+import { User } from "../pages/user/user";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
