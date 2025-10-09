@@ -5,7 +5,6 @@ import { Header } from "./components/header";
 import type { ElComponent } from "./factory/componentFactory";
 import { layoutFactory } from "./factory/layoutFactory";
 import { mainSlotFactory } from "./factory/mainSlotFactory";
-// import type { Params, Route } from "./routing/routeList";
 import { routeList } from "./routing/routeList";
 import { createRouter } from "./routing/router";
 
