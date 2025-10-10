@@ -23,9 +23,9 @@ class WebRTCClient {
   async connect(): Promise<void> {
     // WebSocket接続
     this.ws = new WebSocket(`ws://localhost:3000/signaling/${this.roomId}`);
-    
+
     this.ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log("WebSocket connected");
       this.joinRoom();
     };
 
@@ -35,37 +35,41 @@ class WebRTCClient {
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log("WebSocket disconnected");
     };
   }
 
   private joinRoom(): void {
     if (!this.ws) return;
-    
-    this.ws.send(JSON.stringify({
-      type: 'join-room',
-      data: {
-        userId: 1,
-        playerName: 'TestPlayer'
-      }
-    }));
+
+    this.ws.send(
+      JSON.stringify({
+        type: "join-room",
+        data: {
+          userId: 1,
+          playerName: "TestPlayer",
+        },
+      }),
+    );
   }
 
-  private async handleSignalingMessage(message: SignalingMessage): Promise<void> {
-    console.log('Received signaling message:', message);
+  private async handleSignalingMessage(
+    message: SignalingMessage,
+  ): Promise<void> {
+    console.log("Received signaling message:", message);
 
     switch (message.type) {
-      case 'joined':
+      case "joined":
         this.playerId = message.data?.playerId as string;
-        console.log('Joined room with player ID:', this.playerId);
+        console.log("Joined room with player ID:", this.playerId);
         break;
 
-      case 'player-joined':
-        console.log('Another player joined');
+      case "player-joined":
+        console.log("Another player joined");
         if (!this.pc) {
           await this.createPeerConnection();
           this.isInitiator = true;
@@ -73,46 +77,54 @@ class WebRTCClient {
         }
         break;
 
-      case 'offer':
-        await this.handleOffer(message.data as unknown as RTCSessionDescriptionInit);
+      case "offer":
+        await this.handleOffer(
+          message.data as unknown as RTCSessionDescriptionInit,
+        );
         break;
 
-      case 'answer':
-        await this.handleAnswer(message.data as unknown as RTCSessionDescriptionInit);
+      case "answer":
+        await this.handleAnswer(
+          message.data as unknown as RTCSessionDescriptionInit,
+        );
         break;
 
-      case 'ice-candidate':
-        await this.handleIceCandidate(message.data as unknown as RTCIceCandidateInit);
+      case "ice-candidate":
+        await this.handleIceCandidate(
+          message.data as unknown as RTCIceCandidateInit,
+        );
         break;
 
-      case 'connected':
-        console.log('Connected to signaling server');
+      case "connected":
+        console.log("Connected to signaling server");
         break;
 
-      case 'error':
-        console.error('Signaling error:', message.data?.message);
+      case "error":
+        console.error("Signaling error:", message.data?.message);
         break;
     }
   }
 
   private async createPeerConnection(): Promise<void> {
     this.pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
 
     // ICE候補の処理
     this.pc.onicecandidate = (event) => {
       if (event.candidate && this.ws) {
-        this.ws.send(JSON.stringify({
-          type: 'ice-candidate',
-          data: event.candidate
-        }));
+        this.ws.send(
+          JSON.stringify({
+            type: "ice-candidate",
+            data: event.candidate,
+          }),
+        );
       }
     };
 
     // データチャンネルの設定（イニシエーターのみ）
     if (this.isInitiator) {
-      this.dataChannel = this.pc.createDataChannel('messages');
+      this.dataChannel = this.pc.createDataChannel("messages");
       this.setupDataChannel(this.dataChannel);
     } else {
       this.pc.ondatachannel = (event) => {
@@ -121,23 +133,23 @@ class WebRTCClient {
       };
     }
 
-    console.log('Peer connection created');
+    console.log("Peer connection created");
   }
 
   private setupDataChannel(channel: RTCDataChannel): void {
     channel.onopen = () => {
-      console.log('Data channel opened');
-      this.updateStatus('Connected! You can send messages.');
+      console.log("Data channel opened");
+      this.updateStatus("Connected! You can send messages.");
     };
 
     channel.onmessage = (event) => {
-      console.log('Received message:', event.data);
-      this.displayMessage('Peer', event.data);
+      console.log("Received message:", event.data);
+      this.displayMessage("Peer", event.data);
     };
 
     channel.onclose = () => {
-      console.log('Data channel closed');
-      this.updateStatus('Disconnected');
+      console.log("Data channel closed");
+      this.updateStatus("Disconnected");
     };
   }
 
@@ -147,12 +159,14 @@ class WebRTCClient {
     const offer = await this.pc.createOffer();
     await this.pc.setLocalDescription(offer);
 
-    this.ws.send(JSON.stringify({
-      type: 'offer',
-      data: offer
-    }));
+    this.ws.send(
+      JSON.stringify({
+        type: "offer",
+        data: offer,
+      }),
+    );
 
-    console.log('Offer created and sent');
+    console.log("Offer created and sent");
   }
 
   private async handleOffer(offer: RTCSessionDescriptionInit): Promise<void> {
@@ -166,42 +180,46 @@ class WebRTCClient {
     const answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
 
-    this.ws.send(JSON.stringify({
-      type: 'answer',
-      data: answer
-    }));
+    this.ws.send(
+      JSON.stringify({
+        type: "answer",
+        data: answer,
+      }),
+    );
 
-    console.log('Answer created and sent');
+    console.log("Answer created and sent");
   }
 
   private async handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
     if (!this.pc) return;
 
     await this.pc.setRemoteDescription(answer);
-    console.log('Answer received and set');
+    console.log("Answer received and set");
   }
 
-  private async handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
+  private async handleIceCandidate(
+    candidate: RTCIceCandidateInit,
+  ): Promise<void> {
     if (!this.pc) return;
 
     await this.pc.addIceCandidate(candidate);
-    console.log('ICE candidate added');
+    console.log("ICE candidate added");
   }
 
   sendMessage(message: string): void {
-    if (this.dataChannel && this.dataChannel.readyState === 'open') {
+    if (this.dataChannel && this.dataChannel.readyState === "open") {
       this.dataChannel.send(message);
-      this.displayMessage('You', message);
+      this.displayMessage("You", message);
     } else {
-      console.warn('Data channel not ready');
+      console.warn("Data channel not ready");
     }
   }
 
   private displayMessage(sender: string, message: string): void {
-    const messagesEl = document.getElementById('messages');
+    const messagesEl = document.getElementById("messages");
     if (messagesEl) {
-      const messageEl = document.createElement('div');
-      messageEl.className = 'p-2 border-b';
+      const messageEl = document.createElement("div");
+      messageEl.className = "p-2 border-b";
       messageEl.innerHTML = `<strong>${sender}:</strong> ${message}`;
       messagesEl.appendChild(messageEl);
       messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -209,7 +227,7 @@ class WebRTCClient {
   }
 
   private updateStatus(status: string): void {
-    const statusEl = document.getElementById('status');
+    const statusEl = document.getElementById("status");
     if (statusEl) {
       statusEl.textContent = status;
     }
@@ -229,9 +247,9 @@ class WebRTCClient {
 }
 
 export function TestWebRTC(): ElComponent {
-  const el = document.createElement('div');
-  el.className = 'min-h-screen bg-gray-100 p-8';
-  
+  const el = document.createElement("div");
+  el.className = "min-h-screen bg-gray-100 p-8";
+
   el.innerHTML = `
     <div class="max-w-4xl mx-auto">
       <h1 class="text-3xl font-bold mb-8 text-center">WebRTC Test</h1>
@@ -322,72 +340,74 @@ export function TestWebRTC(): ElComponent {
   let client: WebRTCClient | null = null;
 
   const setupEventListeners = () => {
-    const connectBtn = el.querySelector('#connectBtn') as HTMLButtonElement;
-    const disconnectBtn = el.querySelector('#disconnectBtn') as HTMLButtonElement;
-    const sendBtn = el.querySelector('#sendBtn') as HTMLButtonElement;
-    const roomIdInput = el.querySelector('#roomId') as HTMLInputElement;
-    const messageInput = el.querySelector('#messageInput') as HTMLInputElement;
+    const connectBtn = el.querySelector("#connectBtn") as HTMLButtonElement;
+    const disconnectBtn = el.querySelector(
+      "#disconnectBtn",
+    ) as HTMLButtonElement;
+    const sendBtn = el.querySelector("#sendBtn") as HTMLButtonElement;
+    const roomIdInput = el.querySelector("#roomId") as HTMLInputElement;
+    const messageInput = el.querySelector("#messageInput") as HTMLInputElement;
 
-    connectBtn.addEventListener('click', async () => {
+    connectBtn.addEventListener("click", async () => {
       const roomId = roomIdInput.value.trim();
       if (!roomId) {
-        alert('Please enter a room ID');
+        alert("Please enter a room ID");
         return;
       }
 
       try {
         client = new WebRTCClient(roomId);
         await client.connect();
-        
+
         connectBtn.disabled = true;
         disconnectBtn.disabled = false;
         roomIdInput.disabled = true;
-        
+
         // Update status
-        const statusEl = el.querySelector('#status');
+        const statusEl = el.querySelector("#status");
         if (statusEl) {
-          statusEl.textContent = 'Connecting...';
+          statusEl.textContent = "Connecting...";
         }
       } catch (error) {
-        console.error('Connection failed:', error);
-        alert('Connection failed. Check console for details.');
+        console.error("Connection failed:", error);
+        alert("Connection failed. Check console for details.");
       }
     });
 
-    disconnectBtn.addEventListener('click', () => {
+    disconnectBtn.addEventListener("click", () => {
       if (client) {
         client.disconnect();
         client = null;
       }
-      
+
       connectBtn.disabled = false;
       disconnectBtn.disabled = true;
       sendBtn.disabled = true;
       roomIdInput.disabled = false;
-      
-      const statusEl = el.querySelector('#status');
+
+      const statusEl = el.querySelector("#status");
       if (statusEl) {
-        statusEl.textContent = 'Disconnected';
+        statusEl.textContent = "Disconnected";
       }
     });
 
-    sendBtn.addEventListener('click', () => {
+    sendBtn.addEventListener("click", () => {
       const message = messageInput.value.trim();
       if (client && message) {
         client.sendMessage(message);
-        messageInput.value = '';
+        messageInput.value = "";
       }
     });
 
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
         sendBtn.click();
       }
     });
 
     // Enable send button when connected
     const checkConnection = setInterval(() => {
-      if (client?.['dataChannel']?.readyState === 'open') {
+      if (client?.["dataChannel"]?.readyState === "open") {
         sendBtn.disabled = false;
       } else {
         sendBtn.disabled = true;
@@ -395,7 +415,7 @@ export function TestWebRTC(): ElComponent {
     }, 1000);
 
     // Cleanup interval when component is removed
-    el.addEventListener('beforeRemove', () => {
+    el.addEventListener("beforeRemove", () => {
       clearInterval(checkConnection);
       if (client) {
         client.disconnect();
