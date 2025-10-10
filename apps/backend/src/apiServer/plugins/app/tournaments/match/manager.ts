@@ -1,7 +1,129 @@
 import { randomUUID } from "node:crypto";
-import type { Match, Tournament } from "../types.js";
+import type { Match, Player, Tournament } from "../types.js";
+
+const REQUIRED_SEMIFINAL_MATCHES = 2;
+const REQUIRED_FINAL_PLAYERS = 2;
 
 export function createMatchManager(tournaments: Map<string, Tournament>) {
+  /**
+   * 特定のマッチを取得する
+   */
+  function getMatch(
+    tournamentId: string,
+    matchId: string,
+  ): { tournament: Tournament; match: Match } | null {
+    const tournament = tournaments.get(tournamentId);
+    if (!tournament) return null;
+
+    const match = tournament.matches.find((m) => m.id === matchId);
+    if (!match) return null;
+
+    return { tournament, match };
+  }
+
+  /**
+   * セミファイナルマッチから勝者を判定する
+   */
+  function getWinner(semifinal: Match): Player | null {
+    if (!semifinal.score) return null;
+
+    return semifinal.score.player1 > semifinal.score.player2
+      ? semifinal.player1
+      : semifinal.player2;
+  }
+
+  /**
+   * セミファイナルマッチから敗者を判定する
+   */
+  function getLoser(semifinal: Match): Player | null {
+    const winner = getWinner(semifinal);
+    if (!winner) return null;
+
+    return winner.userId === semifinal.player1.userId
+      ? semifinal.player2
+      : semifinal.player1;
+  }
+
+  /**
+   * マッチを作成する
+   */
+  function createMatch(
+    round: "semifinals" | "finals" | "third_place",
+    player1: Player,
+    player2: Player,
+  ): Match {
+    return {
+      id: randomUUID(),
+      round,
+      player1,
+      player2,
+      status: "pending",
+    };
+  }
+
+  /**
+   * セミファイナルが全て完了しているかチェック
+   */
+  function areSemifinalsCompleted(matches: Match[]): boolean {
+    const semifinalMatches = matches.filter((m) => m.round === "semifinals");
+
+    return (
+      semifinalMatches.length === REQUIRED_SEMIFINAL_MATCHES &&
+      semifinalMatches.every((m) => m.status === "completed")
+    );
+  }
+
+  /**
+   * ファイナルマッチが既に存在するかチェック
+   */
+  function hasFinalMatches(matches: Match[]): boolean {
+    return matches.some(
+      (m) => m.round === "finals" || m.round === "third_place",
+    );
+  }
+
+  /**
+   * セミファイナルマッチから勝者と敗者を抽出
+   */
+  function extractWinnersAndLosers(matches: Match[]): {
+    winners: Player[];
+    losers: Player[];
+  } {
+    const semifinals = matches.filter((m) => m.round === "semifinals");
+    const winners: Player[] = [];
+    const losers: Player[] = [];
+
+    for (const semifinal of semifinals) {
+      const winner = getWinner(semifinal);
+      const loser = getLoser(semifinal);
+
+      if (winner) winners.push(winner);
+      if (loser) losers.push(loser);
+    }
+
+    return { winners, losers };
+  }
+
+  /**
+   * ファイナルマッチと3位決定戦を自動生成する
+   */
+  function generateFinalMatches(tournament: Tournament): void {
+    if (!areSemifinalsCompleted(tournament.matches)) return;
+    if (hasFinalMatches(tournament.matches)) return;
+
+    const { winners, losers } = extractWinnersAndLosers(tournament.matches);
+
+    // ファイナルマッチを生成
+    if (winners.length === REQUIRED_FINAL_PLAYERS) {
+      tournament.matches.push(createMatch("finals", winners[0], winners[1]));
+    }
+
+    // 3位決定戦を生成
+    if (losers.length === REQUIRED_FINAL_PLAYERS) {
+      tournament.matches.push(createMatch("third_place", losers[0], losers[1]));
+    }
+  }
+
   return {
     /**
      * セミファイナルマッチを生成する
@@ -14,21 +136,17 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       if (tournament.players.length < 4) return false;
 
       // セミファイナル2試合を生成
-      const match1: Match = {
-        id: randomUUID(),
-        round: "semifinals",
-        player1: tournament.players[0],
-        player2: tournament.players[1],
-        status: "pending",
-      };
+      const match1 = createMatch(
+        "semifinals",
+        tournament.players[0],
+        tournament.players[1],
+      );
 
-      const match2: Match = {
-        id: randomUUID(),
-        round: "semifinals",
-        player1: tournament.players[2],
-        player2: tournament.players[3],
-        status: "pending",
-      };
+      const match2 = createMatch(
+        "semifinals",
+        tournament.players[2],
+        tournament.players[3],
+      );
 
       tournament.matches = [match1, match2];
       return true;
@@ -51,11 +169,10 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
      * @returns 成功した場合true
      */
     startMatch(tournamentId: string, matchId: string): boolean {
-      const tournament = tournaments.get(tournamentId);
-      if (!tournament) return false;
+      const result = getMatch(tournamentId, matchId);
+      if (!result) return false;
 
-      const match = tournament.matches.find((m) => m.id === matchId);
-      if (!match) return false;
+      const { match } = result;
       if (match.status !== "pending") return false;
 
       match.status = "in_progress";
@@ -76,11 +193,10 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       winnerId: number,
       score: { player1: number; player2: number },
     ): Match | undefined {
-      const tournament = tournaments.get(tournamentId);
-      if (!tournament) return undefined;
+      const result = getMatch(tournamentId, matchId);
+      if (!result) return undefined;
 
-      const match = tournament.matches.find((m) => m.id === matchId);
-      if (!match) return undefined;
+      const { tournament, match } = result;
       if (match.status !== "in_progress") return undefined;
 
       // 勝者がマッチの参加者であることを確認
@@ -91,11 +207,8 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       match.score = score;
       match.status = "completed";
 
-      // TODO: セミファイナルの両方のマッチが完了したら、ファイナルマッチを自動生成
-      // - tournament.matches から round === "semifinals" のマッチを取得
-      // - 全てのセミファイナルマッチが completed かチェック
-      // - 完了していれば、各マッチの勝者（winnerId）を取得
-      // - 勝者2名でファイナルマッチを生成（round: "finals"）
+      // セミファイナルの両方のマッチが完了したら、ファイナルと3位決定戦を自動生成
+      generateFinalMatches(tournament);
 
       return match;
     },
