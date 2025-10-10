@@ -105,7 +105,7 @@ export function TournamentSemifinal(ctx: RouteCtx) {
           `#startMatch-${match.id}`,
         ) as HTMLButtonElement;
         if (btn) {
-          btn.addEventListener("click", () => startMatch(match.id));
+          btn.addEventListener("click", () => startMatch(match));
         }
       });
     } catch (error) {
@@ -134,7 +134,7 @@ export function TournamentSemifinal(ctx: RouteCtx) {
             class="bg-black hover:bg-gray-800 text-white font-bold py-2 px-6 rounded ${!isStartable ? "opacity-50 cursor-not-allowed" : ""}"
             ${!isStartable ? "disabled" : ""}
           >
-            Start Match
+            試合開始
           </button>
         </div>
       </div>
@@ -142,29 +142,11 @@ export function TournamentSemifinal(ctx: RouteCtx) {
   }
 
   // マッチを開始
-  async function startMatch(matchId: string) {
+  async function startMatch(match: Match) {
     try {
-      // マッチ情報を取得して勝者を決定
-      const matchesResponse = await fetch(
-        `/api/tournaments/${tournamentId}/matches`,
-      );
-      if (!matchesResponse.ok) {
-        alert("マッチ情報の取得に失敗しました");
-        return;
-      }
-
-      const matchesData = await matchesResponse.json();
-      const currentMatch = matchesData.matches?.find(
-        (m: Match) => m.id === matchId,
-      );
-      if (!currentMatch) {
-        alert("マッチが見つかりません");
-        return;
-      }
-
       // マッチを開始
       const startResponse = await fetch(
-        `/api/tournaments/${tournamentId}/matches/${matchId}/start`,
+        `/api/tournaments/${tournamentId}/matches/${match.id}/start`,
         {
           method: "POST",
           credentials: "include",
@@ -184,13 +166,13 @@ export function TournamentSemifinal(ctx: RouteCtx) {
 
       // 仮の結果を送信（5 vs 3、player1の勝利）
       const resultResponse = await fetch(
-        `/api/tournaments/${tournamentId}/matches/${matchId}/result`,
+        `/api/tournaments/${tournamentId}/matches/${match.id}/result`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            winnerId: currentMatch.player1.userId, // player1を勝者とする
+            winnerId: match.player1.userId, // player1を勝者とする
             score: {
               player1: 5,
               player2: 3,
@@ -201,7 +183,7 @@ export function TournamentSemifinal(ctx: RouteCtx) {
 
       if (resultResponse.ok) {
         alert(
-          `マッチ結果を送信しました\n${currentMatch.player1.alias}: 5 vs ${currentMatch.player2.alias}: 3`,
+          `マッチ結果を送信しました\n${match.player1.alias}: 5 vs ${match.player2.alias}: 3`,
         );
         loadMatches();
       } else {
