@@ -142,6 +142,14 @@ export const routeList: Route[] = [
     },
   },
   {
+    meta: { title: "WebRTC Test", layout: "none" },
+    path: "/test-webrtc",
+    viewFactory: async () => {
+      const { TestWebRTC } = await import("../pages/test-webrtc");
+      return TestWebRTC();
+    },
+  },
+  {
     meta: { title: "not found" },
     path: "*",
     viewFactory: () => NotFound,
