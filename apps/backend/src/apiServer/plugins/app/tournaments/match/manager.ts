@@ -91,12 +91,6 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       match.score = score;
       match.status = "completed";
 
-      // TODO: セミファイナルの両方のマッチが完了したら、ファイナルマッチを自動生成
-      // - tournament.matches から round === "semifinals" のマッチを取得
-      // - 全てのセミファイナルマッチが completed かチェック
-      // - 完了していれば、各マッチの勝者（winnerId）を取得
-      // - 勝者2名でファイナルマッチを生成（round: "finals"）
-
       return match;
     },
   };
