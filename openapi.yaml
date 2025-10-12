@@ -145,6 +145,8 @@ paths:
         - tournament
       summary: トーナメント一覧
       description: 全トーナメントの一覧を取得します。
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: トーナメント一覧
@@ -171,6 +173,12 @@ paths:
                     createdAt:
                       type: string
                       format: date-time
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/tournaments/{id}:
     get:
@@ -178,6 +186,8 @@ paths:
         - tournament
       summary: トーナメント詳細
       description: 指定されたトーナメントの詳細情報を取得します。
+      security:
+        - cookieAuth: []
       parameters:
         - name: id
           in: path
@@ -192,6 +202,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tournament'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: トーナメントが見つかりません
           content:
@@ -301,6 +317,8 @@ paths:
         - tournament
       summary: 対戦カード一覧取得
       description: トーナメントの対戦カード（マッチ）一覧を取得します。
+      security:
+        - cookieAuth: []
       parameters:
         - name: id
           in: path
@@ -320,6 +338,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Match'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: トーナメントが見つかりません
           content:
