@@ -5,7 +5,6 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import { ErrorSchema, TournamentStatusSchema } from "./utils/schemas.js";
-import { authenticate } from "./utils/verifyJwt.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -27,7 +26,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request: FastifyRequest, reply) => {
-      const user = await authenticate(request, reply);
+      if (!request.user) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+      const user = request.user;
       const { name } = request.body as { name: string };
       const tournament = tournamentsManager.createTournament(name, user.id);
       return reply.status(200).send({ tournamentId: tournament.id });
@@ -51,6 +53,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               createdAt: Type.String(),
             }),
           ),
+          401: ErrorSchema,
         },
       },
     },

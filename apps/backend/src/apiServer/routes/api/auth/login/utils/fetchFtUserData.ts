@@ -9,11 +9,11 @@ const userResponseSchema = z.object({
   }),
 });
 
-export type UserData = z.infer<typeof userResponseSchema>;
+type FtUserData = z.infer<typeof userResponseSchema>;
 
-export async function fetchUserData(
+export async function fetchFtUserData(
   accessToken: string,
-): Promise<UserData | null> {
+): Promise<FtUserData | null> {
   const response = await fetch("https://api.intra.42.fr/v2/me", {
     headers: {
       Authorization: `Bearer ${accessToken}`,

@@ -20,6 +20,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           200: Type.Object({
             matches: Type.Array(MatchSchema),
           }),
+          401: ErrorSchema,
           404: ErrorSchema,
         },
       },
