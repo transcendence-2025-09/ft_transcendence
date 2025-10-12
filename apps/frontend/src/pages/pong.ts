@@ -6,9 +6,10 @@ import type { ElComponent } from "../factory/componentFactory";
 import { pageFactory } from "../factory/pageFactory";
 import type { RenderOption } from "../logic/pong/pongGame";
 import { PongGame } from "../logic/pong/pongGame";
+import type { RouteCtx } from "../routing/routeList";
 
 //pong pageを積むためのbackground
-const pongPageComp = (): ElComponent => {
+const pongPageComp = (ctx: RouteCtx): ElComponent => {
   const bg = pongBackGroundFactory();
   const content = bg.el.querySelector("#pong-container") as HTMLDivElement;
 
@@ -20,6 +21,10 @@ const pongPageComp = (): ElComponent => {
 
   const opt: RenderOption | null = null;
 
+  //path parameterからtournament, matchを特定する
+  // const tournamentId = ctx.params.tournamentId;
+  // const matchId = ctx.params.matchId;
+
   return {
     el: bg.el,
     mount(target, anchor = null) {
@@ -28,12 +33,15 @@ const pongPageComp = (): ElComponent => {
       playerLow.mount(content);
       pong.mount(content);
       const canvas = pong.el as HTMLCanvasElement;
-      gameInstance = new PongGame(canvas, opt);
+      gameInstance = new PongGame(canvas, opt, ctx);
+      gameInstance.init();
       gameInstance.registerKeyEvent();
       gameInstance.start();
     },
     unmount() {
-      if (gameInstance) gameInstance.stop();
+      if (gameInstance) {
+        gameInstance.stop();
+      }
       gameInstance?.unregisterKeyEvent();
       gameInstance = null;
       pong.unmount();
@@ -44,4 +52,4 @@ const pongPageComp = (): ElComponent => {
   };
 };
 
-export const pongPage = pageFactory([pongPageComp()]);
+export const pongPage = (ctx: RouteCtx) => pageFactory([pongPageComp(ctx)]);
