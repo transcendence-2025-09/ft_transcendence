@@ -1,4 +1,5 @@
 import { ERROR_MESSAGES, STATUS_LABELS } from "./constants";
+import type { Player } from "./types";
 
 /**
  * ステータスの日本語ラベルを取得
@@ -66,4 +67,44 @@ export function escapeHtml(text: string): string {
  */
 export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString();
+}
+
+/**
+ * 試合結果から勝者を取得
+ * @param match - マッチ情報
+ * @returns 勝者のPlayer情報（引き分けやスコアがない場合はnull）
+ */
+export function getWinner(match: {
+  leftPlayer: Player;
+  rightPlayer: Player;
+  score?: { leftPlayer: number; rightPlayer: number };
+}): Player | null {
+  if (!match.score) return null;
+  if (match.score.leftPlayer > match.score.rightPlayer) {
+    return match.leftPlayer;
+  }
+  if (match.score.rightPlayer > match.score.leftPlayer) {
+    return match.rightPlayer;
+  }
+  return null; // 引き分け
+}
+
+/**
+ * 試合結果から敗者を取得
+ * @param match - マッチ情報
+ * @returns 敗者のPlayer情報（引き分けやスコアがない場合はnull）
+ */
+export function getLoser(match: {
+  leftPlayer: Player;
+  rightPlayer: Player;
+  score?: { leftPlayer: number; rightPlayer: number };
+}): Player | null {
+  if (!match.score) return null;
+  if (match.score.leftPlayer > match.score.rightPlayer) {
+    return match.rightPlayer;
+  }
+  if (match.score.rightPlayer > match.score.leftPlayer) {
+    return match.leftPlayer;
+  }
+  return null; // 引き分け
 }

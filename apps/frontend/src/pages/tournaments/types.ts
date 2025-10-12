@@ -33,12 +33,12 @@ export type Tournament = {
 export type Match = {
   id: string; // マッチID
   round: MatchRound; // ラウンド
-  player1: Player; // プレイヤー1
-  player2: Player; // プレイヤー2
+  leftPlayer: Player; // 左側のプレイヤー
+  rightPlayer: Player; // 右側のプレイヤー
   status: MatchStatus; // ステータス
   score?: {
     // スコア（任意）
-    player1: number; // プレイヤー1のスコア
-    player2: number; // プレイヤー2のスコア
+    leftPlayer: number; // 左側のプレイヤーのスコア
+    rightPlayer: number; // 右側のプレイヤーのスコア
   };
 };
