@@ -2,7 +2,6 @@ import "dotenv/config";
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
-import type { JWTPayload } from "../auth/login/index.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.addHook(
@@ -16,8 +15,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       const jwtSecret = process.env.JWT_SECRET || "";
 
       try {
-        const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
-        request.user = decoded;
+        const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
+        request.user = { id: decoded.id };
       } catch {
         return reply.status(401).send({ error: "Unauthorized" });
       }

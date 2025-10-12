@@ -6,19 +6,7 @@ import {
 import type { FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import { exchangeToken } from "./utils/exchangeToken.js";
-import { fetchUserData } from "./utils/fetchUserData.js";
-
-export interface JWTPayload {
-  id: number;
-  iat?: number;
-  exp?: number;
-}
-
-declare module "fastify" {
-  interface FastifyRequest {
-    user: JWTPayload;
-  }
-}
+import { fetchFtUserData } from "./utils/fetchFtUserData.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { usersRepository } = fastify;
@@ -46,15 +34,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       console.log("Login request received");
       const { code } = request.body as { code?: string };
       const accessToken = await exchangeToken(code ?? "");
-      const userData = await fetchUserData(accessToken ?? "");
-      if (!userData) {
+      const ftUserData = await fetchFtUserData(accessToken ?? "");
+      if (!ftUserData) {
         return reply.status(500).send({ error: "Failed to fetch user data" });
       }
 
       const user = await usersRepository.createUser({
-        name: userData.login,
-        email: userData.email,
-        ft_id: userData.id,
+        name: ftUserData.login,
+        email: ftUserData.email,
+        ft_id: ftUserData.id,
       });
 
       if (!user) {
@@ -67,8 +55,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!jwtSecret) {
         return reply.status(500).send();
       }
-      const jwtPayload: JWTPayload = { id: user.id };
-      const token = jwt.sign(jwtPayload, jwtSecret, { expiresIn: "1h" });
+      const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "1h" });
 
       reply.setCookie("token", token, {
         httpOnly: true,
