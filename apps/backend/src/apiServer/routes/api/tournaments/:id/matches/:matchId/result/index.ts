@@ -21,8 +21,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         body: Type.Object({
           winnerId: Type.Number(),
           score: Type.Object({
-            player1: Type.Number(),
-            player2: Type.Number(),
+            leftPlayer: Type.Number(),
+            rightPlayer: Type.Number(),
           }),
         }),
         response: {
@@ -44,7 +44,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       const { id, matchId } = request.params;
       const { winnerId, score } = request.body as {
         winnerId: number;
-        score: { player1: number; player2: number };
+        score: { leftPlayer: number; rightPlayer: number };
       };
 
       const tournament = tournamentsManager.getTournament(id);

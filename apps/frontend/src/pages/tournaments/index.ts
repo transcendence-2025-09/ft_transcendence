@@ -1,5 +1,6 @@
 import { componentFactory } from "../../factory/componentFactory";
 import { pageFactory } from "../../factory/pageFactory";
+import { createTournament, fetchAllTournaments } from "./api";
 import { ERROR_MESSAGES } from "./constants";
 import type { Tournament } from "./types";
 import {
@@ -69,8 +70,7 @@ function createTournamentsPage() {
   async function loadTournaments() {
     try {
       showLoading(tournamentsList);
-      const response = await fetch("/api/tournaments");
-      const tournaments = await response.json();
+      const tournaments = await fetchAllTournaments();
 
       if (tournaments.length === 0) {
         showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
@@ -134,22 +134,13 @@ function createTournamentsPage() {
     }
 
     try {
-      const response = await fetch("/api/tournaments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ name }),
-      });
-
-      if (response.ok) {
-        closeModal();
-        loadTournaments();
-      } else {
-        const error = await response.json();
-        alert(`作成に失敗しました: ${error.error}`);
-      }
+      await createTournament(name);
+      closeModal();
+      loadTournaments();
     } catch (error) {
-      alert(ERROR_MESSAGES.GENERIC);
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`作成に失敗しました: ${errorMessage}`);
       console.error("Failed to create tournament:", error);
     }
   });

@@ -6,12 +6,12 @@ export type Player = {
 export type Match = {
   id: string;
   round: "semifinals" | "finals" | "third_place";
-  player1: Player;
-  player2: Player;
+  leftPlayer: Player;
+  rightPlayer: Player;
   status: "pending" | "in_progress" | "completed";
   score?: {
-    player1: number;
-    player2: number;
+    leftPlayer: number;
+    rightPlayer: number;
   };
 };
 

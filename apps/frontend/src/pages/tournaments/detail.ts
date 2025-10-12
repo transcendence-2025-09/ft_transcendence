@@ -1,8 +1,13 @@
 import { componentFactory } from "../../factory/componentFactory";
 import { pageFactory } from "../../factory/pageFactory";
 import type { RouteCtx } from "../../routing/routeList";
+import {
+  startTournament as apiStartTournament,
+  fetchTournament,
+  joinTournament,
+} from "./api";
 import { ERROR_MESSAGES } from "./constants";
-import type { Player, Tournament } from "./types";
+import type { Player } from "./types";
 import {
   escapeHtml,
   formatDate,
@@ -34,14 +39,7 @@ export function TournamentDetail(ctx: RouteCtx) {
   async function loadTournamentDetail() {
     try {
       showLoading(detailContainer);
-      const response = await fetch(`/api/tournaments/${tournamentId}`);
-
-      if (!response.ok) {
-        showError(detailContainer, ERROR_MESSAGES.TOURNAMENT_NOT_FOUND);
-        return;
-      }
-
-      const tournament: Tournament = await response.json();
+      const tournament = await fetchTournament(tournamentId);
 
       detailContainer.innerHTML = `
         <div class="mb-6">
@@ -127,21 +125,12 @@ export function TournamentDetail(ctx: RouteCtx) {
     if (!alias) return;
 
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ alias }),
-      });
-
-      if (res.ok) {
-        loadTournamentDetail();
-      } else {
-        const error = await res.json();
-        alert(`参加に失敗しました: ${error.error}`);
-      }
-    } catch (_error) {
-      alert(ERROR_MESSAGES.GENERIC);
+      await joinTournament(tournamentId, alias);
+      loadTournamentDetail();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`参加に失敗しました: ${errorMessage}`);
     }
   }
 
@@ -150,19 +139,12 @@ export function TournamentDetail(ctx: RouteCtx) {
     if (!confirm("トーナメントを開始しますか？")) return;
 
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/start`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        navigateTo(`/tournaments/${tournamentId}/semifinal`);
-      } else {
-        const error = await res.json();
-        alert(`開始に失敗しました: ${error.error}`);
-      }
-    } catch (_error) {
-      alert(ERROR_MESSAGES.GENERIC);
+      await apiStartTournament(tournamentId);
+      navigateTo(`/tournaments/${tournamentId}/matches`);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`開始に失敗しました: ${errorMessage}`);
     }
   }
 
