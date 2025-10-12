@@ -18,10 +18,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           400: Type.Object({
             error: Type.String(),
           }),
+          401: Type.Object({
+            error: Type.String(),
+          }),
         },
       },
     },
     async (request, reply) => {
+      if (!request.user) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
       const user = await fastify.usersRepository.findById(request.user.id);
       if (!user) {
         return reply.status(400).send({ error: "User not found" });

@@ -22,6 +22,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           400: Type.Object({
             error: Type.String(),
           }),
+          401: Type.Object({
+            error: Type.String(),
+          }),
         },
       },
     },

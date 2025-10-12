@@ -4,7 +4,6 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import { ErrorSchema, TournamentSchema } from "../../utils/schemas.js";
-import { authenticate } from "../../utils/verifyJwt.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -32,7 +31,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
-      const user = await authenticate(request, reply);
+      if (!request.user) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+      const user = request.user;
       const { id } = request.params;
       const { alias } = request.body as { alias: string };
 

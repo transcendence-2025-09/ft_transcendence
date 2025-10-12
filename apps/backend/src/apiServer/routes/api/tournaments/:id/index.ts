@@ -18,6 +18,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         }),
         response: {
           200: TournamentSchema,
+          401: ErrorSchema,
           404: ErrorSchema,
         },
       },
