@@ -27,9 +27,9 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
   function getWinner(semifinal: Match): Player | null {
     if (!semifinal.score) return null;
 
-    return semifinal.score.player1 > semifinal.score.player2
-      ? semifinal.player1
-      : semifinal.player2;
+    return semifinal.score.leftPlayer > semifinal.score.rightPlayer
+      ? semifinal.leftPlayer
+      : semifinal.rightPlayer;
   }
 
   /**
@@ -39,9 +39,9 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     const winner = getWinner(semifinal);
     if (!winner) return null;
 
-    return winner.userId === semifinal.player1.userId
-      ? semifinal.player2
-      : semifinal.player1;
+    return winner.userId === semifinal.leftPlayer.userId
+      ? semifinal.rightPlayer
+      : semifinal.leftPlayer;
   }
 
   /**
@@ -49,14 +49,14 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
    */
   function createMatch(
     round: "semifinals" | "finals" | "third_place",
-    player1: Player,
-    player2: Player,
+    leftPlayer: Player,
+    rightPlayer: Player,
   ): Match {
     return {
       id: randomUUID(),
       round,
-      player1,
-      player2,
+      leftPlayer,
+      rightPlayer,
       status: "pending",
     };
   }
@@ -191,7 +191,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       tournamentId: string,
       matchId: string,
       winnerId: number,
-      score: { player1: number; player2: number },
+      score: { leftPlayer: number; rightPlayer: number },
     ): Match | undefined {
       const result = getMatch(tournamentId, matchId);
       if (!result) return undefined;
@@ -201,7 +201,8 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
 
       // 勝者がマッチの参加者であることを確認
       const isValidWinner =
-        match.player1.userId === winnerId || match.player2.userId === winnerId;
+        match.leftPlayer.userId === winnerId ||
+        match.rightPlayer.userId === winnerId;
       if (!isValidWinner) return undefined;
 
       match.score = score;

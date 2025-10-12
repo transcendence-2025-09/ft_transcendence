@@ -30,13 +30,13 @@ export const MatchRoundSchema = Type.Union([
 export const MatchSchema = Type.Object({
   id: Type.String(),
   round: MatchRoundSchema,
-  player1: PlayerSchema,
-  player2: PlayerSchema,
+  leftPlayer: PlayerSchema,
+  rightPlayer: PlayerSchema,
   status: MatchStatusSchema,
   score: Type.Optional(
     Type.Object({
-      player1: Type.Number(),
-      player2: Type.Number(),
+      leftPlayer: Type.Number(),
+      rightPlayer: Type.Number(),
     }),
   ),
 });

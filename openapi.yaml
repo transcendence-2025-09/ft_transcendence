@@ -406,15 +406,15 @@ paths:
                 score:
                   type: object
                   properties:
-                    player1:
+                    leftPlayer:
                       type: number
-                      description: プレイヤー1のスコア
-                    player2:
+                      description: 左側プレイヤーのスコア
+                    rightPlayer:
                       type: number
-                      description: プレイヤー2のスコア
+                      description: 右側プレイヤーのスコア
                   required:
-                    - player1
-                    - player2
+                    - leftPlayer
+                    - rightPlayer
               required:
                 - winnerId
                 - score
@@ -543,7 +543,7 @@ components:
             - finals
             - third_place
           description: ラウンド
-        player1:
+        leftPlayer:
           type: object
           properties:
             userId:
@@ -553,7 +553,7 @@ components:
           required:
             - userId
             - alias
-        player2:
+        rightPlayer:
           type: object
           properties:
             userId:
@@ -573,18 +573,18 @@ components:
         score:
           type: object
           properties:
-            player1:
+            leftPlayer:
               type: number
-              description: プレイヤー1のスコア
-            player2:
+              description: 左側プレイヤーのスコア
+            rightPlayer:
               type: number
-              description: プレイヤー2のスコア
+              description: 右側プレイヤーのスコア
           required:
-            - player1
-            - player2
+            - leftPlayer
+            - rightPlayer
       required:
         - id
         - round
-        - player1
-        - player2
+        - leftPlayer
+        - rightPlayer
         - status
