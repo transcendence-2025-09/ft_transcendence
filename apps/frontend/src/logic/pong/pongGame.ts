@@ -1,6 +1,15 @@
 //このクラスではpong gameのゲームそのもののデータ・状況を管理する。
 //このクラスでは誰がプレイヤーかなどは管理しない。あくまでその時のゲームのデータ・状況のみ
 
+import type {
+  Match,
+  Player,
+  // MatchRound,
+  // MatchStatus,
+} from "../../pages/tournaments/types";
+import { navigateTo } from "../../pages/tournaments/utils";
+import type { RouteCtx } from "../../routing/routeList";
+
 export type RenderOption = {
   paddleWidth: number;
   paddleHeight: number;
@@ -9,6 +18,7 @@ export type RenderOption = {
   ballRadius: number;
   ballSpeed: number;
   ballAccel: number;
+  winScore: number;
 };
 
 export class PongGame {
@@ -34,6 +44,8 @@ export class PongGame {
   private rightScore: number;
   private leftInput: { up: boolean; down: boolean };
   private rightInput: { up: boolean; down: boolean };
+  private winScore: number;
+  private isFinish: boolean;
   //制御データ
   private canvas: HTMLCanvasElement;
   private isRunning: boolean;
@@ -44,8 +56,20 @@ export class PongGame {
   private onKeyDownRef?: (e: KeyboardEvent) => void;
   private onKeyUpRef?: (e: KeyboardEvent) => void;
   private spaceDown: boolean;
+  //試合に関する情報
+  private tournamentId: string | null;
+  private matchId: string | null;
+  //APIから取得するデータ
+  // private round: MatchRound | null;
+  private leftPlayer: Player | null;
+  private rightPlayer: Player | null;
+  // private status: MatchStatus | null;
 
-  constructor(canvas: HTMLCanvasElement, opt?: RenderOption | null) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    opt?: RenderOption | null,
+    ctx?: RouteCtx | null,
+  ) {
     this.width = canvas.width;
     this.height = canvas.height;
     this.paddleWidth = opt?.paddleWidth ?? 12;
@@ -66,13 +90,44 @@ export class PongGame {
     this.rightScore = 0;
     this.leftInput = { up: false, down: false };
     this.rightInput = { up: false, down: false };
+    this.winScore = opt?.winScore ?? 5;
+    this.isFinish = false;
     this.canvas = canvas;
     this.isRunning = false;
     this.isPaused = false;
     this.animationId = null;
     this.lastScored = null;
     this.spaceDown = false;
+    this.tournamentId = ctx?.params.tournamentId ?? null;
+    this.matchId = ctx?.params.matchId ?? null;
+    // this.round = null;
+    this.leftPlayer = null;
+    this.rightPlayer = null;
+    // this.status = null;
   }
+
+  public init = async () => {
+    const match = await this.getMatchInfo();
+    this.leftPlayer = match?.player1 ?? null;
+    this.rightPlayer = match?.player2 ?? null;
+    // this.round = match?.round ?? null;
+  };
+
+  private getMatchInfo = async (): Promise<Match | null> => {
+    if (!this.tournamentId || !this.matchId) return null;
+    const res = await fetch(
+      `/api/tournaments/${this.tournamentId}/matches/${this.matchId}`,
+      {
+        method: "GET",
+      },
+    );
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      throw new Error("Failed to get tournament info");
+    }
+    const match: Match = await res.json();
+    return match;
+  };
 
   public start = (): void => {
     if (this.isRunning) return;
@@ -81,7 +136,7 @@ export class PongGame {
     this.loop();
   };
 
-  public stop = (): void => {
+  public stop = async (): Promise<void> => {
     if (!this.isRunning) return;
     this.isRunning = false;
     if (this.animationId !== null) {
@@ -98,6 +153,38 @@ export class PongGame {
       this.render();
     }
     this.animationId = requestAnimationFrame(this.loop);
+  };
+
+  private getWinner = () => {
+    if (this.lastScored === "left") return this.leftPlayer;
+    else if (this.lastScored === "right") return this.rightPlayer;
+    else return null;
+  };
+
+  private finishGame = async (): Promise<void> => {
+    const winId = this.getWinner()?.userId;
+
+    const res = await fetch(
+      `/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          winnerId: winId,
+          score: {
+            player1: this.leftScore,
+            player2: this.rightScore,
+          },
+        }),
+      },
+    );
+
+    this.isFinish = true;
+    if (!res.ok) {
+      throw new Error("Failed to post result");
+    }
+    this.render();
   };
 
   public update = (): void => {
@@ -162,10 +249,14 @@ export class PongGame {
     if (this.ballX + this.ballRadius < 0) {
       this.rightScore += 1;
       this.lastScored = "right";
-      this.serveFrom();
     } else if (this.ballX + this.ballRadius > this.width) {
       this.leftScore += 1;
       this.lastScored = "left";
+    }
+    //試合終了かどうかを判断
+    if (this.rightScore === this.winScore || this.leftScore === this.winScore) {
+      this.finishGame();
+    } else {
       this.serveFrom();
     }
   };
@@ -259,6 +350,9 @@ export class PongGame {
   };
 
   private handleSpace = (): void => {
+    if (this.isFinish) {
+      navigateTo("/");
+    }
     if (this.isRunning) {
       this.isPaused = !this.isPaused;
       this.render();
@@ -349,6 +443,20 @@ export class PongGame {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("PAUSED", width / 2, height / 2);
+      ctx.restore();
+    }
+
+    if (this.isFinish) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 48px ui-sans-serif, system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Winner", width / 2, height / 2);
+      ctx.fillText(`${this.getWinner()?.alias}`, width / 2, height / 2);
+      ctx.fillText("Press Space", width / 2, height / 2);
       ctx.restore();
     }
   };

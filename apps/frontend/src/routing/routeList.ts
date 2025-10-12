@@ -71,8 +71,8 @@ export const routeList: Route[] = [
   },
   {
     meta: { title: "pong" },
-    path: "/pong",
-    viewFactory: () => pongPage,
+    path: "/pong/:tournamentId/:matchId",
+    viewFactory: (ctx: RouteCtx) => pongPage(ctx),
   },
   {
     meta: { title: "tournament" },
