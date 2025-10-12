@@ -108,8 +108,8 @@ export class PongGame {
 
   public init = async () => {
     const match = await this.getMatchInfo();
-    this.leftPlayer = match?.player1 ?? null;
-    this.rightPlayer = match?.player2 ?? null;
+    this.leftPlayer = match?.leftPlayer ?? null;
+    this.rightPlayer = match?.rightPlayer ?? null;
     // this.round = match?.round ?? null;
   };
 
@@ -162,7 +162,7 @@ export class PongGame {
   };
 
   private finishGame = async (): Promise<void> => {
-    const winId = this.getWinner()?.userId;
+    const winId = this.getWinner()?.userId ?? "Undefined";
 
     const res = await fetch(
       `/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
