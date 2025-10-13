@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   ft_id INTEGER UNIQUE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  two_factor_secret TEXT,
+  two_factor_enabled BOOLEAN DEFAULT 0,
 );
 
 CREATE TABLE IF NOT EXISTS tournaments (
