@@ -12,9 +12,14 @@ export type UserRecord = {
   name: string;
   email: string;
   ft_id: number;
+  two_factor_secret: string | null;
+  two_factor_enabled: boolean;
 };
 
-export type CreateUserDTO = Omit<UserRecord, "id">;
+export type CreateUserDTO = Omit<
+  UserRecord,
+  "id" | "two_factor_secret" | "two_factor_enabled"
+>;
 
 export function createUsersRepository(fastify: FastifyInstance) {
   return {
@@ -42,6 +47,22 @@ export function createUsersRepository(fastify: FastifyInstance) {
         ft_id,
       ]);
       return user || null;
+    },
+
+    async setTwoFactor(id: number, secret: string): Promise<boolean> {
+      const result = await fastify.db.run(
+        "UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1 WHERE id = ?",
+        [secret, id],
+      );
+      return (result.changes ?? 0) > 0;
+    },
+
+    async disableTwoFactor(id: number): Promise<boolean> {
+      const result = await fastify.db.run(
+        "UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0 WHERE id = ?",
+        [id],
+      );
+      return (result.changes ?? 0) > 0;
     },
   };
 }
