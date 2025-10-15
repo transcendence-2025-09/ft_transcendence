@@ -26,4 +26,18 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+      - game
+    restart: unless-stopped
+
+  game:
+    container_name: game
+    build:
+      context: .
+      dockerfile: apps/game/Dockerfile
+    environment:
+        - NODE_ENV=production
+        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
+        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
+    ports:
+        - "3001:3001"
     restart: unless-stopped
