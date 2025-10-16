@@ -108,7 +108,7 @@ export class PongGame {
 
   public init = async () => {
     const match = await this.getMatchInfo();
-        this.leftPlayer = match?.leftPlayer ?? null;
+    this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
     this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
@@ -132,6 +132,7 @@ export class PongGame {
 
   public start = (): void => {
     if (this.isRunning) return;
+    this.isRunning = false;
     this.isPaused = false;
     this.loop();
   };
@@ -253,11 +254,11 @@ export class PongGame {
       this.leftScore += 1;
       this.lastScored = "left";
     }
-      //試合終了かどうかを判断
+    //試合終了かどうかを判断
     if (this.rightScore === this.winScore || this.leftScore === this.winScore) {
-        this.finishGame();
-      } else {
-        this.serveFrom();
+      this.finishGame();
+    } else {
+      this.serveFrom();
     }
   };
 
