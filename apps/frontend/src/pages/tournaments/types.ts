@@ -17,6 +17,12 @@ export type Player = {
   alias: string;
 };
 
+/** ゲームオプション */
+export type GameOptions = {
+  ballSpeed: number; // ボールの速度（例: 3=ゆっくり, 6=普通, 15=速い）
+  ballRadius: number; // ボールの半径（例: 3=小さい, 12=普通, 48=大きい）
+};
+
 /** トーナメント情報 */
 export type Tournament = {
   id: string; // トーナメントID
@@ -27,6 +33,7 @@ export type Tournament = {
   currentPlayers?: number; // 現在の参加人数
   status: TournamentStatus; // ステータス
   createdAt: string; // 作成日時
+  gameOptions?: GameOptions; // ゲームオプション
 };
 
 /** マッチ情報 */
@@ -41,4 +48,5 @@ export type Match = {
     leftPlayer: number; // 左側のプレイヤーのスコア
     rightPlayer: number; // 右側のプレイヤーのスコア
   };
+  gameOptions: GameOptions; // ゲームオプション
 };

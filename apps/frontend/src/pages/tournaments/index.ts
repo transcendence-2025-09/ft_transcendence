@@ -41,6 +41,25 @@ function createTournamentsPage() {
           placeholder="トーナメント名"
           class="w-full border border-gray-300 rounded px-3 py-2 mb-4"
         >
+
+        <div class="mb-4">
+          <label class="block text-sm font-bold mb-2">ボールの速度</label>
+          <select id="ballSpeed" class="w-full border border-gray-300 rounded px-3 py-2">
+            <option value="3">ゆっくり</option>
+            <option value="6" selected>普通</option>
+            <option value="15">速い</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-bold mb-2">ボールの大きさ</label>
+          <select id="ballRadius" class="w-full border border-gray-300 rounded px-3 py-2">
+            <option value="3">小さい</option>
+            <option value="12" selected>普通</option>
+            <option value="48">大きい</option>
+          </select>
+        </div>
+
         <div class="flex gap-2">
           <button id="createBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex-1">
             作成
@@ -65,6 +84,8 @@ function createTournamentsPage() {
   const tournamentNameInput = el.querySelector(
     "#tournamentName",
   ) as HTMLInputElement;
+  const ballSpeedSelect = el.querySelector("#ballSpeed") as HTMLSelectElement;
+  const ballRadiusSelect = el.querySelector("#ballRadius") as HTMLSelectElement;
 
   // トーナメント一覧を読み込む
   async function loadTournaments() {
@@ -133,8 +154,13 @@ function createTournamentsPage() {
       return;
     }
 
+    const gameOptions = {
+      ballSpeed: Number(ballSpeedSelect.value),
+      ballRadius: Number(ballRadiusSelect.value),
+    };
+
     try {
-      await createTournament(name);
+      await createTournament(name, gameOptions);
       closeModal();
       loadTournaments();
     } catch (error) {
