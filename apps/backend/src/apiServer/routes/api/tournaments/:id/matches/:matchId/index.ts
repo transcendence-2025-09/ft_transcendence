@@ -3,7 +3,7 @@ import {
   Type,
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
-import { MatchSchema, ErrorSchema } from "../../../utils/schemas.js";
+import { ErrorSchema, MatchSchema } from "../../../utils/schemas.js";
 
 /**
  * GET /api/tournaments/:id/matches/:matchId
