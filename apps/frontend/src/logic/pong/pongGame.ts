@@ -174,8 +174,8 @@ export class PongGame {
         body: JSON.stringify({
           winnerId: winId,
           score: {
-            player1: this.leftScore,
-            player2: this.rightScore,
+            leftPlayer: this.leftScore,
+            rightPlayer: this.rightScore,
           },
         }),
       },
@@ -186,6 +186,10 @@ export class PongGame {
       throw new Error("Failed to post result");
     }
     this.render();
+
+    setTimeout(() => {
+      navigateTo(`/tournaments/${this.tournamentId}/matches`);
+    }, 2000); // 2秒後に遷移
   };
 
   public update = (): void => {
@@ -250,15 +254,21 @@ export class PongGame {
     if (this.ballX + this.ballRadius < 0) {
       this.rightScore += 1;
       this.lastScored = "right";
-    } else if (this.ballX + this.ballRadius > this.width) {
+      //試合終了かどうかを判断
+      if (this.rightScore === this.winScore) {
+        this.finishGame();
+      } else {
+        this.serveFrom();
+      }
+    } else if (this.ballX - this.ballRadius > this.width) {
       this.leftScore += 1;
       this.lastScored = "left";
-    }
-    //試合終了かどうかを判断
-    if (this.rightScore === this.winScore || this.leftScore === this.winScore) {
-      this.finishGame();
-    } else {
-      this.serveFrom();
+      //試合終了かどうかを判断
+      if (this.leftScore === this.winScore) {
+        this.finishGame();
+      } else {
+        this.serveFrom();
+      }
     }
   };
 
