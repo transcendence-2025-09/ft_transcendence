@@ -325,7 +325,10 @@ export function TournamentMatches(ctx: RouteCtx) {
   }
 
   // 5秒ごとに現在のタブを更新
-  let pollingInterval: number | null = window.setInterval(refreshCurrentTab, 5000);
+  let pollingInterval: number | null = window.setInterval(
+    refreshCurrentTab,
+    5000,
+  );
 
   loadTournament();
 
