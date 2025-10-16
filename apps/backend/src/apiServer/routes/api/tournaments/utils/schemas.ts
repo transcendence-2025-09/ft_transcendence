@@ -27,6 +27,11 @@ export const MatchRoundSchema = Type.Union([
   Type.Literal("third_place"),
 ]);
 
+export const GameOptionsSchema = Type.Object({
+  ballSpeed: Type.Number(),
+  ballRadius: Type.Number(),
+});
+
 export const MatchSchema = Type.Object({
   id: Type.String(),
   round: MatchRoundSchema,
@@ -39,6 +44,7 @@ export const MatchSchema = Type.Object({
       rightPlayer: Type.Number(),
     }),
   ),
+  gameOptions: GameOptionsSchema,
 });
 
 export const TournamentSchema = Type.Object({
@@ -49,4 +55,5 @@ export const TournamentSchema = Type.Object({
   players: Type.Array(PlayerSchema),
   status: TournamentStatusSchema,
   createdAt: Type.String(),
+  gameOptions: GameOptionsSchema,
 });

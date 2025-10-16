@@ -3,6 +3,11 @@ export type Player = {
   alias: string;
 };
 
+export type GameOptions = {
+  ballSpeed: number; // ボールの速度（例: 3=ゆっくり, 6=普通, 15=速い）
+  ballRadius: number; // ボールの半径（例: 3=小さい, 12=普通, 48=大きい）
+};
+
 export type Match = {
   id: string;
   round: "semifinals" | "finals" | "third_place";
@@ -13,6 +18,7 @@ export type Match = {
     leftPlayer: number;
     rightPlayer: number;
   };
+  gameOptions: GameOptions;
 };
 
 export type Tournament = {
@@ -24,4 +30,5 @@ export type Tournament = {
   status: "waiting" | "ready" | "in_progress" | "completed";
   matches: Match[];
   createdAt: Date;
+  gameOptions: GameOptions; // トーナメントのゲームオプション
 };

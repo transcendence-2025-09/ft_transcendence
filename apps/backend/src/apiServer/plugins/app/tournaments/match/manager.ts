@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Match, Player, Tournament } from "../types.js";
+import type { GameOptions, Match, Player, Tournament } from "../types.js";
 
 const REQUIRED_SEMIFINAL_MATCHES = 2;
 const REQUIRED_FINAL_PLAYERS = 2;
@@ -51,6 +51,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     round: "semifinals" | "finals" | "third_place",
     leftPlayer: Player,
     rightPlayer: Player,
+    gameOptions: GameOptions,
   ): Match {
     return {
       id: randomUUID(),
@@ -58,6 +59,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       leftPlayer,
       rightPlayer,
       status: "pending",
+      gameOptions,
     };
   }
 
@@ -115,12 +117,16 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
 
     // ファイナルマッチを生成
     if (winners.length === REQUIRED_FINAL_PLAYERS) {
-      tournament.matches.push(createMatch("finals", winners[0], winners[1]));
+      tournament.matches.push(
+        createMatch("finals", winners[0], winners[1], tournament.gameOptions),
+      );
     }
 
     // 3位決定戦を生成
     if (losers.length === REQUIRED_FINAL_PLAYERS) {
-      tournament.matches.push(createMatch("third_place", losers[0], losers[1]));
+      tournament.matches.push(
+        createMatch("third_place", losers[0], losers[1], tournament.gameOptions),
+      );
     }
   }
 
@@ -140,12 +146,14 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
         "semifinals",
         tournament.players[0],
         tournament.players[1],
+        tournament.gameOptions,
       );
 
       const match2 = createMatch(
         "semifinals",
         tournament.players[2],
         tournament.players[3],
+        tournament.gameOptions,
       );
 
       tournament.matches = [match1, match2];
