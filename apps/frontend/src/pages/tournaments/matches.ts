@@ -5,7 +5,6 @@ import {
   startMatch as apiStartMatch,
   fetchMatches,
   fetchTournament,
-  submitMatchResult,
 } from "./api";
 import { ERROR_MESSAGES, MATCH_ROUND } from "./constants";
 import {
@@ -15,7 +14,14 @@ import {
 } from "./matchCard";
 import { TabManager, type TabType } from "./tabManager";
 import type { Match } from "./types";
-import { getLoser, getWinner, showError, showInfo, showLoading } from "./utils";
+import {
+  getLoser,
+  getWinner,
+  navigateTo,
+  showError,
+  showInfo,
+  showLoading,
+} from "./utils";
 
 export function TournamentMatches(ctx: RouteCtx) {
   const tournamentId = ctx.params.id;
@@ -104,23 +110,6 @@ export function TournamentMatches(ctx: RouteCtx) {
     } catch (error) {
       console.error("Failed to update tab states:", error);
     }
-  }
-
-  /**
-   * 現在のタブのコンテンツを再読み込み
-   */
-  async function reloadCurrentTab() {
-    const currentTab = tabManager.getCurrentTab();
-
-    if (currentTab === "round1") {
-      await loadSemifinals();
-    } else if (currentTab === "finals") {
-      await loadFinals();
-    } else if (currentTab === "results") {
-      await loadResults();
-    }
-
-    await updateTabStates();
   }
 
   /**
@@ -281,20 +270,8 @@ export function TournamentMatches(ctx: RouteCtx) {
   async function handleMatchStart(match: Match) {
     try {
       await apiStartMatch(tournamentId, match.id);
-      alert("マッチが開始されました");
-
-      // TODO: 実際のゲーム画面に遷移してプレイ
-      // 現在は仮の結果を送信（leftPlayerが5点、rightPlayerが3点で勝利）
-      await submitMatchResult(tournamentId, match.id, match.leftPlayer.userId, {
-        leftPlayer: 5,
-        rightPlayer: 3,
-      });
-
-      alert(
-        `マッチ結果を送信しました\n${match.leftPlayer.alias}: 5 vs ${match.rightPlayer.alias}: 3`,
-      );
-
-      await reloadCurrentTab();
+      // Pongゲーム画面に遷移
+      navigateTo(`/pong/${tournamentId}/${match.id}`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;

@@ -110,7 +110,8 @@ export class PongGame {
     const match = await this.getMatchInfo();
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
-    // this.round = match?.round ?? null;
+    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
+    this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
   };
 
   private getMatchInfo = async (): Promise<Match | null> => {
@@ -125,8 +126,8 @@ export class PongGame {
       if (res.status === 404) return null;
       throw new Error("Failed to get tournament info");
     }
-    const match: Match = await res.json();
-    return match;
+    const data = await res.json();
+    return data.match;
   };
 
   public start = (): void => {
