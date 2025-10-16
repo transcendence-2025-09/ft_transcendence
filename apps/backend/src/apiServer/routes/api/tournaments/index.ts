@@ -6,8 +6,8 @@ import {
 import type { FastifyRequest } from "fastify";
 import {
   ErrorSchema,
-  TournamentStatusSchema,
   GameOptionsSchema,
+  TournamentStatusSchema,
 } from "./utils/schemas.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {

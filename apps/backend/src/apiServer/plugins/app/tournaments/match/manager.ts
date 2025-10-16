@@ -125,7 +125,12 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     // 3位決定戦を生成
     if (losers.length === REQUIRED_FINAL_PLAYERS) {
       tournament.matches.push(
-        createMatch("third_place", losers[0], losers[1], tournament.gameOptions),
+        createMatch(
+          "third_place",
+          losers[0],
+          losers[1],
+          tournament.gameOptions,
+        ),
       );
     }
   }
