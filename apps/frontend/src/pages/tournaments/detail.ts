@@ -73,11 +73,11 @@ export function TournamentDetail(ctx: RouteCtx) {
           <dl class="space-y-2">
             <div class="flex">
               <dt class="font-semibold w-32">ボールの速度:</dt>
-              <dd>${tournament.gameOptions?.ballSpeed === 3 ? "ゆっくり" : tournament.gameOptions?.ballSpeed === 6 ? "普通" : tournament.gameOptions?.ballSpeed === 15 ? "速い" : tournament.gameOptions?.ballSpeed ?? "未設定"}</dd>
+              <dd>${tournament.gameOptions?.ballSpeed === 3 ? "ゆっくり" : tournament.gameOptions?.ballSpeed === 6 ? "普通" : tournament.gameOptions?.ballSpeed === 15 ? "速い" : (tournament.gameOptions?.ballSpeed ?? "未設定")}</dd>
             </div>
             <div class="flex">
               <dt class="font-semibold w-32">ボールの大きさ:</dt>
-              <dd>${tournament.gameOptions?.ballRadius === 3 ? "小さい" : tournament.gameOptions?.ballRadius === 12 ? "普通" : tournament.gameOptions?.ballRadius === 48 ? "大きい" : tournament.gameOptions?.ballRadius ?? "未設定"}</dd>
+              <dd>${tournament.gameOptions?.ballRadius === 3 ? "小さい" : tournament.gameOptions?.ballRadius === 12 ? "普通" : tournament.gameOptions?.ballRadius === 48 ? "大きい" : (tournament.gameOptions?.ballRadius ?? "未設定")}</dd>
             </div>
           </dl>
         </div>
