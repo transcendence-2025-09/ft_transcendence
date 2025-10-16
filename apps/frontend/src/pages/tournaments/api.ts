@@ -1,4 +1,4 @@
-import type { Match, Tournament } from "./types";
+import type { GameOptions, Match, Tournament } from "./types";
 
 /**
  * トーナメント情報を取得
@@ -85,12 +85,15 @@ export async function fetchAllTournaments(): Promise<Tournament[]> {
 /**
  * トーナメントを作成
  */
-export async function createTournament(name: string): Promise<Tournament> {
+export async function createTournament(
+  name: string,
+  gameOptions: GameOptions,
+): Promise<Tournament> {
   const response = await fetch("/api/tournaments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, gameOptions }),
   });
 
   if (!response.ok) {
