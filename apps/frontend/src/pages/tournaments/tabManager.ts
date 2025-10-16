@@ -58,7 +58,7 @@ export class TabManager {
    * タブの有効/無効状態を更新
    * @returns セミファイナル完了時に自動切り替えが必要な場合true
    */
-  updateTabStates(matches: Match[]): boolean {
+  updateTabStates(matches: Match[]): "finals" | "results" | null {
     const semifinals = matches.filter(
       (m) => m.round === MATCH_ROUND.SEMIFINALS,
     );
@@ -72,18 +72,11 @@ export class TabManager {
     );
     const finalsCompleted = finals.every((m) => m.status === "completed");
 
-    let shouldAutoSwitchToFinals = false;
-
     // セミファイナル完了 → Finalsタブ有効化
     if (semifinalsCompleted && semifinals.length === 2) {
       this.tabFinals.disabled = false;
       this.tabFinals.className =
         "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
-
-      // セミファイナルタブにいる場合のみ、自動切り替えフラグを立てる
-      if (this.currentTab === "round1") {
-        shouldAutoSwitchToFinals = true;
-      }
     }
 
     // ファイナル完了 → Resultsタブ有効化
@@ -91,9 +84,23 @@ export class TabManager {
       this.tabResults.disabled = false;
       this.tabResults.className =
         "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
+
+      // 決勝完了時、決勝タブにいる場合は結果タブに自動切り替え
+      if (this.currentTab === "finals") {
+        return "results";
+      }
     }
 
-    return shouldAutoSwitchToFinals;
+    // セミファイナル完了時、セミファイナルタブにいる場合は決勝タブに自動切り替え
+    if (
+      semifinalsCompleted &&
+      semifinals.length === 2 &&
+      this.currentTab === "round1"
+    ) {
+      return "finals";
+    }
+
+    return null;
   }
 
   /**
