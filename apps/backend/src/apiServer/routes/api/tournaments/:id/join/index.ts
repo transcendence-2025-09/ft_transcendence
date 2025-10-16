@@ -65,6 +65,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           players: updatedTournament.players,
           status: updatedTournament.status,
           createdAt: updatedTournament.createdAt.toISOString(),
+          gameOptions: updatedTournament.gameOptions,
         },
       });
     },
