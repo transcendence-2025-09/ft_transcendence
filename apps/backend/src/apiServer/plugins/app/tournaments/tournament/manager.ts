@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Tournament } from "../types.js";
+import type { GameOptions, Tournament } from "../types.js";
 
 export function createTournamentManager(tournaments: Map<string, Tournament>) {
   return {
@@ -7,12 +7,14 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
      * トーナメントを作成
      * @param name トーナメント名
      * @param hostId ホストのユーザーID
+     * @param gameOptions ゲームオプション
      * @param maxPlayers 最大プレイヤー数
      * @returns 作成されたトーナメント
      */
     createTournament(
       name: string,
       hostId: number,
+      gameOptions: GameOptions,
       maxPlayers: number = 4,
     ): Tournament {
       const tournament: Tournament = {
@@ -24,6 +26,7 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
         status: "waiting",
         matches: [],
         createdAt: new Date(),
+        gameOptions,
       };
       tournaments.set(tournament.id, tournament);
       return tournament;

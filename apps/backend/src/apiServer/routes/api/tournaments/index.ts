@@ -4,7 +4,11 @@ import {
   Type,
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
-import { ErrorSchema, TournamentStatusSchema } from "./utils/schemas.js";
+import {
+  ErrorSchema,
+  GameOptionsSchema,
+  TournamentStatusSchema,
+} from "./utils/schemas.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -16,12 +20,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: Type.Object({
           name: Type.String(),
+          gameOptions: GameOptionsSchema,
         }),
         response: {
           200: Type.Object({
             tournamentId: Type.String(),
           }),
           401: ErrorSchema,
+          400: ErrorSchema,
         },
       },
     },
@@ -30,8 +36,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(401).send({ error: "Unauthorized" });
       }
       const user = request.user;
-      const { name } = request.body as { name: string };
-      const tournament = tournamentsManager.createTournament(name, user.id);
+      const { name, gameOptions } = request.body as {
+        name: string;
+        gameOptions: { ballSpeed: number; ballRadius: number };
+      };
+      const tournament = tournamentsManager.createTournament(
+        name,
+        user.id,
+        gameOptions,
+      );
       return reply.status(200).send({ tournamentId: tournament.id });
     },
   );
