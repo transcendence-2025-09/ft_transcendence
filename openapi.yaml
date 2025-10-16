@@ -120,8 +120,22 @@ paths:
                 name:
                   type: string
                   description: トーナメント名
+                gameOptions:
+                  type: object
+                  description: ゲームオプション
+                  properties:
+                    ballSpeed:
+                      type: number
+                      description: ボールの速度（例 3=ゆっくり, 6=普通, 15=速い）
+                    ballRadius:
+                      type: number
+                      description: ボールの半径（例 3=小さい, 12=普通, 48=大きい）
+                  required:
+                    - ballSpeed
+                    - ballRadius
               required:
                 - name
+                - gameOptions
       responses:
         '200':
           description: トーナメント作成成功
@@ -133,6 +147,12 @@ paths:
                   tournamentId:
                     type: string
                     description: 作成されたトーナメントのID
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: 認証エラー
           content:
@@ -351,6 +371,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/tournaments/{id}/matches/{matchId}:
+    get:
+      tags:
+        - tournament
+      summary: 試合情報取得
+      description: 特定の試合の詳細情報を取得します。試合に参加するプレイヤー情報やトーナメント情報を含みます。
+      security:
+        - cookieAuth: []
+        - testUserAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: マッチID
+      responses:
+        '200':
+          description: 試合情報取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  match:
+                    $ref: '#/components/schemas/Match'
+                  tournament:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: トーナメントID
+                      name:
+                        type: string
+                        description: トーナメント名
+                    required:
+                      - id
+                      - name
+                required:
+                  - match
+                  - tournament
+        '404':
+          description: トーナメントまたはマッチが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+
   /api/tournaments/{id}/matches/{matchId}/start:
     post:
       tags:
@@ -545,6 +621,19 @@ components:
           type: string
           format: date-time
           description: 作成日時
+        gameOptions:
+          type: object
+          description: ゲームオプション
+          properties:
+            ballSpeed:
+              type: number
+              description: ボールの速度（例 3=ゆっくり, 6=普通, 15=速い）
+            ballRadius:
+              type: number
+              description: ボールの半径（例 3=小さい, 12=普通, 48=大きい）
+          required:
+            - ballSpeed
+            - ballRadius
       required:
         - id
         - name
@@ -553,6 +642,7 @@ components:
         - players
         - status
         - createdAt
+        - gameOptions
 
     Match:
       type: object
@@ -606,9 +696,23 @@ components:
           required:
             - leftPlayer
             - rightPlayer
+        gameOptions:
+          type: object
+          description: ゲームオプション
+          properties:
+            ballSpeed:
+              type: number
+              description: ボールの速度（例 3=ゆっくり, 6=普通, 15=速い）
+            ballRadius:
+              type: number
+              description: ボールの半径（例 3=小さい, 12=普通, 48=大きい）
+          required:
+            - ballSpeed
+            - ballRadius
       required:
         - id
         - round
         - leftPlayer
         - rightPlayer
         - status
+        - gameOptions
