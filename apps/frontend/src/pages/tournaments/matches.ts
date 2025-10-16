@@ -100,12 +100,19 @@ export function TournamentMatches(ctx: RouteCtx) {
   async function updateTabStates() {
     try {
       const matches = await fetchMatches(tournamentId);
-      const shouldAutoSwitch = tabManager.updateTabStates(matches);
+      const switchTo = tabManager.updateTabStates(matches);
 
-      if (shouldAutoSwitch) {
-        alert("全てのセミファイナルが完了しました！決勝戦をご覧ください。");
+      if (switchTo === "finals") {
         tabManager.setActiveTab("finals");
         await loadFinals();
+      } else if (switchTo === "results") {
+        tabManager.setActiveTab("results");
+        await loadResults();
+        // 最終結果画面に到達したらポーリングを停止
+        if (pollingInterval !== null) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
       }
     } catch (error) {
       console.error("Failed to update tab states:", error);
@@ -298,8 +305,44 @@ export function TournamentMatches(ctx: RouteCtx) {
     loadResults();
   });
 
+  // ポーリング: マッチの状態を定期的にチェックして画面を更新
+  async function refreshCurrentTab() {
+    try {
+      const currentTab = tabManager.getCurrentTab();
+
+      if (currentTab === "round1") {
+        await loadSemifinals();
+      } else if (currentTab === "finals") {
+        await loadFinals();
+      } else if (currentTab === "results") {
+        await loadResults();
+      }
+
+      await updateTabStates();
+    } catch (error) {
+      console.error("Failed to refresh current tab:", error);
+    }
+  }
+
+  // 5秒ごとに現在のタブを更新
+  let pollingInterval: number | null = window.setInterval(
+    refreshCurrentTab,
+    5000,
+  );
+
   loadTournament();
 
   const component = componentFactory(el);
+
+  // オリジナルのunmountを拡張してポーリングをクリーンアップ
+  const originalUnmount = component.unmount;
+  component.unmount = () => {
+    if (pollingInterval !== null) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+    originalUnmount();
+  };
+
   return pageFactory([component]);
 }
