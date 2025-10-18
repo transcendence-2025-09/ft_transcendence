@@ -1,0 +1,45 @@
+{
+  "type": "init",
+  "payload": {
+    "width": 800,
+    "height": 600,
+    "paddleWidth": 12,
+    "paddleHeight": 110,
+    "paddleMargin": 24,
+    "paddleSpeed": 3,
+    "ballRadius": 12,
+    "ballSpeed": 3,
+    "ballAccel": 1.03,
+    "winScore": 5,
+    "tournamentId": "tournament-001",
+    "matchId": "match-001",
+    "leftPlayer": {
+      "userId": 1,
+      "alias": "Player_Left"
+    },
+    "rightPlayer": {
+      "userId": 2,
+      "alias": "Player_Right"
+    }
+  }
+}
+
+
+{
+  "type": "input",
+  "payload": {
+    "leftup": false,
+    "leftdown": true,
+    "rightup": false,
+    "rightdown": false
+  }
+}
+{
+  "type": "input",
+  "payload": {
+    "leftup": false,
+    "leftdown": true,
+    "rightup": true,
+    "rightdown": false
+  }
+}
