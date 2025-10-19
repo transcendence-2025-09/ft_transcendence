@@ -57,7 +57,7 @@ export function createUsersRepository(fastify: FastifyInstance) {
       return (result.changes ?? 0) > 0;
     },
 
-    async disableTwoFactor(id: number): Promise<boolean> {
+    async removeTwoFactor(id: number): Promise<boolean> {
       const result = await fastify.db.run(
         "UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0 WHERE id = ?",
         [id],
