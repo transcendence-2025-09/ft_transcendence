@@ -13,12 +13,22 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return;
       }
 
+      const jwtSecret = process.env.JWT_SECRET || "";
+
       const token = request.cookies.token;
       if (!token) {
+        if (request.cookies.mfaTicket) {
+          try {
+            jwt.verify(request.cookies.mfaTicket, jwtSecret) as jwt.JwtPayload;
+            return reply.status(401).send({ error: "MFA required" });
+          } catch {
+            return reply
+              .status(401)
+              .send({ error: "MFA ticket is invalid or expired" });
+          }
+        }
         return reply.status(401).send({ error: "Unauthorized" });
       }
-
-      const jwtSecret = process.env.JWT_SECRET || "";
 
       try {
         const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
