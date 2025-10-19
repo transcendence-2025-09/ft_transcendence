@@ -36,7 +36,151 @@ paths:
                 - code
       responses:
         '200':
-          description: 成功時、JWTトークンをhttpOnly cookieに設定します。
+          description: 成功時、JWTトークンまたはMFAチケットをhttpOnly cookieに設定します。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /api/auth/2fa/generate:
+    get:
+      tags:
+        - authentication
+      summary: 2要素認証用シークレット生成
+      description: ログイン中のユーザー向けに2要素認証用のシークレットとQRコードを発行します。
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: シークレット生成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/2fa/enable:
+    post:
+      tags:
+        - authentication
+      summary: 2要素認証有効化
+      description: QRコード経由で取得したワンタイムパスコードを検証し、2要素認証を有効化します。
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorTokenRequest'
+      responses:
+        '200':
+          description: 2要素認証を有効化しました。
+        '400':
+          description: 入力値が不正または2要素認証が既に有効です。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/2fa/remove:
+    post:
+      tags:
+        - authentication
+      summary: 2要素認証無効化
+      description: 現在のワンタイムパスコードを検証し、登録済みの2要素認証情報を削除します。
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorTokenRequest'
+      responses:
+        '200':
+          description: 2要素認証を無効化しました。
+        '400':
+          description: 2要素認証が設定されていない、またはトークンが不正です。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/2fa/validate:
+    post:
+      tags:
+        - authentication
+      summary: 2要素認証トークン検証
+      description: MFAチケットとTOTPコードを検証し、セッショントークンを発行します。
+      security:
+        - mfaTicket: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorTokenRequest'
+      responses:
+        '200':
+          description: 検証結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorValidateResponse'
+        '400':
+          description: 2要素認証が未設定です。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/user/me:
     get:
@@ -550,6 +694,11 @@ components:
       type: http
       scheme: bearer
       description: テスト用のBearerトークン認証
+    mfaTicket:
+      type: apiKey
+      in: cookie
+      name: mfaTicket
+      description: MFAチケットをhttpOnly cookieで送信
 
   schemas:
     Error:
@@ -560,6 +709,54 @@ components:
           description: エラーメッセージ
       required:
         - error
+
+    LoginResponse:
+      type: object
+      properties:
+        needTwoFactor:
+          type: boolean
+          description: 追加の2要素認証が必要かどうか
+        message:
+          type: string
+          description: ログイン結果メッセージ
+      required:
+        - needTwoFactor
+        - message
+
+    TwoFactorTokenRequest:
+      type: object
+      properties:
+        twoFactorToken:
+          type: string
+          description: 認証アプリが生成した6桁のTOTPコード
+      required:
+        - twoFactorToken
+
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        otpauthUrl:
+          type: string
+          description: 認証アプリ用のotpauth URL
+        qrCode:
+          type: string
+          description: otpauth URLをエンコードしたData URL形式のQRコード
+      required:
+        - otpauthUrl
+        - qrCode
+
+    TwoFactorValidateResponse:
+      type: object
+      properties:
+        passed:
+          type: boolean
+          description: トークン検証が成功したかどうか
+        message:
+          type: string
+          description: 検証結果メッセージ
+      required:
+        - passed
+        - message
 
     User:
       type: object
