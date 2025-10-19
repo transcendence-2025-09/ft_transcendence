@@ -47,6 +47,12 @@ export function TournamentDetail(ctx: RouteCtx) {
         return;
       }
 
+      // トーナメントが完了している場合、結果タブに遷移
+      if (tournament.status === "completed") {
+        navigateTo(`/tournaments/${tournamentId}/matches?tab=results`);
+        return;
+      }
+
       detailContainer.innerHTML = `
         <div class="mb-6">
           <a href="/tournaments" class="text-blue-500 hover:underline">&larr; 一覧に戻る</a>
@@ -175,6 +181,12 @@ export function TournamentDetail(ctx: RouteCtx) {
       // トーナメントが開始されたら、マッチ画面に遷移
       if (tournament.status === "in_progress") {
         navigateTo(`/tournaments/${tournamentId}/matches`);
+        return;
+      }
+      // トーナメントが完了したら、結果タブに遷移
+      if (tournament.status === "completed") {
+        navigateTo(`/tournaments/${tournamentId}/matches?tab=results`);
+        return;
       }
     } catch (error) {
       console.error("Failed to check tournament status:", error);

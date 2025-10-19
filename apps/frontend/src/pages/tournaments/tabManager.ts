@@ -56,7 +56,7 @@ export class TabManager {
 
   /**
    * タブの有効/無効状態を更新
-   * @returns セミファイナル完了時に自動切り替えが必要な場合true
+   * @returns 自動切り替えが必要なタブ、またはnull
    */
   updateTabStates(matches: Match[]): "finals" | "results" | null {
     const semifinals = matches.filter(
@@ -67,36 +67,38 @@ export class TabManager {
         m.round === MATCH_ROUND.FINALS || m.round === MATCH_ROUND.THIRD_PLACE,
     );
 
-    const semifinalsCompleted = semifinals.every(
-      (m) => m.status === "completed",
-    );
-    const finalsCompleted = finals.every((m) => m.status === "completed");
+    const semifinalsCompleted =
+      semifinals.length === 2 &&
+      semifinals.every((m) => m.status === "completed");
+    const finalsCompleted =
+      finals.length > 0 && finals.every((m) => m.status === "completed");
 
     // セミファイナル完了 → Finalsタブ有効化
-    if (semifinalsCompleted && semifinals.length === 2) {
+    if (semifinalsCompleted) {
       this.tabFinals.disabled = false;
       this.tabFinals.className =
         "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
     }
 
     // ファイナル完了 → Resultsタブ有効化
-    if (finalsCompleted && finals.length > 0) {
+    if (finalsCompleted) {
       this.tabResults.disabled = false;
       this.tabResults.className =
         "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
-
-      // 決勝完了時、決勝タブにいる場合は結果タブに自動切り替え
-      if (this.currentTab === "finals") {
-        return "results";
-      }
     }
 
-    // セミファイナル完了時、セミファイナルタブにいる場合は決勝タブに自動切り替え
-    if (
-      semifinalsCompleted &&
-      semifinals.length === 2 &&
-      this.currentTab === "round1"
-    ) {
+    // 自動遷移ロジック: 結果タブにいる場合は遷移しない
+    if (this.currentTab === "results") {
+      return null;
+    }
+
+    // 決勝完了 → 結果タブへ
+    if (finalsCompleted) {
+      return "results";
+    }
+
+    // セミファイナル完了 & まだround1タブにいる → 決勝タブへ
+    if (semifinalsCompleted && this.currentTab === "round1") {
       return "finals";
     }
 
