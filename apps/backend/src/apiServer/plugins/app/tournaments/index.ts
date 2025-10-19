@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import { createMatchManager } from "./match/manager.js";
+import { createTournamentRepository } from "./repository.js";
 import { createTournamentManager } from "./tournament/manager.js";
-import type { Tournament } from "./types.js";
+import type { Match, Tournament } from "./types.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -15,14 +16,43 @@ declare module "fastify" {
  * - トーナメントの作成・取得・削除
  * - プレイヤーの参加管理
  * - マッチの生成・進行・結果登録
+ * - トーナメント完了時のDB保存
  */
-export function createTournamentsManager(_fastify: FastifyInstance) {
+export function createTournamentsManager(fastify: FastifyInstance) {
   // トーナメントストレージ（メモリ上のMap）
   const tournaments = new Map<string, Tournament>();
 
-  // 各マネージャーを初期化（同じストレージを共有）
+  // 各ManagerとRepositoryを初期化
   const tournamentManager = createTournamentManager(tournaments);
   const matchManager = createMatchManager(tournaments);
+  const repository = createTournamentRepository(fastify.db);
+
+  /**
+   * トーナメントが完了しているか判定
+   */
+  function isTournamentCompleted(matches: Match[]): boolean {
+    const finalsMatch = matches.find((m) => m.round === "finals");
+    const thirdPlaceMatch = matches.find((m) => m.round === "third_place");
+
+    return (
+      finalsMatch?.status === "completed" &&
+      thirdPlaceMatch?.status === "completed"
+    );
+  }
+
+  /**
+   * 優勝者を取得（決勝戦の勝者）
+   */
+  function getChampion(matches: Match[]): number | null {
+    const finalsMatch = matches.find((m) => m.round === "finals");
+    if (!finalsMatch || !finalsMatch.score) {
+      return null;
+    }
+
+    return finalsMatch.score.leftPlayer > finalsMatch.score.rightPlayer
+      ? finalsMatch.leftPlayer.userId
+      : finalsMatch.rightPlayer.userId;
+  }
 
   return {
     // トーナメント基本操作
@@ -50,11 +80,58 @@ export function createTournamentsManager(_fastify: FastifyInstance) {
       return true;
     },
 
-    // マッチ操作
+    // マッチ基本操作
     generateMatches: matchManager.generateMatches,
     getMatches: matchManager.getMatches,
     startMatch: matchManager.startMatch,
-    submitMatchResult: matchManager.submitMatchResult,
+
+    /**
+     * 試合結果を登録 + トーナメント完了時にDB保存
+     */
+    submitMatchResult(
+      tournamentId: string,
+      matchId: string,
+      winnerId: number,
+      score: { leftPlayer: number; rightPlayer: number },
+    ): Match | undefined {
+      // 試合結果を登録
+      const match = matchManager.submitMatchResult(
+        tournamentId,
+        matchId,
+        winnerId,
+        score,
+      );
+
+      if (!match) {
+        return undefined;
+      }
+
+      // トーナメント完了チェック
+      const tournament = tournaments.get(tournamentId);
+      if (!tournament) {
+        return match;
+      }
+
+      if (isTournamentCompleted(tournament.matches)) {
+        // トーナメントステータスを更新
+        tournament.status = "completed";
+
+        // 優勝者を取得
+        const championId = getChampion(tournament.matches);
+
+        // DB保存
+        repository
+          .saveTournamentWithMatches(tournament, championId)
+          .catch((error) => {
+            console.error(
+              `❌ Failed to save tournament ${tournamentId} to database:`,
+              error,
+            );
+          });
+      }
+
+      return match;
+    },
   };
 }
 
