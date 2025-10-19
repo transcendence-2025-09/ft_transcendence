@@ -20,7 +20,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (mfaPublicPaths.some((path) => request.url.startsWith(path))) {
         if (request.cookies.mfaTicket) {
           try {
-            jwt.verify(request.cookies.mfaTicket, jwtSecret) as jwt.JwtPayload;
+            const decoded = jwt.verify(
+              request.cookies.mfaTicket,
+              jwtSecret,
+            ) as jwt.JwtPayload;
+            request.user = { id: decoded.id };
             return;
           } catch {
             return reply.status(401).send({
