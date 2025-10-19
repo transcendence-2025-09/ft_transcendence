@@ -25,8 +25,5 @@
   },
   "lefthook": {
     "version": "1.13.3"
-  },
-  "dependencies": {
-    "fastify": "5.6.1"
   }
 }
