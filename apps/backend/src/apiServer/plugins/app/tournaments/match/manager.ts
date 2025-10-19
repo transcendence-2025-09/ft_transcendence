@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { v7 as uuidv7 } from "uuid";
 import type { GameOptions, Match, Player, Tournament } from "../types.js";
 
 const REQUIRED_SEMIFINAL_MATCHES = 2;
@@ -54,7 +54,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     gameOptions: GameOptions,
   ): Match {
     return {
-      id: randomUUID(),
+      id: uuidv7(),
       round,
       leftPlayer,
       rightPlayer,

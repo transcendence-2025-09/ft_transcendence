@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { v7 as uuidv7 } from "uuid";
 import type { GameOptions, Tournament } from "../types.js";
 
 export function createTournamentManager(tournaments: Map<string, Tournament>) {
@@ -18,7 +18,7 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
       maxPlayers: number = 4,
     ): Tournament {
       const tournament: Tournament = {
-        id: randomUUID(),
+        id: uuidv7(),
         name,
         hostId,
         maxPlayers,
