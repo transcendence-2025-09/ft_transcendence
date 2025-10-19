@@ -13,7 +13,6 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         response: {
           200: Type.Object({
-            secret: Type.String(),
             otpauthUrl: Type.String(),
             qrCode: Type.String(),
           }),
@@ -43,8 +42,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       }
       const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
 
+      reply.setCookie("TemporaryTwoFactorSecret", secret.base32, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        expires: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      });
+
       return reply.status(200).send({
-        secret: secret.base32,
         otpauthUrl: secret.otpauth_url,
         qrCode: qrCodeUrl,
       });

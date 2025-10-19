@@ -11,7 +11,6 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         body: Type.Object({
-          secret: Type.String(),
           twoFactorToken: Type.String(),
         }),
         response: {
@@ -38,13 +37,30 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(401).send({ error: "Unauthorized" });
       }
 
-      const { secret, twoFactorToken } = request.body as {
-        secret: string;
+      const user = await fastify.usersRepository.findById(request.user.id);
+      if (!user) {
+        return reply.status(500).send({ error: "DB error" });
+      }
+
+      if (user.two_factor_enabled) {
+        return reply
+          .status(400)
+          .send({ error: "Two factor authentication is already enabled" });
+      }
+
+      const { twoFactorToken } = request.body as {
         twoFactorToken: string;
       };
 
+      const temporaryTwoFactorSecret = request.cookies.TemporaryTwoFactorSecret;
+      if (!temporaryTwoFactorSecret) {
+        return reply
+          .status(400)
+          .send({ error: "should generate two factor secret first" });
+      }
+
       const isValid = speakeasy.totp.verify({
-        secret: secret,
+        secret: temporaryTwoFactorSecret,
         encoding: "base32",
         token: twoFactorToken,
         window: 1,
@@ -55,10 +71,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       }
 
       if (
-        !(await fastify.usersRepository.setTwoFactor(request.user.id, secret))
+        !(await fastify.usersRepository.setTwoFactor(
+          request.user.id,
+          temporaryTwoFactorSecret,
+        ))
       ) {
         return reply.status(500).send({ error: "DB error" });
       }
+      reply.clearCookie("TemporaryTwoFactorSecret");
 
       return reply.status(200).send();
     },
