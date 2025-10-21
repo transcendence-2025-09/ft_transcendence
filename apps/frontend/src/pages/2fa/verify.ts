@@ -91,4 +91,4 @@ formEl.addEventListener("submit", (event) => {
   event.preventDefault();
 });
 
-export const Verify = pageFactory([VerifyPage]);
+export const Verify2FA = pageFactory([VerifyPage]);

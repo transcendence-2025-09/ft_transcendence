@@ -773,11 +773,15 @@ components:
         ft_id:
           type: number
           description: 42 Intra ID
+        two_factor_enabled:
+          type: boolean
+          description: 2FAが有効かどうか
       required:
         - id
         - name
         - email
         - ft_id
+        - two_factor_enabled
 
     Tournament:
       type: object
