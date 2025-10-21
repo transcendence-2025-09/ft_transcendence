@@ -1,6 +1,7 @@
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { handleAuthCallback } from "../features";
+import { Verify } from "../pages/2fa/verify";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
@@ -140,6 +141,11 @@ export const routeList: Route[] = [
         }
       }
     },
+  },
+  {
+    meta: { title: "verify2FA", layout: "none" },
+    path: "/auth/2fa/verify",
+    viewFactory: () => Verify,
   },
   {
     meta: { title: "not found" },
