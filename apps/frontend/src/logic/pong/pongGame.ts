@@ -1,6 +1,7 @@
 //このクラスではpong gameのゲームそのもののデータ・状況を管理する。
 //このクラスでは誰がプレイヤーかなどは管理しない。あくまでその時のゲームのデータ・状況のみ
 
+// import WebSocket from "ws";
 import type {
   Match,
   Player,
@@ -20,6 +21,8 @@ export type RenderOption = {
   ballAccel: number;
   winScore: number;
 };
+
+// const URL = "ws://localhost:3001";
 
 export class PongGame {
   //基本定数(固定値)
@@ -64,6 +67,7 @@ export class PongGame {
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
   // private status: MatchStatus | null;
+  // private ws: WebSocket;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -104,6 +108,7 @@ export class PongGame {
     this.leftPlayer = null;
     this.rightPlayer = null;
     // this.status = null;
+    // this.ws = new WebSocket(URL);
   }
 
   public init = async () => {
@@ -154,42 +159,6 @@ export class PongGame {
       this.render();
     }
     this.animationId = requestAnimationFrame(this.loop);
-  };
-
-  private getWinner = () => {
-    if (this.lastScored === "left") return this.leftPlayer;
-    else if (this.lastScored === "right") return this.rightPlayer;
-    else return null;
-  };
-
-  private finishGame = async (): Promise<void> => {
-    const winId = this.getWinner()?.userId ?? "Undefined";
-
-    const res = await fetch(
-      `/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          winnerId: winId,
-          score: {
-            leftPlayer: this.leftScore,
-            rightPlayer: this.rightScore,
-          },
-        }),
-      },
-    );
-
-    this.isFinish = true;
-    if (!res.ok) {
-      throw new Error("Failed to post result");
-    }
-    this.render();
-
-    setTimeout(() => {
-      navigateTo(`/tournaments/${this.tournamentId}/matches`);
-    }, 2000); // 2秒後に遷移
   };
 
   public update = (): void => {

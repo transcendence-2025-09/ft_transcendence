@@ -74,6 +74,9 @@ export class PongServer {
       case "input":
         this.updateInput(data.payload as PlayerInput);
         break;
+      case "pause":
+        this.handleSpace();
+        break;
       case "close":
         this.stop();
         this.ws.close(1000, "client request closed");
