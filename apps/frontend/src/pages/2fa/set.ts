@@ -70,7 +70,14 @@ const stepsListEl = eh(
   eh(
     "li",
     { className: "flex items-start gap-3" },
-    eh("span", { className: "mt-0.5 h-6 w-6 rounded-full bg-blue-50 text-center text-sm font-semibold text-blue-600" }, "1"),
+    eh(
+      "span",
+      {
+        className:
+          "mt-0.5 h-6 w-6 rounded-full bg-blue-50 text-center text-sm font-semibold text-blue-600",
+      },
+      "1",
+    ),
     eh(
       "div",
       {},
@@ -85,7 +92,14 @@ const stepsListEl = eh(
   eh(
     "li",
     { className: "flex items-start gap-3" },
-    eh("span", { className: "mt-0.5 h-6 w-6 rounded-full bg-blue-50 text-center text-sm font-semibold text-blue-600" }, "3"),
+    eh(
+      "span",
+      {
+        className:
+          "mt-0.5 h-6 w-6 rounded-full bg-blue-50 text-center text-sm font-semibold text-blue-600",
+      },
+      "2",
+    ),
     eh(
       "div",
       {},
@@ -175,20 +189,14 @@ formEl.addEventListener("submit", (event) => {
   event.preventDefault();
 });
 
-const overlayEl = eh(
-  "div",
-  {
-    className:
-      "fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm",
-  },
-);
+const overlayEl = eh("div", {
+  className:
+    "fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm",
+});
 
-const modalContainerEl = eh(
-  "div",
-  {
-    className: "relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl",
-  },
-);
+const modalContainerEl = eh("div", {
+  className: "relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl",
+});
 
 const modalCloseButtonEl = eh(
   "button",
@@ -263,7 +271,11 @@ const enableQrStageEl = eh(
         className:
           "flex h-40 w-40 items-center justify-center rounded-lg bg-white shadow-inner",
       },
-      eh("span", { className: "text-xs text-gray-400" }, "QRコードがここに表示されます"),
+      eh(
+        "span",
+        { className: "text-xs text-gray-400" },
+        "QRコードがここに表示されます",
+      ),
     ),
     eh(
       "p",
@@ -295,7 +307,10 @@ const enableCodeFormEl = eh(
     {},
     eh(
       "label",
-      { className: "text-sm font-medium text-gray-700", htmlFor: "enableTwoFactorCode" },
+      {
+        className: "text-sm font-medium text-gray-700",
+        htmlFor: "enableTwoFactorCode",
+      },
       "認証コード",
     ),
     enableCodeInputEl,
@@ -373,14 +388,17 @@ const disableFormEl = eh(
     {},
     eh(
       "label",
-      { className: "text-sm font-medium text-gray-700", htmlFor: "disableTwoFactorCode" },
+      {
+        className: "text-sm font-medium text-gray-700",
+        htmlFor: "disableTwoFactorCode",
+      },
       "認証コード",
     ),
     disableCodeInputEl,
     eh(
       "p",
       { className: "mt-2 text-xs text-gray-500" },
-      "現在設定されている二要素認証のコードを入力してください。",
+      "アプリに表示されているワンタイムコードを入力してください。",
     ),
   ),
   eh(
