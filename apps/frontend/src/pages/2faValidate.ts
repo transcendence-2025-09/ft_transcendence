@@ -85,10 +85,31 @@ const wrapperEl = eh<"div">(
   cardEl,
 );
 
-const VerifyPage: ElComponent = componentFactory(wrapperEl);
+async function validate2fa(code: string): Promise<void> {
+  const response = await fetch("/api/auth/2fa/validate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ twoFactorToken: code }),
+  });
+  if (!response.ok) {
+    throw new Error((await response.json()).error);
+  }
+}
 
-formEl.addEventListener("submit", (event) => {
+formEl.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const code = codeInputEl.value;
+  try {
+    await validate2fa(code);
+    window.location.href = "/dashboard";
+  } catch (error) {
+    alert(error);
+  }
 });
 
-export const Verify2FA = pageFactory([VerifyPage]);
+const ValidatePage: ElComponent = componentFactory(wrapperEl);
+
+export const Validate2FA = pageFactory([ValidatePage]);

@@ -2,7 +2,7 @@ import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { handleAuthCallback } from "../features";
 import { Set2FA } from "../pages/2faSettings";
-import { Verify2FA } from "../pages/2faVerify";
+import { Validate2FA } from "../pages/2faValidate";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
@@ -149,9 +149,9 @@ export const routeList: Route[] = [
     viewFactory: () => Set2FA,
   },
   {
-    meta: { title: "verify2FA", layout: "none" },
-    path: "/auth/2fa/verify",
-    viewFactory: () => Verify2FA,
+    meta: { title: "validate2FA", layout: "none" },
+    path: "/auth/2fa/validate",
+    viewFactory: () => Validate2FA,
   },
   {
     meta: { title: "not found" },
