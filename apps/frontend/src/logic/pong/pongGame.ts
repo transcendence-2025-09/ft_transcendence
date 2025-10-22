@@ -232,7 +232,7 @@ export class PongGame {
     this.finishTime = performance.now();
     //一旦ルートへ
     setTimeout(() => {
-      navigateTo("/");
+      navigateTo(`/tournaments/${this.tournamentId}/matches`);
     }, this.redirectDelay);
   };
 
@@ -359,6 +359,9 @@ export class PongGame {
   };
 
   private handleSpace = (): void => {
+    if (this.isFinish) {
+      navigateTo(`/tournaments/${this.tournamentId}/matches`);
+    }
     if (this.ws && this.ws.readyState === this.ws.OPEN) {
       this.ws.send(
         JSON.stringify({
