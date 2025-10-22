@@ -36,6 +36,7 @@ export type WsMessage =
   | { type: "input"; payload: PlayerInput }
   | { type: "snapshot"; payload: MatchState }
   | { type: "result"; payload: MatchResult }
+  | { type: "pause" }
   | { type: "close" }
   | { type: "ping" };
 

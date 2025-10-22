@@ -1,6 +1,5 @@
-//このクラスではpong gameのゲームそのもののデータ・状況を管理する。
-//このクラスでは誰がプレイヤーかなどは管理しない。あくまでその時のゲームのデータ・状況のみ
-
+//このクラスはあくまで描画の管理のみ。データの変更などはAPIを通じて行う.
+//
 // import WebSocket from "ws";
 import type {
   Match,
@@ -10,6 +9,7 @@ import type {
 } from "../../pages/tournaments/types";
 import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
+import type { WsMessage, MatchData, MatchState, MatchResult } from "./types";
 
 export type RenderOption = {
   paddleWidth: number;
@@ -22,6 +22,7 @@ export type RenderOption = {
   winScore: number;
 };
 
+//あとで環境変数として登録しておく？
 // const URL = "ws://localhost:3001";
 
 export class PongGame {
@@ -31,16 +32,16 @@ export class PongGame {
   private paddleWidth: number;
   private paddleHeight: number;
   private paddleMargin: number;
-  private paddleSpeed: number;
+  // private paddleSpeed: number;
   private ballRadius: number;
   private ballSpeed: number;
   private ballAccel: number;
-  private ballMaxSpeed: number;
+  // private ballMaxSpeed: number;
   //状態データ
   private ballX: number;
   private ballY: number;
-  private ballVelX: number;
-  private ballVelY: number;
+  // private ballVelX: number;
+  // private ballVelY: number;
   private paddleLeftY: number;
   private paddleRightY: number;
   private leftScore: number;
@@ -48,13 +49,14 @@ export class PongGame {
   private leftInput: { up: boolean; down: boolean };
   private rightInput: { up: boolean; down: boolean };
   private winScore: number;
+  private winnerId: string | null;
   private isFinish: boolean;
   //制御データ
   private canvas: HTMLCanvasElement;
   private isRunning: boolean;
   private isPaused: boolean;
   private animationId: number | null;
-  private lastScored: "left" | "right" | null;
+  // private lastScored: "left" | "right" | null;
   //key管理関係
   private onKeyDownRef?: (e: KeyboardEvent) => void;
   private onKeyUpRef?: (e: KeyboardEvent) => void;
@@ -67,7 +69,9 @@ export class PongGame {
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
   // private status: MatchStatus | null;
-  // private ws: WebSocket;
+  private ws: WebSocket;
+  private finishTime: number | null;
+  private redirectDelay: number;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -79,28 +83,28 @@ export class PongGame {
     this.paddleWidth = opt?.paddleWidth ?? 12;
     this.paddleHeight = opt?.paddleHeight ?? 110;
     this.paddleMargin = opt?.paddleMargin ?? 24;
-    this.paddleSpeed = opt?.paddleSpeed ?? 3;
+    // this.paddleSpeed = opt?.paddleSpeed ?? 3;
     this.ballRadius = opt?.ballRadius ?? 12;
     this.ballSpeed = opt?.ballSpeed ?? 3;
     this.ballAccel = opt?.ballAccel ?? 1.03;
-    this.ballMaxSpeed = 8;
+    // this.ballMaxSpeed = 8;
     this.ballX = this.width / 2;
     this.ballY = this.height / 2;
-    this.ballVelX = 0;
-    this.ballVelY = 0;
+    // this.ballVelX = 0;
+    // this.ballVelY = 0;
     this.paddleLeftY = (this.height - this.paddleHeight) / 2;
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
     this.leftScore = 0;
     this.rightScore = 0;
     this.leftInput = { up: false, down: false };
     this.rightInput = { up: false, down: false };
-    this.winScore = opt?.winScore ?? 5;
+    this.winScore = opt?.winScore ?? 1;
     this.isFinish = false;
     this.canvas = canvas;
     this.isRunning = false;
     this.isPaused = false;
     this.animationId = null;
-    this.lastScored = null;
+    // this.lastScored = null;
     this.spaceDown = false;
     this.tournamentId = ctx?.params.tournamentId ?? null;
     this.matchId = ctx?.params.matchId ?? null;
@@ -108,15 +112,70 @@ export class PongGame {
     this.leftPlayer = null;
     this.rightPlayer = null;
     // this.status = null;
-    // this.ws = new WebSocket(URL);
+    this.ws = new WebSocket("ws://localhost:3001/ws");
+    this.winnerId = null;
+    //試合終了の時間
+    this.finishTime = null;
+    //試合終了後の画面遷移時間
+    this.redirectDelay = 5000;
   }
 
   public init = async () => {
-    const match = await this.getMatchInfo();
+    let match;
+    if (this.tournamentId && this.matchId) {
+      match = await this.getMatchInfo();
+    } else {
+      match = null;
+    }
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
     this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
+    this.ws.onopen = (): void => {
+      this.ws.send(
+        JSON.stringify({
+          type: "Connect successfully!!",
+        }),
+      );
+      console.log("Connection Success!!");
+      //初期情報をgame serverに対して送信しておく
+      this.ws.send(
+        JSON.stringify({
+          type: "init",
+          payload: {
+            width: this.width,
+            height: this.height,
+            paddleWidth: this.paddleWidth,
+            paddleHeight: this.paddleHeight,
+            paddleMargin: this.paddleMargin,
+            ballRadius: this.ballRadius,
+            ballSpeed: this.ballSpeed,
+            ballAccel: this.ballAccel,
+            winScore: this.winScore,
+            tournamentId: this.tournamentId,
+            matchId: this.matchId,
+            leftPlayer: this.leftPlayer,
+            rightPlayer: this.rightPlayer,
+          } as MatchData,
+        }),
+      );
+    };
+    this.ws.onmessage = (event) => {
+      try {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        this.onReceive(data as WsMessage);
+      } catch (e) {
+        console.error("WS parse error:", e, event.data);
+      }
+    };
+    //closeの処理
+    this.ws.onclose = () => {
+      console.log("Connection Closed");
+    };
+
+    //一応エラーの処理も書いておく
+    this.ws.onerror = (e) => console.error("WS error", e);
   };
 
   private getMatchInfo = async (): Promise<Match | null> => {
@@ -137,7 +196,7 @@ export class PongGame {
 
   public start = (): void => {
     if (this.isRunning) return;
-    this.isRunning = false;
+    this.isRunning = true;
     this.isPaused = false;
     this.loop();
   };
@@ -151,140 +210,79 @@ export class PongGame {
     }
   };
 
+  private onReceive = (data: WsMessage): void => {
+    switch (data.type) {
+      case "snapshot":
+        this.updateState(data.payload as MatchState);
+        break;
+      case "result":
+        this.finishGame(data.payload as MatchResult);
+        break;
+    }
+  };
+
+  private finishGame = (data: MatchResult): void => {
+    this.leftScore = data.leftScore;
+    this.rightScore = data.rightScore;
+    this.winnerId = data.winnerId;
+    //isFinishフラグを上げる。
+    this.isFinish = data.isFinish;
+    //終了時間を記録
+    this.finishTime = performance.now();
+    //一旦ルートへ
+    setTimeout(() => {
+      navigateTo("/");
+    }, this.redirectDelay);
+  };
+
+  private updateState = (data: MatchState): void => {
+    this.ballX = data.ballX;
+    this.ballY = data.ballY;
+    // this.ballVelX = data.ballVelX;
+    // this.ballVelY = data.ballVelY;
+    this.paddleLeftY = data.paddleLeftY;
+    this.paddleRightY = data.paddleRightY;
+    this.leftScore = data.leftScore;
+    this.rightScore = data.rightScore;
+    this.isFinish = data.isFinish;
+    this.isRunning = data.isRunning;
+    this.isPaused = data.isPaused;
+    // this.lastScored = data.lastScored;
+  };
+
   public loop = (): void => {
-    if (this.isPaused) {
-      this.render();
-    } else {
-      this.update();
-      this.render();
-    }
+    this.render();
     this.animationId = requestAnimationFrame(this.loop);
-  };
-
-  public update = (): void => {
-    if (this.leftInput.up) this.paddleLeftY -= this.paddleSpeed;
-    if (this.leftInput.down) this.paddleLeftY += this.paddleSpeed;
-    if (this.rightInput.up) this.paddleRightY -= this.paddleSpeed;
-    if (this.rightInput.down) this.paddleRightY += this.paddleSpeed;
-
-    this.paddleLeftY = Math.max(
-      0,
-      Math.min(this.paddleLeftY, this.height - this.paddleHeight),
-    );
-
-    this.paddleRightY = Math.max(
-      0,
-      Math.min(this.paddleRightY, this.height - this.paddleHeight),
-    );
-
-    this.ballX += this.ballVelX;
-    this.ballY += this.ballVelY;
-
-    if (
-      this.ballY - this.ballRadius <= 0 ||
-      this.ballY + this.ballRadius >= this.height
-    )
-      this.ballVelY *= -1;
-
-    //左パドルの当たり判定
-    //ボールの左側の座標が左パドルの右側面の座標よりも小さくなったら反射している
-    //paddleの右サイドの座標
-    const lpRightSide = this.paddleMargin + this.paddleWidth;
-    if (
-      this.ballX - this.ballRadius <= lpRightSide &&
-      this.ballY >= this.paddleLeftY &&
-      this.ballY <= this.paddleLeftY + this.paddleHeight
-    ) {
-      //めり込み処理。lpRightSideにボールの半径分だけx座標を足しておく
-      this.ballX = lpRightSide + this.ballRadius;
-      //速度ベクトルの向きを更新
-      this.ballVelX = Math.abs(this.ballVelX);
-      //ボールを加速
-      this.boostBallSpeed();
-    }
-
-    //右パドルの当たり判定
-    //左とロジックは同じ(右向き)
-    const rpLeftSide = this.width - this.paddleMargin - this.paddleWidth;
-    if (
-      this.ballX + this.ballRadius >= rpLeftSide &&
-      this.ballY >= this.paddleRightY &&
-      this.ballY <= this.paddleRightY + this.paddleHeight
-    ) {
-      //めり込み処理
-      this.ballX = rpLeftSide - this.ballRadius;
-      //速度ベクトルの変更(左向きに)
-      this.ballVelX = -Math.abs(this.ballVelX);
-      //ボールを加速
-      this.boostBallSpeed();
-    }
-
-    //得点処理
-    if (this.ballX + this.ballRadius < 0) {
-      this.rightScore += 1;
-      this.lastScored = "right";
-      //試合終了かどうかを判断
-      if (this.rightScore === this.winScore) {
-        this.finishGame();
-      } else {
-        this.serveFrom();
-      }
-    } else if (this.ballX - this.ballRadius > this.width) {
-      this.leftScore += 1;
-      this.lastScored = "left";
-      //試合終了かどうかを判断
-      if (this.leftScore === this.winScore) {
-        this.finishGame();
-      } else {
-        this.serveFrom();
-      }
-    }
-  };
-
-  private boostBallSpeed = (): void => {
-    const vx = this.ballVelX;
-    const vy = this.ballVelY;
-    const speed = Math.hypot(vx, vy);
-    if (speed === 0) return;
-    const newSpeed = Math.min(this.ballMaxSpeed, speed * this.ballAccel);
-
-    const nx = vx / speed;
-    const ny = vy / speed;
-
-    this.ballVelX = nx * newSpeed;
-    this.ballVelY = ny * newSpeed;
-  };
-
-  public serveFrom = (): void => {
-    this.ballX = this.width / 2;
-    this.ballY = this.height / 2;
-    this.ballVelX = 0;
-    this.ballVelY = 0;
-    this.isRunning = false;
   };
 
   public registerKeyEvent = (): void => {
     if (this.onKeyUpRef || this.onKeyDownRef) return;
+    let keyflag = false;
 
     this.onKeyDownRef = (e: KeyboardEvent) => {
       switch (e.code) {
         case "KeyW":
           this.leftInput.up = true;
+          keyflag = true;
           e.preventDefault();
           break;
         case "KeyS":
           this.leftInput.down = true;
+          keyflag = true;
           e.preventDefault();
           break;
         case "ArrowUp":
           this.rightInput.up = true;
+          keyflag = true;
           e.preventDefault();
           break;
         case "ArrowDown":
           this.rightInput.down = true;
+          keyflag = true;
           e.preventDefault();
           break;
         case "Space":
+          keyflag = true;
           if (!this.spaceDown) {
             this.spaceDown = true;
             this.handleSpace();
@@ -292,26 +290,56 @@ export class PongGame {
           e.preventDefault();
           break;
       }
+      if (keyflag)
+        this.ws.send(
+          JSON.stringify({
+            type: "input",
+            payload: {
+              leftup: this.leftInput.up,
+              leftdown: this.leftInput.down,
+              rightup: this.rightInput.up,
+              rightdown: this.rightInput.down,
+            },
+          }),
+        );
     };
 
     this.onKeyUpRef = (e: KeyboardEvent) => {
+      let keyflag = false;
       switch (e.code) {
         case "KeyW":
           this.leftInput.up = false;
+          keyflag = true;
           break;
         case "KeyS":
           this.leftInput.down = false;
+          keyflag = true;
           break;
         case "ArrowUp":
           this.rightInput.up = false;
+          keyflag = true;
           break;
         case "ArrowDown":
           this.rightInput.down = false;
+          keyflag = true;
           break;
         case "Space":
           this.spaceDown = false;
+          keyflag = true;
           break;
       }
+      if (keyflag)
+        this.ws.send(
+          JSON.stringify({
+            type: "input",
+            payload: {
+              leftup: this.leftInput.up,
+              leftdown: this.leftInput.down,
+              rightup: this.rightInput.up,
+              rightdown: this.rightInput.down,
+            },
+          }),
+        );
     };
 
     window.addEventListener("keydown", this.onKeyDownRef, { passive: false });
@@ -330,32 +358,16 @@ export class PongGame {
   };
 
   private handleSpace = (): void => {
-    if (this.isFinish) {
-      navigateTo("/");
+    if (this.ws && this.ws.readyState === this.ws.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: "pause",
+        }),
+      );
+    } else {
+      console.warn("WS not open. drop:");
     }
-    if (this.isRunning) {
-      this.isPaused = !this.isPaused;
-      this.render();
-      return;
-    }
-
-    const dirX =
-      this.lastScored === "left"
-        ? -1
-        : this.lastScored === "right"
-          ? 1
-          : Math.random() < 0.5
-            ? 1
-            : -1;
-
-    const dirY = Math.random() < 0.5 ? 1 : -1;
-    this.ballVelX = dirX * this.ballSpeed;
-    this.ballVelY = dirY * this.ballSpeed;
-
-    this.isPaused = false;
-    this.isRunning = true;
-    if (this.animationId === null)
-      this.animationId = requestAnimationFrame(this.loop);
+    //spaceは状況の変更は特にせずに送る。
   };
 
   public render = (): void => {
@@ -414,7 +426,7 @@ export class PongGame {
     ctx.restore();
 
     //Pause画面用のウィンドウ
-    if (this.isPaused) {
+    if (this.isPaused && !this.isFinish) {
       ctx.save();
       ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
       ctx.fillRect(0, 0, width, height);
@@ -430,13 +442,48 @@ export class PongGame {
       ctx.save();
       ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
       ctx.fillRect(0, 0, width, height);
+
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 48px ui-sans-serif, system-ui";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("Winner", width / 2, height / 2);
-      ctx.fillText(`${this.getWinner()?.alias}`, width / 2, height / 2);
-      ctx.fillText("Press Space", width / 2, height / 2);
+
+      const titleFont = "bold 48px ui-sans-serif, system-ui";
+      const bodyFont = "bold 36px ui-sans-serif, system-ui";
+      const smallFont = "bold 24px ui-sans-serif, system-ui";
+      const lineGap = 16;
+
+      const titleSize = 48;
+      const bodySize = 36;
+      const smallSize = 24;
+
+      const totalHeight = titleSize + bodySize + smallSize + lineGap * 2;
+      const centerY = height / 2;
+      let y = centerY - totalHeight / 2;
+
+      // 1行目: タイトル
+      ctx.font = titleFont;
+      ctx.fillText("Winner", width / 2, y + titleSize / 2);
+      y += titleSize + lineGap;
+
+      // 2行目: Winner ID
+      ctx.font = bodyFont;
+      ctx.fillText(String(this.winnerId ?? ""), width / 2, y + bodySize / 2);
+      y += bodySize + lineGap;
+
+      // 3行目: カウントダウン表示
+      if (this.finishTime) {
+        const elapsed = performance.now() - this.finishTime;
+        const remaining = Math.max(0, this.redirectDelay - elapsed);
+        const seconds = Math.ceil(remaining / 1000);
+        ctx.font = smallFont;
+        ctx.fillStyle = "#aaa";
+        ctx.fillText(
+          `Returning in ${seconds}s...`,
+          width / 2,
+          y + smallSize / 2,
+        );
+      }
+
       ctx.restore();
     }
   };
