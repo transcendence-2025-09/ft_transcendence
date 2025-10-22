@@ -9,7 +9,7 @@ import type {
 } from "../../pages/tournaments/types";
 import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
-import type { WsMessage, MatchData, MatchState, MatchResult } from "./types";
+import type { MatchData, MatchResult, MatchState, WsMessage } from "./types";
 
 export type RenderOption = {
   paddleWidth: number;
@@ -121,12 +121,13 @@ export class PongGame {
   }
 
   public init = async () => {
-    let match;
-    if (this.tournamentId && this.matchId) {
-      match = await this.getMatchInfo();
-    } else {
-      match = null;
-    }
+    // let match;
+    // if (this.tournamentId && this.matchId) {
+    //   match = await this.getMatchInfo();
+    // } else {
+    //   match = null;
+    // }
+    const match = await this.getMatchInfo();
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
     this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
