@@ -1,5 +1,8 @@
 import { eh } from "../../factory/elementFactory";
-import { openModal } from "./modal";
+import { loadUserInfo } from "./actionsRow";
+import { disable2fa } from "./api";
+import { closeModal, openModal } from "./modal";
+import { showSuccessBanner } from "./successBanner";
 
 const disableCodeInputEl = eh<"input">("input", {
   id: "disableTwoFactorCode",
@@ -45,10 +48,6 @@ const disableFormEl = eh(
   ),
 );
 
-disableFormEl.addEventListener("submit", (event) => {
-  event.preventDefault();
-});
-
 const disableModalBodyEl = eh(
   "div",
   { className: "space-y-4" },
@@ -59,6 +58,19 @@ const disableModalBodyEl = eh(
   ),
   disableFormEl,
 );
+
+disableFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const code = disableCodeInputEl.value;
+  try {
+    await disable2fa(code);
+    closeModal();
+    loadUserInfo();
+    showSuccessBanner();
+  } catch (error) {
+    alert(error);
+  }
+});
 
 export const openDisableModal = () => {
   disableCodeInputEl.value = "";

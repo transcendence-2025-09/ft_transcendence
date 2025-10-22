@@ -2,9 +2,9 @@ import type { ElComponent } from "../../factory/componentFactory";
 import { componentFactory } from "../../factory/componentFactory";
 import { eh } from "../../factory/elementFactory";
 import { pageFactory } from "../../factory/pageFactory";
-import { openDisableModal } from "./disableModal";
-import { openEnableModal } from "./enableModal";
+import { actionsRowEl, loadUserInfo } from "./actionsRow";
 import { modalOverlayEl } from "./modal";
+import { successBannerEl } from "./successBanner";
 
 const headingEl = eh<"h1">(
   "h1",
@@ -18,53 +18,6 @@ const descriptionEl = eh<"p">(
     className: "mt-3 text-sm text-gray-600 leading-relaxed",
   },
   "ログインの安全性を高めるため、認証アプリ（Google Authenticator など）を使った二要素認証を有効化できます。",
-);
-
-const successBannerEl = eh(
-  "div",
-  {
-    className:
-      "hidden mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700",
-  },
-  "二要素認証の設定が更新されました。",
-);
-
-const statusBadgeEl = eh(
-  "span",
-  {
-    className:
-      "inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700",
-  },
-  eh("span", { className: "h-2 w-2 rounded-full bg-gray-400" }),
-  "現在: 未設定",
-);
-
-const generateButtonEl = eh(
-  "button",
-  {
-    type: "button",
-    className:
-      "inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-  },
-  "2FAを設定する",
-);
-
-const disableButtonEl = eh(
-  "button",
-  {
-    type: "button",
-    className:
-      "inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2",
-  },
-  "2FAを無効化",
-);
-
-const actionsRowEl = eh(
-  "div",
-  { className: "mt-6 flex flex-col gap-3 sm:flex-row sm:items-center" },
-  statusBadgeEl,
-  generateButtonEl,
-  disableButtonEl,
 );
 
 const stepsListEl = eh(
@@ -140,9 +93,8 @@ const wrapperEl = eh<"div">(
 
 const SetPage: ElComponent = componentFactory(wrapperEl);
 
-generateButtonEl.addEventListener("click", openEnableModal);
-disableButtonEl.addEventListener("click", openDisableModal);
-
 wrapperEl.append(modalOverlayEl);
+
+loadUserInfo();
 
 export const Set2FA = pageFactory([SetPage]);

@@ -1,6 +1,8 @@
 import { eh } from "../../factory/elementFactory";
-import { get2faQrCode } from "./api";
-import { openModal } from "./modal";
+import { loadUserInfo } from "./actionsRow";
+import { enable2fa, get2faQrCode } from "./api";
+import { closeModal, openModal } from "./modal";
+import { showSuccessBanner } from "./successBanner";
 
 const qrImageEl = eh<"img">("img", {
   className: "h-36 w-36 rounded-lg bg-white shadow-inner",
@@ -47,10 +49,6 @@ const enableCodeFormEl = eh(
   ),
 );
 
-enableCodeFormEl.addEventListener("submit", (event) => {
-  event.preventDefault();
-});
-
 const enableModalBodyEl = eh(
   "div",
   { className: "space-y-6" },
@@ -75,11 +73,30 @@ const enableModalBodyEl = eh(
   enableCodeFormEl,
 );
 
+enableCodeFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const code = enableCodeInputEl.value;
+  try {
+    await enable2fa(code);
+    closeModal();
+    loadUserInfo();
+    showSuccessBanner();
+  } catch (error) {
+    alert(error);
+  }
+});
+
 export const openEnableModal = async () => {
   enableCodeInputEl.value = "";
-  const { qrCode } = await get2faQrCode();
+  let qrCode: string;
+  try {
+    const { qrCode: qrCodeData } = await get2faQrCode();
+    qrCode = qrCodeData;
+  } catch (error) {
+    alert(error);
+    return;
+  }
   qrImageEl.src = qrCode;
   enableCodeInputEl.focus();
-
   openModal("二要素認証の有効化", enableModalBodyEl);
 };

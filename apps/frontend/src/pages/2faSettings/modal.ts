@@ -31,7 +31,7 @@ const modalBodyEl = eh("div", { className: "mt-4" });
 modalContainerEl.append(modalCloseButtonEl, modalTitleEl, modalBodyEl);
 modalOverlayEl.append(modalContainerEl);
 
-const closeModal = () => {
+export const closeModal = () => {
   modalOverlayEl.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
 };

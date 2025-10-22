@@ -33,6 +33,17 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(401).send({ error: "Unauthorized" });
       }
 
+      const user = await fastify.usersRepository.findById(request.user.id);
+      if (!user) {
+        return reply.status(500).send({ error: "DB error" });
+      }
+
+      if (user.two_factor_enabled) {
+        return reply
+          .status(400)
+          .send({ error: "Two factor authentication is already enabled" });
+      }
+
       const secret = speakeasy.generateSecret({
         name: "ft_transcendence",
         issuer: "42Team",
