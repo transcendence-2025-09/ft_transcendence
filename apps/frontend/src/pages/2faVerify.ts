@@ -1,7 +1,7 @@
-import type { ElComponent } from "../../factory/componentFactory";
-import { componentFactory } from "../../factory/componentFactory";
-import { eh } from "../../factory/elementFactory";
-import { pageFactory } from "../../factory/pageFactory";
+import type { ElComponent } from "../factory/componentFactory";
+import { componentFactory } from "../factory/componentFactory";
+import { eh } from "../factory/elementFactory";
+import { pageFactory } from "../factory/pageFactory";
 
 const headingEl = eh<"h1">(
   "h1",

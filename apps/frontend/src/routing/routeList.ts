@@ -1,8 +1,8 @@
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { handleAuthCallback } from "../features";
-import { Set2FA } from "../pages/2fa/set";
-import { Verify2FA } from "../pages/2fa/verify";
+import { Set2FA } from "../pages/2faSettings";
+import { Verify2FA } from "../pages/2faVerify";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
