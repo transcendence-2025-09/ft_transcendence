@@ -74,6 +74,9 @@ export class PongServer {
       case "input":
         this.updateInput(data.payload as PlayerInput);
         break;
+      case "pause":
+        this.handleSpace();
+        break;
       case "close":
         this.stop();
         this.ws.close(1000, "client request closed");
@@ -137,7 +140,7 @@ export class PongServer {
     //20Hzでデータの送信。
     this.snapShotTimer = setInterval(() => {
       this.sendData();
-    }, 1000 / 20);
+    }, 1000 / 30);
   };
 
   //ソケットを閉じるときに呼ぶ
@@ -268,21 +271,21 @@ export class PongServer {
     const winId = this.getWinner()?.userId ?? "Undefined";
 
     //先にbackendサーバーにpostしてデータを保存しておく
-    const res = await fetch(
-      `/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          winnerId: winId,
-          score: {
-            leftPlayer: this.leftScore,
-            rightPlayer: this.rightScore,
-          },
-        }),
-      },
-    );
+    // const res = await fetch(
+    //   `http://localhost:3000/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
+    //   {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     credentials: "include",
+    //     body: JSON.stringify({
+    //       winnerId: winId,
+    //       score: {
+    //         leftPlayer: this.leftScore,
+    //         rightPlayer: this.rightScore,
+    //       },
+    //     }),
+    //   },
+    // );
 
     this.isFinish = true;
 
@@ -290,7 +293,7 @@ export class PongServer {
     this.ws.send(
       JSON.stringify({
         type: "result",
-        palyload: {
+        payload: {
           leftScore: this.leftScore,
           rightScore: this.rightScore,
           winnerId: winId,
@@ -298,9 +301,9 @@ export class PongServer {
         } as MatchResult,
       }),
     );
-    if (!res.ok) {
-      throw new Error("Failed to post result");
-    }
+    // if (!res.ok) {
+    //   throw new Error("Failed to post result");
+    // }
   };
 
   private updateInput = (palyload: PlayerInput): void => {
@@ -328,6 +331,8 @@ export class PongServer {
             rightScore: this.rightScore,
             winScore: this.winScore,
             isFinish: this.isFinish,
+            isRunning: this.isRunning,
+            isPaused: this.isPaused,
             lastScored: this.lastScored,
           } as MatchState,
         }),
