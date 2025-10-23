@@ -15,9 +15,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return;
       }
 
-      // MFA認証を必要としないパス
-      const mfaPublicPaths = ["/api/auth/2fa/validate"];
-      if (mfaPublicPaths.some((path) => request.url.startsWith(path))) {
+      // 認証の代わりにMFA Ticketを必要とするパス
+      const mfaTicketRequiredPaths = ["/api/auth/2fa/validate"];
+      if (mfaTicketRequiredPaths.some((path) => request.url.startsWith(path))) {
         if (request.cookies.mfaTicket) {
           try {
             const decoded = jwt.verify(
@@ -32,7 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             });
           }
         }
-        return reply.status(401).send({ error: "Unauthorized" });
+        return reply.status(401).send({ error: "Should login first" });
       }
 
       const token = request.cookies.token;
