@@ -3,8 +3,9 @@ import {
   type FastifyPluginAsyncTypebox,
   Type,
 } from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
+import { issueSessionToken } from "../utils/issueSessionToken.js";
 import { exchangeToken } from "./utils/exchangeToken.js";
 import { fetchFtUserData } from "./utils/fetchFtUserData.js";
 
@@ -19,6 +20,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         }),
         response: {
           200: Type.Object({
+            needTwoFactor: Type.Boolean(),
             message: Type.String(),
           }),
           400: Type.Object({
@@ -30,7 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request: FastifyRequest, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       console.log("Login request received");
       const { code } = request.body as { code?: string };
       const accessToken = await exchangeToken(code ?? "");
@@ -55,19 +57,43 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!jwtSecret) {
         return reply.status(500).send();
       }
-      const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "1h" });
 
-      reply.setCookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-      });
+      if (user.two_factor_enabled) {
+        // 2FAが有効な場合、MFAチケットを生成してクッキーに保存
+        await issueMfaTicket(user.id, jwtSecret, reply);
 
-      return reply.status(200).send();
+        return reply.status(200).send({
+          needTwoFactor: true,
+          message: "MFA required",
+        });
+      } else {
+        // 2FAが無効な場合、JWTトークンを生成してクッキーに保存
+        await issueSessionToken(user.id, jwtSecret, reply);
+
+        return reply.status(200).send({
+          needTwoFactor: false,
+          message: "Login successful",
+        });
+      }
     },
   );
 };
+
+async function issueMfaTicket(
+  userId: number,
+  jwtSecret: string,
+  reply: FastifyReply,
+) {
+  const mfaTicket = jwt.sign({ id: userId, purpose: "mfa" }, jwtSecret, {
+    expiresIn: "10m",
+  });
+  reply.setCookie("mfaTicket", mfaTicket, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    expires: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+  });
+}
 
 export default plugin;

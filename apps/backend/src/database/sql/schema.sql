@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   ft_id INTEGER UNIQUE,
+  two_factor_secret TEXT,
+  two_factor_enabled BOOLEAN DEFAULT 0,
   created_at DATETIME DEFAULT (datetime('now', 'localtime'))
 );
 

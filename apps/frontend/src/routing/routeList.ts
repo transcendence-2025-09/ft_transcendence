@@ -1,6 +1,8 @@
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { handleAuthCallback } from "../features";
+import { Set2FA } from "../pages/2faSettings";
+import { Validate2FA } from "../pages/2faValidate";
 import { NotFound } from "../pages/404";
 import { About } from "../pages/about";
 import { Home } from "../pages/main";
@@ -52,6 +54,9 @@ const Dashboard = (name: string): ElComponent => {
     <p>Welcome, ${name}!</p>
     <a href="/tournaments" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
       トーナメント一覧
+    </a>
+    <a href="/settings/2fa" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      2FA設定
     </a>
   `;
   return componentFactory(el);
@@ -115,36 +120,17 @@ export const routeList: Route[] = [
   {
     meta: { title: "Authenticating...", layout: "none" },
     path: "/auth/callback",
-    action: async (_ctx) => {
-      try {
-        await handleAuthCallback();
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "AUTH_SUCCESS" },
-            window.location.origin,
-          );
-          window.close();
-          return;
-        } else {
-          return { redirect: "/dashboard", replace: true };
-        }
-      } catch (err: unknown) {
-        if (window.opener) {
-          window.opener.postMessage(
-            {
-              type: "AUTH_ERROR",
-              error:
-                err instanceof Error ? err.message : "Authentication Failed",
-            },
-            window.location.origin,
-          );
-          window.close();
-          return;
-        } else {
-          return { redirect: "/dashboard", replace: true };
-        }
-      }
-    },
+    action: handleAuthCallback,
+  },
+  {
+    meta: { title: "2FA setting", protected: true },
+    path: "/settings/2fa",
+    viewFactory: () => Set2FA,
+  },
+  {
+    meta: { title: "validate2FA", layout: "none" },
+    path: "/auth/2fa/validate",
+    viewFactory: () => Validate2FA,
   },
   {
     meta: { title: "not found" },
