@@ -55,6 +55,9 @@ const Dashboard = (name: string): ElComponent => {
     <a href="/tournaments" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
       トーナメント一覧
     </a>
+    <a href="/settings/2fa" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      2FA設定
+    </a>
   `;
   return componentFactory(el);
 };
@@ -113,34 +116,14 @@ export const routeList: Route[] = [
     meta: { title: "Authenticating...", layout: "none" },
     path: "/auth/callback",
     action: async (_ctx) => {
-      try {
-        await handleAuthCallback();
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "AUTH_SUCCESS" },
-            window.location.origin,
-          );
-          window.close();
-          return;
-        } else {
-          return { redirect: "/dashboard", replace: true };
-        }
-      } catch (err: unknown) {
-        if (window.opener) {
-          window.opener.postMessage(
-            {
-              type: "AUTH_ERROR",
-              error:
-                err instanceof Error ? err.message : "Authentication Failed",
-            },
-            window.location.origin,
-          );
-          window.close();
-          return;
-        } else {
-          return { redirect: "/dashboard", replace: true };
-        }
+      const result = await handleAuthCallback();
+
+      if (window.opener) {
+        window.opener.postMessage({ type: result }, window.location.origin);
+        window.close();
+        return undefined;
       }
+      return undefined;
     },
   },
   {

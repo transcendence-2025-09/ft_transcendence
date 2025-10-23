@@ -1,17 +1,19 @@
-export async function handleAuthCallback(): Promise<void> {
+export async function handleAuthCallback(): Promise<
+  "AUTH_SUCCESS" | "AUTH_ERROR" | "AUTH_2FA_REQUIRED"
+> {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
   const state = params.get("state");
 
   if (!code || !state) {
-    window.location.href = "/";
+    return "AUTH_ERROR";
   }
 
   // CSRF対策のため、保存しておいたstateと照合
   const savedState = sessionStorage.getItem("oauth_state");
   sessionStorage.removeItem("oauth_state");
   if (!savedState || !state || savedState !== state) {
-    window.location.href = "/";
+    return "AUTH_ERROR";
   }
 
   try {
@@ -24,12 +26,16 @@ export async function handleAuthCallback(): Promise<void> {
     });
 
     if (!response.ok) {
-      window.location.href = "/";
-      return;
+      return "AUTH_ERROR";
     } else {
-      window.location.href = "/dashboard";
+      const data: { needTwoFactor: boolean } = await response.json();
+      if (data.needTwoFactor) {
+        return "AUTH_2FA_REQUIRED";
+      } else {
+        return "AUTH_SUCCESS";
+      }
     }
   } catch (_error) {
-    window.location.href = "/";
+    return "AUTH_ERROR";
   }
 }
