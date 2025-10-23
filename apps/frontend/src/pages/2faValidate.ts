@@ -85,7 +85,10 @@ const wrapperEl = eh<"div">(
   cardEl,
 );
 
-async function validate2fa(code: string): Promise<void> {
+async function validate2fa(code: string): Promise<{
+  passed: boolean;
+  message: string;
+}> {
   const response = await fetch("/api/auth/2fa/validate", {
     method: "POST",
     headers: {
@@ -97,13 +100,18 @@ async function validate2fa(code: string): Promise<void> {
   if (!response.ok) {
     throw new Error((await response.json()).error);
   }
+  return await response.json();
 }
 
 formEl.addEventListener("submit", async (event) => {
   event.preventDefault();
   const code = codeInputEl.value;
   try {
-    await validate2fa(code);
+    const { passed, message } = await validate2fa(code);
+    if (!passed) {
+      alert(message);
+      return;
+    }
     window.location.href = "/dashboard";
   } catch (error) {
     alert(error);
