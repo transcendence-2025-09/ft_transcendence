@@ -9,6 +9,15 @@ export const successBannerEl = eh(
   "二要素認証の設定が更新されました。",
 );
 
+let hideTimer: number | undefined;
+
 export const showSuccessBanner = () => {
   successBannerEl.classList.remove("hidden");
+  if (hideTimer !== undefined) {
+    clearTimeout(hideTimer);
+  }
+  hideTimer = window.setTimeout(() => {
+    successBannerEl.classList.add("hidden");
+    hideTimer = undefined;
+  }, 3000);
 };
