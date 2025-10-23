@@ -9,7 +9,7 @@ import { PongGame } from "../logic/pong/pongGame";
 import type { RouteCtx } from "../routing/routeList";
 
 //pong pageを積むためのbackground
-const pongPageComp = (ctx: RouteCtx): ElComponent => {
+const pongPageComp = (ctx?: RouteCtx): ElComponent => {
   const bg = pongBackGroundFactory();
   const content = bg.el.querySelector("#pong-container") as HTMLDivElement;
 
@@ -52,4 +52,4 @@ const pongPageComp = (ctx: RouteCtx): ElComponent => {
   };
 };
 
-export const pongPage = (ctx: RouteCtx) => pageFactory([pongPageComp(ctx)]);
+export const pongPage = (ctx?: RouteCtx) => pageFactory([pongPageComp(ctx)]);
