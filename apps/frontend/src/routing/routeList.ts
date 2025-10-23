@@ -115,19 +115,10 @@ export const routeList: Route[] = [
   {
     meta: { title: "Authenticating...", layout: "none" },
     path: "/auth/callback",
-    action: async (_ctx) => {
-      const result = await handleAuthCallback();
-
-      if (window.opener) {
-        window.opener.postMessage({ type: result }, window.location.origin);
-        window.close();
-        return undefined;
-      }
-      return undefined;
-    },
+    action: handleAuthCallback,
   },
   {
-    meta: { title: "2FA setting" },
+    meta: { title: "2FA setting", protected: true },
     path: "/settings/2fa",
     viewFactory: () => Set2FA,
   },

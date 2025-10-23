@@ -1,4 +1,17 @@
-export async function handleAuthCallback(): Promise<
+import type { RouteCtx } from "../../routing/routeList";
+
+export async function handleAuthCallback(_ctx: RouteCtx) {
+  const result = await authCallback();
+
+  if (window.opener) {
+    window.opener.postMessage({ type: result }, window.location.origin);
+    window.close();
+    return undefined;
+  }
+  return undefined;
+}
+
+async function authCallback(): Promise<
   "AUTH_SUCCESS" | "AUTH_ERROR" | "AUTH_2FA_REQUIRED"
 > {
   const params = new URLSearchParams(window.location.search);
