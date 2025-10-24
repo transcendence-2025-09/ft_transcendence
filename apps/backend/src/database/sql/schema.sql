@@ -33,3 +33,19 @@ CREATE TABLE IF NOT EXISTS matches (
   FOREIGN KEY (player2_id) REFERENCES users(id),
   FOREIGN KEY (winner_id) REFERENCES users(id)
 );
+
+-- ユーザ個人の統計情報を保存するテーブル
+CREATE TABLE IF NOT EXISTS user_stats (
+  id TEXT NOT NULL PRIMARY KEY, -- uuidv7
+  user_id INTEGER NOT NULL,
+  average_score REAL DEFAULT 0, -- 平均スコア
+  number_of_matches INTEGER DEFAULT 0, -- 試合数
+  number_of_wins INTEGER DEFAULT 0, -- 勝利数 (敗北数=試合数-勝利数)
+  current_winning_streak INTEGER DEFAULT 0, -- 連勝数
+  total_score_points INTEGER DEFAULT 0, -- 総得点
+  total_loss_points INTEGER DEFAULT 0, -- 総失点 (総得失点差=総得点-総失点)
+  last_match_id TEXT, -- 最後に参加したmatch ID (matchesテーブルをfetchして照合、更新の有無を判断. null許容)
+  last_updated DATETIME DEFAULT (datetime('now', 'localtime')),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (last_match_id) REFERENCES matches(id)
+)
