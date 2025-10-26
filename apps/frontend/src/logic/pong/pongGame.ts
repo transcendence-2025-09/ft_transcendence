@@ -11,6 +11,14 @@ import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
 import type { MatchData, MatchResult, MatchState, WsMessage } from "./types";
 
+type Snap = {
+  time: number;
+  ballX: number;
+  ballY: number;
+  paddleLeftY: number;
+  paddleRightY: number;
+};
+
 export type RenderOption = {
   paddleWidth: number;
   paddleHeight: number;
@@ -72,6 +80,10 @@ export class PongGame {
   private ws: WebSocket;
   private finishTime: number | null;
   private redirectDelay: number;
+  //snapをとって描画の線形補完をする
+  private prevSnap: Snap | null;
+  private lastSnap: Snap | null;
+  private interpDelay: number;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -118,6 +130,9 @@ export class PongGame {
     this.finishTime = null;
     //試合終了後の画面遷移時間
     this.redirectDelay = 5000;
+    this.prevSnap = null;
+    this.lastSnap = null;
+    this.interpDelay = 120;
   }
 
   public init = async () => {
@@ -237,6 +252,16 @@ export class PongGame {
   };
 
   private updateState = (data: MatchState): void => {
+    const now = performance.now();
+    this.prevSnap = this.lastSnap;
+    this.lastSnap = {
+      time: now,
+      ballX: data.ballX,
+      ballY: data.ballY,
+      paddleLeftY: data.paddleLeftY,
+      paddleRightY: data.paddleRightY,
+    };
+
     this.ballX = data.ballX;
     this.ballY = data.ballY;
     // this.ballVelX = data.ballVelX;
@@ -374,11 +399,56 @@ export class PongGame {
     //spaceは状況の変更は特にせずに送る。
   };
 
+  private lerp(a: number, b: number, t: number) {
+    return a + (b - a) * t;
+  }
+
+  private clamp(x: number) {
+    return Math.max(0, Math.min(1, x));
+  }
+
+  private samplePosition(targettime: number): {
+    ballX: number;
+    ballY: number;
+    paddleLeftY: number;
+    paddleRightY: number;
+  } | null {
+    if (!this.prevSnap || !this.lastSnap) return null;
+    console.log("Sample get!");
+
+    const A = this.prevSnap;
+    const B = this.lastSnap;
+    const dt = B.time - A.time;
+    if (dt <= 0) {
+      return {
+        ballX: B.ballX,
+        ballY: B.ballY,
+        paddleLeftY: B.paddleLeftY,
+        paddleRightY: B.paddleRightY,
+      };
+    }
+    const t = this.clamp((targettime - A.time) / dt);
+    return {
+      ballX: this.lerp(A.ballX, B.ballX, t),
+      ballY: this.lerp(A.ballY, B.ballY, t),
+      paddleLeftY: this.lerp(A.paddleLeftY, B.paddleLeftY, t),
+      paddleRightY: this.lerp(A.paddleRightY, B.paddleRightY, t),
+    };
+  }
+
   public render = (): void => {
     const ctx = this.canvas.getContext("2d");
     if (!ctx) return;
     const width = this.width;
     const height = this.height;
+
+    //補完データの追加
+    const targettime = performance.now() - this.interpDelay;
+    const s = this.samplePosition(targettime);
+    const ballX = s?.ballX ?? this.ballX;
+    const ballY = s?.ballY ?? this.ballY;
+    const paddleLeftY = s?.paddleLeftY ?? this.paddleLeftY;
+    const paddleRightY = s?.paddleRightY ?? this.paddleRightY;
 
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, width, height);
@@ -403,18 +473,18 @@ export class PongGame {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(
       this.paddleMargin,
-      this.paddleLeftY,
+      paddleLeftY,
       this.paddleWidth,
       this.paddleHeight,
     );
     ctx.fillRect(
       this.width - this.paddleMargin - this.paddleWidth,
-      this.paddleRightY,
+      paddleRightY,
       this.paddleWidth,
       this.paddleHeight,
     );
     ctx.beginPath();
-    ctx.arc(this.ballX, this.ballY, this.ballRadius, 0, Math.PI * 2);
+    ctx.arc(ballX, ballY, this.ballRadius, 0, Math.PI * 2);
     ctx.fill();
 
     //scoreの描画
