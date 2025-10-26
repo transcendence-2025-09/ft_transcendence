@@ -3,6 +3,13 @@ import { componentFactory } from "../factory/componentFactory";
 import { eh } from "../factory/elementFactory";
 import { pageFactory } from "../factory/pageFactory";
 
+class TwoFactorRequiredError extends Error {
+  constructor() {
+    super("Two-factor authentication required");
+    this.name = "TwoFactorRequiredError";
+  }
+}
+
 // ポップアップでOAuth認証を処理する関数
 const handleOAuthWithPopup = async (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -64,6 +71,11 @@ const handleOAuthWithPopup = async (): Promise<void> => {
         setTimeout(() => {
           resolve();
         }, 100);
+      } else if (event.data.type === "AUTH_2FA_REQUIRED") {
+        clearInterval(checkClosed);
+        popup.close();
+        window.removeEventListener("message", messageListener);
+        reject(new TwoFactorRequiredError());
       } else if (event.data.type === "AUTH_ERROR") {
         clearInterval(checkClosed);
         popup.close();
@@ -252,6 +264,12 @@ signInButtonEl.addEventListener("click", async () => {
     console.log("認証が完了しました");
     window.location.href = "/dashboard";
   } catch (error) {
+    // 2FA が必要な場合は検証ページへ
+    if (error instanceof TwoFactorRequiredError) {
+      window.location.href = "/auth/2fa/validate";
+      return;
+    }
+
     console.error("認証エラー:", error);
     const errorMessage =
       error instanceof Error

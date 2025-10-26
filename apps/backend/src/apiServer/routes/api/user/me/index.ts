@@ -14,6 +14,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             name: Type.String(),
             email: Type.String(),
             ft_id: Type.Number(),
+            two_factor_enabled: Type.Boolean(),
           }),
           400: Type.Object({
             error: Type.String(),
@@ -38,6 +39,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         name: user.name,
         email: user.email,
         ft_id: user.ft_id,
+        two_factor_enabled: user.two_factor_enabled,
       });
     },
   );
