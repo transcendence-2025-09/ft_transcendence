@@ -120,9 +120,10 @@ export class PongServer {
 
     this.start();
     // 必要ならクライアントへ
+    console.log("server send init");
     this.ws.send(
       JSON.stringify({
-        type: "init:ok",
+        type: "init",
       }),
     );
   };
@@ -270,24 +271,29 @@ export class PongServer {
   private finishGame = async (): Promise<void> => {
     const winId = this.getWinner()?.userId ?? "Undefined";
 
-    //先にbackendサーバーにpostしてデータを保存しておく
-    // const res = await fetch(
-    //   `http://localhost:3000/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
-    //   {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     credentials: "include",
-    //     body: JSON.stringify({
-    //       winnerId: winId,
-    //       score: {
-    //         leftPlayer: this.leftScore,
-    //         rightPlayer: this.rightScore,
-    //       },
-    //     }),
-    //   },
-    // );
-
+    //先にゲームを止めておく
     this.isFinish = true;
+    // 先にbackendサーバーにpostしてデータを保存しておく;
+    const res = await fetch(
+      `http://localhost:3000/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          winnerId: winId,
+          score: {
+            leftPlayer: this.leftScore,
+            rightPlayer: this.rightScore,
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      console.log(res);
+      throw new Error("Failed to post result");
+    }
 
     //その処理が終わってからフロント側に返す。
     this.ws.send(
@@ -301,9 +307,6 @@ export class PongServer {
         } as MatchResult,
       }),
     );
-    // if (!res.ok) {
-    //   throw new Error("Failed to post result");
-    // }
   };
 
   private updateInput = (palyload: PlayerInput): void => {
