@@ -35,7 +35,7 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
       const canvas = pong.el as HTMLCanvasElement;
       gameInstance = new PongGame(canvas, opt, ctx);
       gameInstance.init();
-      gameInstance.registerKeyEvent();
+      // gameInstance.registerKeyEvent();
       gameInstance.start();
     },
     unmount() {
