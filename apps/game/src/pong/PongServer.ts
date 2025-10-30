@@ -269,10 +269,11 @@ export class PongServer {
 
   //試合終了処理。先にbackendに試合の記録を送って、送った後にフロントに対してそれを通知
   private finishGame = async (): Promise<void> => {
-    const winId = this.getWinner()?.userId ?? "Undefined";
+    const winId = this.getWinner()?.userId ?? undefined;
 
     //先にゲームを止めておく
     this.isFinish = true;
+    // this.stop();
     // 先にbackendサーバーにpostしてデータを保存しておく;
     const res = await fetch(
       `http://localhost:3000/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
@@ -307,6 +308,7 @@ export class PongServer {
         } as MatchResult,
       }),
     );
+    this.ws.close(1000, "game finish");
   };
 
   private updateInput = (palyload: PlayerInput): void => {
