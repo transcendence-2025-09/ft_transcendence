@@ -61,6 +61,6 @@ export type MatchState = {
 export type MatchResult = {
   leftScore: number;
   rightScore: number;
-  winnerId: string;
+  winnerId: number;
   isFinish: boolean;
 };

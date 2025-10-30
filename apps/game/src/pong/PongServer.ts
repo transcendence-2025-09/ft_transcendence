@@ -109,8 +109,8 @@ export class PongServer {
     this.winScore = arg.winScore ?? this.winScore;
     this.tournamentId = arg.tournamentId ?? null;
     this.matchId = arg.matchId ?? null;
-    this.leftPlayer = arg.leftPlayer ?? null;
-    this.rightPlayer = arg.rightPlayer ?? null;
+    this.leftPlayer = arg.leftPlayer;
+    this.rightPlayer = arg.rightPlayer;
 
     // 位置の初期化
     this.ballX = this.width / 2;
@@ -261,15 +261,14 @@ export class PongServer {
   };
 
   //勝者判定
-  private getWinner = () => {
-    if (this.lastScored === "left") return this.leftPlayer;
-    else if (this.lastScored === "right") return this.rightPlayer;
-    else return null;
+  private getWinnerId = (): number | undefined => {
+    if (this.lastScored === "left") return this.leftPlayer?.userId;
+    else if (this.lastScored === "right") return this.rightPlayer?.userId;
   };
 
   //試合終了処理。先にbackendに試合の記録を送って、送った後にフロントに対してそれを通知
   private finishGame = async (): Promise<void> => {
-    const winId = this.getWinner()?.userId ?? undefined;
+    const winId = this.getWinnerId();
 
     //先にゲームを止めておく
     this.isFinish = true;
