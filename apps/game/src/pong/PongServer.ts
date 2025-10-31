@@ -9,6 +9,7 @@ import type {
   WsMessage,
 } from "src/types/pong";
 import type { WebSocket } from "ws";
+import { internalApiClient } from "../utils/internalApiClient.js";
 
 export class PongServer {
   // 通信
@@ -272,27 +273,28 @@ export class PongServer {
 
     //先にゲームを止めておく
     this.isFinish = true;
-    // this.stop();
-    // 先にbackendサーバーにpostしてデータを保存しておく;
-    const res = await fetch(
-      `http://localhost:3000/api/tournaments/${this.tournamentId}/matches/${this.matchId}/result`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
+
+    // 先にbackendサーバーに内部APIでpostしてデータを保存しておく
+    if (this.tournamentId && this.matchId && winId) {
+      try {
+        await internalApiClient.submitMatchResult({
+          tournamentId: this.tournamentId,
+          matchId: this.matchId,
           winnerId: winId,
           score: {
             leftPlayer: this.leftScore,
             rightPlayer: this.rightScore,
           },
-        }),
-      },
-    );
-
-    if (!res.ok) {
-      console.log(res);
-      throw new Error("Failed to post result");
+        });
+        console.log("Match result successfully submitted to backend");
+      } catch (error) {
+        console.error("Failed to submit match result to backend:", error);
+        // エラーでも試合は続行（フロントには結果を返す）
+      }
+    } else {
+      console.warn(
+        "Missing tournament/match ID or winner ID, skipping result submission",
+      );
     }
 
     //その処理が終わってからフロント側に返す。

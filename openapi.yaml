@@ -14,6 +14,8 @@ tags:
     description: ゲーム関連API
   - name: tournament
     description: トーナメント関連API
+  - name: internal
+    description: 内部API（サーバー間通信専用）
 
 paths:
   /api/auth/login:
@@ -683,6 +685,86 @@ paths:
         '401':
           description: 認証エラー
 
+  /internal/tournaments/{id}/matches/{matchId}/result:
+    post:
+      tags:
+        - internal
+      summary: 試合結果登録（内部API）
+      description: ゲームサーバーから試合結果を受信して保存します。INTERNAL_API_SECRETが必要
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: トーナメントID
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: マッチID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                winnerId:
+                  type: number
+                  description: 勝者のユーザーID
+                score:
+                  type: object
+                  properties:
+                    leftPlayer:
+                      type: number
+                      description: 左側プレイヤーのスコア
+                    rightPlayer:
+                      type: number
+                      description: 右側プレイヤーのスコア
+                  required:
+                    - leftPlayer
+                    - rightPlayer
+              required:
+                - winnerId
+                - score
+      responses:
+        '200':
+          description: 結果登録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                required:
+                  - success
+                  - message
+        '400':
+          description: バリデーションエラーまたは試合が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 認証エラー（無効なトークン）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: トーナメントが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     cookieAuth:
@@ -699,6 +781,10 @@ components:
       in: cookie
       name: mfaTicket
       description: MFAチケットをhttpOnly cookieで送信
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 内部API用のBearer Token認証（INTERNAL_API_SECRET）
 
   schemas:
     Error:
