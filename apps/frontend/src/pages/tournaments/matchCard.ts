@@ -33,11 +33,24 @@ function createCompletedMatchCard(match: Match): string {
 /**
  * 未完了の試合のカードHTMLを生成
  */
-function createPendingMatchCard(match: Match): string {
+function createPendingMatchCard(match: Match, currentUserId?: number): string {
   const player1Name = escapeHtml(match.leftPlayer?.alias || "TBD");
   const player2Name = escapeHtml(match.rightPlayer?.alias || "TBD");
   const isStartable =
     match.status === "pending" && match.leftPlayer && match.rightPlayer;
+
+  // 現在のユーザーが対戦プレイヤーかどうかを判定
+  const isParticipant =
+    currentUserId !== undefined &&
+    (match.leftPlayer?.userId === currentUserId ||
+      match.rightPlayer?.userId === currentUserId);
+
+  // ボタンのスタイルとdisabled属性を決定
+  const buttonClass =
+    !isStartable || !isParticipant
+      ? "bg-gray-400 cursor-not-allowed text-white font-bold py-2 px-6 rounded"
+      : "bg-black hover:bg-gray-800 text-white font-bold py-2 px-6 rounded";
+  const buttonDisabled = !isStartable || !isParticipant ? "disabled" : "";
 
   return `
     <div class="bg-white shadow-lg rounded-lg p-6">
@@ -49,8 +62,8 @@ function createPendingMatchCard(match: Match): string {
         </div>
         <button
           id="startMatch-${match.id}"
-          class="bg-black hover:bg-gray-800 text-white font-bold py-2 px-6 rounded ${!isStartable ? "opacity-50 cursor-not-allowed" : ""}"
-          ${!isStartable ? "disabled" : ""}
+          class="${buttonClass}"
+          ${buttonDisabled}
         >
           試合開始
         </button>
@@ -62,14 +75,14 @@ function createPendingMatchCard(match: Match): string {
 /**
  * マッチカードのHTMLを生成
  */
-export function createMatchCard(match: Match): string {
+export function createMatchCard(match: Match, currentUserId?: number): string {
   const isCompleted = match.status === "completed";
 
   if (isCompleted && match.score) {
     return createCompletedMatchCard(match);
   }
 
-  return createPendingMatchCard(match);
+  return createPendingMatchCard(match, currentUserId);
 }
 
 /**
