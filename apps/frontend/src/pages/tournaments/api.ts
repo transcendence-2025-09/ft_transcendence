@@ -138,3 +138,23 @@ export async function startTournament(tournamentId: string): Promise<void> {
     throw new Error(error.error || "Failed to start tournament");
   }
 }
+
+/**
+ * 現在のユーザー情報を取得
+ */
+export async function getCurrentUser(): Promise<{
+  id: number;
+  name: string;
+  email: string;
+  ft_id: number;
+}> {
+  const response = await fetch("/api/user/me", {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch current user");
+  }
+
+  return await response.json();
+}
