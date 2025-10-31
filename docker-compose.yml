@@ -10,6 +10,7 @@ services:
       - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
       - CLIENT_SECRET=${CLIENT_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -38,6 +39,7 @@ services:
         - NODE_ENV=production
         - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
         - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
+        - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     ports:
         - "3001:3001"
     restart: unless-stopped
