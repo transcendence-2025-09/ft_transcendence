@@ -4,6 +4,7 @@ import type { RouteCtx } from "../../routing/routeList";
 import {
   startTournament as apiStartTournament,
   fetchTournament,
+  getCurrentUser,
   joinTournament,
 } from "./api";
 import { ERROR_MESSAGES } from "./constants";
@@ -39,7 +40,10 @@ export function TournamentDetail(ctx: RouteCtx) {
   async function loadTournamentDetail() {
     try {
       showLoading(detailContainer);
-      const tournament = await fetchTournament(tournamentId);
+      const [tournament, currentUser] = await Promise.all([
+        fetchTournament(tournamentId),
+        getCurrentUser(),
+      ]);
 
       // トーナメントが既に開始されている場合、マッチ画面に即座に遷移
       if (tournament.status === "in_progress") {
@@ -116,15 +120,42 @@ export function TournamentDetail(ctx: RouteCtx) {
           }
         </div>
 
-        <div class="space-x-4">
-          <button id="joinBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
-            参加する
-          </button>
-          <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
-            開始する
-          </button>
+        <div class="space-x-4" id="actionButtons">
         </div>
       `;
+
+      // ユーザーの状態に応じてボタンを表示
+      const actionButtonsContainer =
+        detailContainer.querySelector("#actionButtons");
+      const isHost = currentUser.id === tournament.hostId;
+      const isParticipant =
+        tournament.players?.some((p) => p.userId === currentUser.id) ?? false;
+
+      if (actionButtonsContainer) {
+        if (isParticipant) {
+          // 既に参加している場合は「待機中」を表示
+          actionButtonsContainer.innerHTML = `
+            <span class="text-gray-600 font-semibold py-2 px-6">待機中...</span>
+          `;
+        } else {
+          // まだ参加していない場合は「参加する」ボタンを表示
+          actionButtonsContainer.innerHTML = `
+            <button id="joinBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+              参加する
+            </button>
+          `;
+        }
+
+        // ホストの場合のみ開始ボタンを追加
+        if (isHost) {
+          const canStart = (tournament.players?.length ?? 0) >= tournament.maxPlayers;
+          actionButtonsContainer.innerHTML += `
+            <button id="startBtn" class="${canStart ? 'bg-blue-500 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white font-bold py-2 px-6 rounded" ${canStart ? '' : 'disabled'}>
+              開始する ${canStart ? '' : `(${tournament.players?.length ?? 0}/${tournament.maxPlayers}人)`}
+            </button>
+          `;
+        }
+      }
 
       // 参加ボタンのイベントリスナーを設定
       const joinBtn = detailContainer.querySelector("#joinBtn");
@@ -160,8 +191,6 @@ export function TournamentDetail(ctx: RouteCtx) {
 
   // トーナメントを開始
   async function handleStart() {
-    if (!confirm("トーナメントを開始しますか？")) return;
-
     try {
       await apiStartTournament(tournamentId);
       navigateTo(`/tournaments/${tournamentId}/matches`);
