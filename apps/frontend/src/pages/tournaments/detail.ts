@@ -148,10 +148,11 @@ export function TournamentDetail(ctx: RouteCtx) {
 
         // ホストの場合のみ開始ボタンを追加
         if (isHost) {
-          const canStart = (tournament.players?.length ?? 0) >= tournament.maxPlayers;
+          const canStart =
+            (tournament.players?.length ?? 0) >= tournament.maxPlayers;
           actionButtonsContainer.innerHTML += `
-            <button id="startBtn" class="${canStart ? 'bg-blue-500 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white font-bold py-2 px-6 rounded" ${canStart ? '' : 'disabled'}>
-              開始する ${canStart ? '' : `(${tournament.players?.length ?? 0}/${tournament.maxPlayers}人)`}
+            <button id="startBtn" class="${canStart ? "bg-blue-500 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"} text-white font-bold py-2 px-6 rounded" ${canStart ? "" : "disabled"}>
+              開始する ${canStart ? "" : `(${tournament.players?.length ?? 0}/${tournament.maxPlayers}人)`}
             </button>
           `;
         }
