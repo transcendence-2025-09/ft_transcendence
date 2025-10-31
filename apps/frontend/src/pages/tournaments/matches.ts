@@ -5,6 +5,7 @@ import {
   startMatch as apiStartMatch,
   fetchMatches,
   fetchTournament,
+  getCurrentUser,
 } from "./api";
 import { ERROR_MESSAGES, MATCH_ROUND } from "./constants";
 import {
@@ -119,12 +120,19 @@ export function TournamentMatches(ctx: RouteCtx) {
     }
   }
 
+  // 現在のユーザー情報を保持
+  let currentUserId: number | undefined;
+
   /**
    * トーナメント情報を読み込む
    */
   async function loadTournament() {
     try {
-      const tournament = await fetchTournament(tournamentId);
+      const [tournament, currentUser] = await Promise.all([
+        fetchTournament(tournamentId),
+        getCurrentUser(),
+      ]);
+      currentUserId = currentUser.id;
       tournamentNameEl.textContent = tournament.name;
 
       // 初期タブに応じた内容を読み込み
@@ -162,7 +170,7 @@ export function TournamentMatches(ctx: RouteCtx) {
       }
 
       matchesContainer.innerHTML = semifinalMatches
-        .map((match) => createMatchCard(match))
+        .map((match) => createMatchCard(match, currentUserId))
         .join("");
 
       attachMatchEventListeners(semifinalMatches);
@@ -200,12 +208,12 @@ export function TournamentMatches(ctx: RouteCtx) {
 
       if (finalsMatch) {
         html += `<h2 class="text-2xl font-bold mb-4">決勝戦</h2>`;
-        html += createMatchCard(finalsMatch);
+        html += createMatchCard(finalsMatch, currentUserId);
       }
 
       if (thirdPlaceMatch) {
         html += `<h2 class="text-2xl font-bold mb-4 mt-8">3位決定戦</h2>`;
-        html += createMatchCard(thirdPlaceMatch);
+        html += createMatchCard(thirdPlaceMatch, currentUserId);
       }
 
       matchesContainer.innerHTML = html;
