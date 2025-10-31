@@ -84,6 +84,12 @@ importers:
 
   apps/frontend:
     dependencies:
+      '@babylonjs/core':
+        specifier: ^8.34.0
+        version: 8.34.0
+      '@babylonjs/gui':
+        specifier: ^8.34.0
+        version: 8.34.0(@babylonjs/core@8.34.0)
       '@tailwindcss/vite':
         specifier: 4.1.13
         version: 4.1.13(vite@7.1.7(@types/node@24.5.2)(jiti@2.6.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -157,6 +163,14 @@ packages:
 
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
+
+  '@babylonjs/core@8.34.0':
+    resolution: {integrity: sha512-AEF/Zvs2WeC7ckazLi93GecDvlTc/E1ZZ4IF7O1JvZHtwYHtlQ7G0LuR9iJ9zhz7pkiKb1CV3g9KHWNiCmWt8A==}
+
+  '@babylonjs/gui@8.34.0':
+    resolution: {integrity: sha512-DZ+wRAIsBrW6D137LZApuvbwCbhXGIKPx28QFCi+IYFnadpMLUT3GIpJyy3wGp7nBfceTZ0knFrCilTTmn+hiA==}
+    peerDependencies:
+      '@babylonjs/core': ^8.0.0
 
   '@biomejs/biome@2.2.4':
     resolution: {integrity: sha512-TBHU5bUy/Ok6m8c0y3pZiuO/BZoY/OcGxoLlrfQof5s8ISVwbVBdFINPQZyFfKwil8XibYWb7JMwnT8wT4WVPg==}
@@ -2301,6 +2315,12 @@ snapshots:
       lru-cache: 11.2.2
 
   '@asamuzakjp/nwsapi@2.3.9': {}
+
+  '@babylonjs/core@8.34.0': {}
+
+  '@babylonjs/gui@8.34.0(@babylonjs/core@8.34.0)':
+    dependencies:
+      '@babylonjs/core': 8.34.0
 
   '@biomejs/biome@2.2.4':
     optionalDependencies:

@@ -4,8 +4,8 @@ import { eh } from "../../factory/elementFactory";
 
 export const pongGame = (): ElComponent => {
   const canvas = eh("canvas", {
-    width: "1000",
-    height: "700",
+    width: "1500",
+    height: "1100",
     id: "game",
     className: "mx-auto block bg-black rounded-lg shadow-lg",
   });
