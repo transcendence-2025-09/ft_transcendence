@@ -33,13 +33,10 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
         console.error(error);
         return null;
       }
-    }
+    },
   };
 }
 
 export default fp(async (fastify) => {
-  fastify.decorate(
-    "userStatsRepository",
-    createUserStatsRepository(fastify),
-  );
+  fastify.decorate("userStatsRepository", createUserStatsRepository(fastify));
 });

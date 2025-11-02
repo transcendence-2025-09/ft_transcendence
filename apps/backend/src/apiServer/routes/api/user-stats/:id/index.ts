@@ -43,7 +43,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       }
 
       return reply.status(200).send(userStats);
-    }
+    },
   );
 };
 
