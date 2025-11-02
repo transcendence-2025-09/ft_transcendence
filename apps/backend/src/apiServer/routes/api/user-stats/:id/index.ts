@@ -1,42 +1,29 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import { UserStatsResponseSchema } from "@transcendence/shared";
 import type { FastifyRequest } from "fastify";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { z } from "zod";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get(
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
+        params: z.object({
+          id: z.number(),
         }),
         response: {
-          200: Type.Object({
-            id: Type.String(),
-            user_id: Type.Number(),
-            average_score: Type.Number(),
-            number_of_matches: Type.Number(),
-            number_of_wins: Type.Number(),
-            current_winning_streak: Type.Number(),
-            total_score_points: Type.Number(),
-            total_loss_points: Type.Number(),
-            last_match_id: Type.Union([Type.String(), Type.Null()]),
-            last_updated: Type.String(),
+          200: UserStatsResponseSchema,
+          400: z.object({
+            error: z.string(),
           }),
-          400: Type.Object({
-            error: Type.String(),
-          }),
-          401: Type.Object({
-            error: Type.String(),
+          401: z.object({
+            error: z.string(),
           }),
         },
       },
     },
     async (request: FastifyRequest<{ Params: { id: number } }>, reply) => {
       const { id } = request.params;
-
       const userStats = await fastify.userStatsRepository.findByUserId(id);
       if (!userStats) {
         return reply.status(400).send({ error: "User stats not found" });
