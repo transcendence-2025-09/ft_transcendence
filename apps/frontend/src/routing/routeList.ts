@@ -1,3 +1,7 @@
+import {
+  type UserStatsResponse,
+  UserStatsResponseSchema,
+} from "@transcendence/shared";
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { handleAuthCallback } from "../features";
@@ -47,11 +51,26 @@ export type Route = {
 };
 
 //これはテストようなので実際はpageコンポーネントで別ファイルとして定義した方がいい
-const Dashboard = (name: string): ElComponent => {
+const Dashboard = (
+  name: string,
+  userStats: UserStatsResponse | null,
+): ElComponent => {
   const el = document.createElement("div");
+  const statsHtml = userStats
+    ? `
+      <p>平均獲得点数: ${userStats.average_score}</p>
+      <p>試合数: ${userStats.number_of_matches}</p>
+      <p>勝利数: ${userStats.number_of_wins}</p>
+      <p>連勝数: ${userStats.current_winning_streak}</p>
+      <p>合計獲得点数: ${userStats.total_score_points}</p>
+      <p>合計失点数: ${userStats.total_loss_points}</p>
+    `
+    : `<p>有効な試合データがありません</p>`;
+
   el.innerHTML = `
     <h1>dashboard</h1>
     <p>Welcome, ${name}!</p>
+    ${statsHtml}
     <a href="/tournaments" class="inline-block mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
       トーナメント一覧
     </a>
@@ -114,7 +133,24 @@ export const routeList: Route[] = [
       });
       if (!res.ok) throw new Error("Unorthorized");
       const data = await res.json();
-      return Dashboard(data.name ?? "User");
+      const userStatsRes = await fetch(`/api/user-stats/${data.id}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!userStatsRes.ok) {
+        return Dashboard(data.name ?? "User", null);
+      }
+
+      const statsJson = await userStatsRes.json().catch(() => null);
+      if (!statsJson) return Dashboard(data.name ?? "User", null);
+
+      const parsed = UserStatsResponseSchema.safeParse(statsJson);
+      if (!parsed.success) {
+        return Dashboard(data.name ?? "User", null);
+      }
+
+      return Dashboard(data.name ?? "User", parsed.data);
     },
   },
   {

@@ -33,7 +33,9 @@
     "sqlite": "5.1.1",
     "sqlite3": "5.1.7",
     "uuid": "13.0.0",
-    "zod": "4.1.11"
+    "zod": "4.1.11",
+    "fastify-type-provider-zod": "6.0.0",
+    "@transcendence/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "9.0.10",

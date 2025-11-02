@@ -22,6 +22,7 @@
     "@tailwindcss/vite": "4.1.13",
     "@types/ws": "8.18.1",
     "tailwindcss": "4.1.13",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "@transcendence/shared": "workspace:*"
   }
 }
