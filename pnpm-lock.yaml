@@ -99,6 +99,9 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.1.13
         version: 4.1.13(vite@7.1.7(@types/node@24.5.2)(jiti@2.6.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+      '@transcendence/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@types/ws':
         specifier: 8.18.1
         version: 8.18.1
