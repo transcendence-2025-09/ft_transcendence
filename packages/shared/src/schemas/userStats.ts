@@ -12,3 +12,5 @@ export const UserStatsResponseSchema = z.object({
   last_match_id: z.string().uuid().nullable(),
   last_updated: z.string(), // ISO 8601形式の日付文字列
 });
+
+export type UserStatsResponse = z.infer<typeof UserStatsResponseSchema>;

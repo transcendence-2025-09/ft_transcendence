@@ -1,15 +1,20 @@
 import { UserStatsResponseSchema } from "@transcendence/shared";
-import type { FastifyRequest } from "fastify";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import {
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
 import { z } from "zod";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
   fastify.get(
     "/",
     {
       schema: {
         params: z.object({
-          id: z.number(),
+          id: z.coerce.number(),
         }),
         response: {
           200: UserStatsResponseSchema,
@@ -22,12 +27,14 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: { id: number } }>, reply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const userStats = await fastify.userStatsRepository.findByUserId(id);
       if (!userStats) {
         return reply.status(400).send({ error: "User stats not found" });
       }
+
+      console.log("User stats retrieved:", userStats);
 
       return reply.status(200).send(userStats);
     },
