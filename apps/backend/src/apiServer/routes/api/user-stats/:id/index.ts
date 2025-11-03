@@ -55,21 +55,24 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           401: z.object({
             error: z.string(),
           }),
-        }
-      }
+        },
+      },
     },
     async (request, reply) => {
       const { id } = request.params;
-      const userStats = await fastify.userStatsRepository.createOrUpdateUserStats(id);
+      const userStats =
+        await fastify.userStatsRepository.createOrUpdateUserStats(id);
       if (!userStats) {
-        return reply.status(400).send({ error: "Failed to create or update user stats" });
+        return reply
+          .status(400)
+          .send({ error: "Failed to create or update user stats" });
       }
 
       console.log("User stats created or updated:", userStats);
 
       return reply.status(200).send(userStats);
-    }
-  )
+    },
+  );
 };
 
 export default plugin;

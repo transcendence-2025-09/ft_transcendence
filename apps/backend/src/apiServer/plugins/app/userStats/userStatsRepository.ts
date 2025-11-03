@@ -30,7 +30,9 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
       }
     },
 
-    async createOrUpdateUserStats(user_id: number): Promise<UserStatsResponse | null> {
+    async createOrUpdateUserStats(
+      user_id: number,
+    ): Promise<UserStatsResponse | null> {
       try {
         // 1. statsが存在するか確認(現在のstatsを取得)
         const userStats = await fastify.db.get(
@@ -59,8 +61,10 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
           const number_of_matches = matches.length;
           const number_of_wins = matches.filter(
             (match) =>
-              (match.player1_id === user_id && match.player1_score > match.player2_score) ||
-              (match.player2_id === user_id && match.player2_score > match.player1_score),
+              (match.player1_id === user_id &&
+                match.player1_score > match.player2_score) ||
+              (match.player2_id === user_id &&
+                match.player2_score > match.player1_score),
           ).length;
           const total_score_points = matches.reduce((acc, match) => {
             if (match.player1_id === user_id) return acc + match.player1_score;
@@ -77,14 +81,17 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
             for (let i = matches.length - 1; i >= 0; i--) {
               const match = matches[i];
               const isWin =
-                (match.player1_id === user_id && match.player1_score > match.player2_score) ||
-                (match.player2_id === user_id && match.player2_score > match.player1_score);
+                (match.player1_id === user_id &&
+                  match.player1_score > match.player2_score) ||
+                (match.player2_id === user_id &&
+                  match.player2_score > match.player1_score);
               if (isWin) streak++;
               else break;
             }
             return streak;
           })();
-          const last_match_id = matches.length > 0 ? matches[matches.length - 1].id : null;
+          const last_match_id =
+            matches.length > 0 ? matches[matches.length - 1].id : null;
 
           await fastify.db.run(
             `UPDATE user_stats SET average_score = ?, number_of_matches = ?, number_of_wins = ?, current_winning_streak = ?, total_score_points = ?, total_loss_points = ?, last_match_id = ? WHERE user_id = ?`,
@@ -107,7 +114,7 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
         return null;
       }
     },
-  }
+  };
 }
 
 export default fp(async (fastify) => {
