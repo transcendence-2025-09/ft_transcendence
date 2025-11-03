@@ -5,7 +5,7 @@ import { eh } from "../factory/elementFactory";
 const HeaderEl = eh<"header">(
   "header",
   { className: "p-3 border-b flex items-center justify-between" },
-  eh("h1", { className: "text-xl font-bold" }, "Demo Layout"),
+  eh("h1", { className: "text-xl font-bold" }, "ft_transcendence"),
   eh(
     "nav",
     { className: "flex gap-2" },

@@ -212,7 +212,7 @@ async function mockLogin(): Promise<void> {
 const titleEl = eh<"h1">(
   "h1",
   { className: "text-6xl font-bold text-black mb-8" },
-  "Title",
+  "ft_transcendence",
 );
 
 // Sign in with 42 ボタン
