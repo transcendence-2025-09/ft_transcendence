@@ -6,8 +6,9 @@ import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 
 const renderOverview = (stats: UserStatsResponse | null) => {
-  if (!stats) return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
-  
+  if (!stats)
+    return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
+
   return `
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       <div class="bg-white shadow rounded-lg p-4 hover:shadow-lg transition-shadow">
@@ -41,8 +42,9 @@ const renderOverview = (stats: UserStatsResponse | null) => {
 };
 
 const renderMatches = (stats: UserStatsResponse | null) => {
-  if (!stats) return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
-  
+  if (!stats)
+    return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
+
   return `
     <div class="p-4">
       <p class="text-gray-500">試合履歴は実装中です...</p>
@@ -93,7 +95,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
   }
 
   const el = document.createElement("div");
-  
+
   el.innerHTML = `
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
@@ -148,30 +150,40 @@ export const Dashboard = async (): Promise<ElComponent> => {
   `;
 
   // タブ切り替えの実装
-  const tabs = el.querySelectorAll('.tab-btn');
-  const contents = el.querySelectorAll('.tab-content');
+  const tabs = el.querySelectorAll(".tab-btn");
+  const contents = el.querySelectorAll(".tab-content");
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const target = tab.getAttribute('data-tab');
-      
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const target = tab.getAttribute("data-tab");
+
       // タブボタンのスタイル更新
-      tabs.forEach(t => {
+      tabs.forEach((t) => {
         if (t === tab) {
-          t.classList.add('border-blue-500', 'text-blue-600');
-          t.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+          t.classList.add("border-blue-500", "text-blue-600");
+          t.classList.remove(
+            "border-transparent",
+            "text-gray-500",
+            "hover:text-gray-700",
+            "hover:border-gray-300",
+          );
         } else {
-          t.classList.remove('border-blue-500', 'text-blue-600');
-          t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+          t.classList.remove("border-blue-500", "text-blue-600");
+          t.classList.add(
+            "border-transparent",
+            "text-gray-500",
+            "hover:text-gray-700",
+            "hover:border-gray-300",
+          );
         }
       });
 
       // コンテンツの表示/非表示
-      contents.forEach(content => {
+      contents.forEach((content) => {
         if (content.id === target) {
-          content.classList.remove('hidden');
+          content.classList.remove("hidden");
         } else {
-          content.classList.add('hidden');
+          content.classList.add("hidden");
         }
       });
     });
