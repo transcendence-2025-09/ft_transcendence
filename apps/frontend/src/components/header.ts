@@ -35,8 +35,12 @@ const HeaderEl = eh<"header">(
 );
 
 // ボタン要素を取得してイベントを紐付け
-const homeBtn = HeaderEl.querySelector('[data-page="home"]') as HTMLButtonElement | null;
-const aboutBtn = HeaderEl.querySelector('[data-page="about"]') as HTMLButtonElement | null;
+const homeBtn = HeaderEl.querySelector(
+  '[data-page="home"]',
+) as HTMLButtonElement | null;
+const aboutBtn = HeaderEl.querySelector(
+  '[data-page="about"]',
+) as HTMLButtonElement | null;
 
 if (homeBtn) {
   homeBtn.addEventListener("click", (e) => {
@@ -50,7 +54,10 @@ if (homeBtn) {
 // About モーダルの実装
 function openAboutModal() {
   const overlay = document.createElement("div");
-  overlay.setAttribute("class", "fixed inset-0 flex items-center justify-center");
+  overlay.setAttribute(
+    "class",
+    "fixed inset-0 flex items-center justify-center",
+  );
   overlay.style.backgroundColor = "rgba(0,0,0,0.8)";
   overlay.style.setProperty("backdrop-filter", "blur(4px)");
   overlay.style.zIndex = "9999";
@@ -76,8 +83,8 @@ function openAboutModal() {
 
   const close = () => {
     if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
-  document.removeEventListener("keydown", onKeyDown);
-  document.body.style.overflow = "";
+    document.removeEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "";
   };
 
   const onKeyDown = (ev: KeyboardEvent) => {
@@ -88,7 +95,9 @@ function openAboutModal() {
     if (ev.target === overlay) close();
   });
 
-  const closeBtn = modal.querySelector("#about-close") as HTMLButtonElement | null;
+  const closeBtn = modal.querySelector(
+    "#about-close",
+  ) as HTMLButtonElement | null;
   if (closeBtn) closeBtn.addEventListener("click", close);
 
   document.addEventListener("keydown", onKeyDown);
