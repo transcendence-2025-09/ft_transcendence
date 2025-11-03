@@ -1,6 +1,7 @@
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { eh } from "../factory/elementFactory";
+import { getRouter } from "../routing/instance";
 
 const HeaderEl = eh<"header">(
   "header",
@@ -45,9 +46,9 @@ const aboutBtn = HeaderEl.querySelector(
 if (homeBtn) {
   homeBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    // SPA的に遷移する場合はルーターを使うのが望ましいが、既存のコードベースでは
-    // 単純に location.href で移動している箇所があるため同様に扱う
-    window.location.href = "/dashboard";
+    // ルーターを使ってSPA遷移する
+    const router = getRouter();
+    router.navigate("/dashboard");
   });
 }
 
