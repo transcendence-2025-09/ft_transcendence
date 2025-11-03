@@ -7,7 +7,7 @@ const FooterEl = eh<"footer">(
   {
     className: "p-3 border-t text-sm text-gray-600",
   },
-  "© 2025 R.Matsuba",
+  "© 2025 yootsubo, syamasaw, rmatsuba, yxu",
 );
 
 export const Footer: ElComponent = componentFactory(FooterEl);
