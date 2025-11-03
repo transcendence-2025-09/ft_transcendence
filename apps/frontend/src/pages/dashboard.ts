@@ -16,7 +16,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
 
   // fetch stats
   const userStatsRes = await fetch(`/api/user-stats/${data.id}`, {
-    method: "GET",
+    method: "POST",
     credentials: "include",
   });
 
