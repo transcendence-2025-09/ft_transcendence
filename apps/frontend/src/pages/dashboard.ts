@@ -227,7 +227,9 @@ export const Dashboard = async (): Promise<ElComponent> => {
               match.player1_id === data.id
                 ? `${match.player1_score} - ${match.player2_score}`
                 : `${match.player2_score} - ${match.player1_score}`;
-            const resultClass = isWin ? "text-green-600 font-bold" : "text-red-600";
+            const resultClass = isWin
+              ? "text-green-600 font-bold"
+              : "text-red-600";
             const result = isWin ? "勝利" : "敗北";
             const playedAt = new Date(match.played_at).toLocaleString("ja-JP");
 
