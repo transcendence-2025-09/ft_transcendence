@@ -36,7 +36,15 @@ export class InternalApiClient {
   async submitMatchResult(
     payload: MatchResultPayload,
   ): Promise<MatchResultResponse> {
-    const { tournamentId, matchId, winnerId, score, ballSpeed, ballRadius, scoreLogs } = payload;
+    const {
+      tournamentId,
+      matchId,
+      winnerId,
+      score,
+      ballSpeed,
+      ballRadius,
+      scoreLogs,
+    } = payload;
     const url = `${this.baseUrl}/internal/tournaments/${tournamentId}/matches/${matchId}/result`;
 
     try {

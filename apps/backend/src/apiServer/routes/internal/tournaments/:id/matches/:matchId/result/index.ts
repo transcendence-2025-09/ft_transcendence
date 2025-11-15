@@ -25,10 +25,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           }),
           ballSpeed: Type.Optional(Type.Number()),
           ballRadius: Type.Optional(Type.Number()),
-          scoreLogs: Type.Optional(Type.Array(Type.Object({
-            left: Type.Number(),
-            right: Type.Number(),
-          }))),
+          scoreLogs: Type.Optional(
+            Type.Array(
+              Type.Object({
+                left: Type.Number(),
+                right: Type.Number(),
+              }),
+            ),
+          ),
         }),
         response: {
           200: Type.Object({
@@ -49,13 +53,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       reply,
     ) => {
       const { id: tournamentId, matchId } = request.params;
-      const { winnerId, score, ballSpeed, ballRadius, scoreLogs } = request.body as {
-        winnerId: number;
-        score: { leftPlayer: number; rightPlayer: number };
-        ballSpeed?: number;
-        ballRadius?: number;
-        scoreLogs?: Array<{ left: number; right: number }>;
-      };
+      const { winnerId, score, ballSpeed, ballRadius, scoreLogs } =
+        request.body as {
+          winnerId: number;
+          score: { leftPlayer: number; rightPlayer: number };
+          ballSpeed?: number;
+          ballRadius?: number;
+          scoreLogs?: Array<{ left: number; right: number }>;
+        };
 
       fastify.log.info(
         {
@@ -90,19 +95,19 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (ballSpeed !== undefined || ballRadius !== undefined) {
         const updateFields = [];
         const updateValues = [];
-        
+
         if (ballSpeed !== undefined) {
           updateFields.push("ball_speed = ?");
           updateValues.push(ballSpeed);
         }
-        
+
         if (ballRadius !== undefined) {
           updateFields.push("ball_radius = ?");
           updateValues.push(ballRadius);
         }
-        
+
         updateValues.push(matchId);
-        
+
         const updateQuery = `UPDATE matches SET ${updateFields.join(", ")} WHERE id = ?`;
         try {
           await fastify.db.run(updateQuery, updateValues);
@@ -124,17 +129,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           for (const log of scoreLogs) {
             // log.left > log.right の場合は leftPlayer がスコアを取った、そうでなければ rightPlayer
             const scoredPlayerId =
-              log.left > log.right ? match.leftPlayer.userId : match.rightPlayer.userId;
+              log.left > log.right
+                ? match.leftPlayer.userId
+                : match.rightPlayer.userId;
             await fastify.db.run(
               `INSERT INTO score_logs (id, match_id, scored_player_id, current_player1_score, current_player2_score)
                VALUES (?, ?, ?, ?, ?)`,
-              [
-                uuidv7(),
-                matchId,
-                scoredPlayerId,
-                log.left,
-                log.right,
-              ],
+              [uuidv7(), matchId, scoredPlayerId, log.left, log.right],
             );
           }
           fastify.log.info(
