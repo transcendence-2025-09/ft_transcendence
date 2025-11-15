@@ -187,13 +187,41 @@ export const Dashboard = async (): Promise<ElComponent> => {
           ball_speed: 3,
           ball_radius: 3,
           score_logs: [
-            { scored_player_id: data.id, current_player1_score: 1, current_player2_score: 0 },
-            { scored_player_id: 2, current_player1_score: 1, current_player2_score: 1 },
-            { scored_player_id: 2, current_player1_score: 1, current_player2_score: 2 },
-            { scored_player_id: data.id, current_player1_score: 2, current_player2_score: 2 },
-            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 3 },
-            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 4 },
-            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 5 },
+            {
+              scored_player_id: data.id,
+              current_player1_score: 1,
+              current_player2_score: 0,
+            },
+            {
+              scored_player_id: 2,
+              current_player1_score: 1,
+              current_player2_score: 1,
+            },
+            {
+              scored_player_id: 2,
+              current_player1_score: 1,
+              current_player2_score: 2,
+            },
+            {
+              scored_player_id: data.id,
+              current_player1_score: 2,
+              current_player2_score: 2,
+            },
+            {
+              scored_player_id: 2,
+              current_player1_score: 2,
+              current_player2_score: 3,
+            },
+            {
+              scored_player_id: 2,
+              current_player1_score: 2,
+              current_player2_score: 4,
+            },
+            {
+              scored_player_id: 2,
+              current_player1_score: 2,
+              current_player2_score: 5,
+            },
           ],
         },
         {
@@ -209,13 +237,41 @@ export const Dashboard = async (): Promise<ElComponent> => {
           ball_speed: 4,
           ball_radius: 2,
           score_logs: [
-            { scored_player_id: 3, current_player1_score: 1, current_player2_score: 0 },
-            { scored_player_id: data.id, current_player1_score: 1, current_player2_score: 1 },
-            { scored_player_id: 3, current_player1_score: 2, current_player2_score: 1 },
-            { scored_player_id: 3, current_player1_score: 3, current_player2_score: 1 },
-            { scored_player_id: data.id, current_player1_score: 3, current_player2_score: 2 },
-            { scored_player_id: 3, current_player1_score: 4, current_player2_score: 2 },
-            { scored_player_id: 3, current_player1_score: 5, current_player2_score: 2 }
+            {
+              scored_player_id: 3,
+              current_player1_score: 1,
+              current_player2_score: 0,
+            },
+            {
+              scored_player_id: data.id,
+              current_player1_score: 1,
+              current_player2_score: 1,
+            },
+            {
+              scored_player_id: 3,
+              current_player1_score: 2,
+              current_player2_score: 1,
+            },
+            {
+              scored_player_id: 3,
+              current_player1_score: 3,
+              current_player2_score: 1,
+            },
+            {
+              scored_player_id: data.id,
+              current_player1_score: 3,
+              current_player2_score: 2,
+            },
+            {
+              scored_player_id: 3,
+              current_player1_score: 4,
+              current_player2_score: 2,
+            },
+            {
+              scored_player_id: 3,
+              current_player1_score: 5,
+              current_player2_score: 2,
+            },
           ],
         },
       ];
@@ -295,8 +351,8 @@ export const Dashboard = async (): Promise<ElComponent> => {
                 <div class="bg-gray-50 rounded p-2 mb-2 text-xs">
                   <p class="text-gray-700">
                     Ball Speed: ${match.ball_speed ?? "N/A"} | Ball Radius: ${
-              match.ball_radius ?? "N/A"
-            }
+                      match.ball_radius ?? "N/A"
+                    }
                   </p>
                 </div>
 
@@ -415,11 +471,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
                   scales: {
                     y: {
                       beginAtZero: true,
-                      max:
-                        Math.max(
-                          ...player1Data,
-                          ...player2Data,
-                        ) + 1,
+                      max: Math.max(...player1Data, ...player2Data) + 1,
                       ticks: {
                         stepSize: 1,
                       },

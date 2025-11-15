@@ -77,10 +77,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         );
 
         // 各マッチの score_logs を取得
-        const matchesWithLogs: Array<Record<string, unknown>> = await Promise.all(
-          (matches || []).map(async (match: Record<string, unknown>) => {
-            const logs = await fastify.db.all(
-              `
+        const matchesWithLogs: Array<Record<string, unknown>> =
+          await Promise.all(
+            (matches || []).map(async (match: Record<string, unknown>) => {
+              const logs = await fastify.db.all(
+                `
               SELECT 
                 scored_player_id,
                 current_player1_score,
@@ -89,16 +90,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               WHERE match_id = ?
               ORDER BY rowid ASC
               `,
-              [match.id],
-            );
-            return {
-              ...match,
-              score_logs: logs || [],
-            };
-          }),
-        );
+                [match.id],
+              );
+              return {
+                ...match,
+                score_logs: logs || [],
+              };
+            }),
+          );
 
-        return reply.status(200).send({ 
+        return reply.status(200).send({
           matches: (matchesWithLogs || []) as Array<{
             id: string;
             tournament_id: string;
