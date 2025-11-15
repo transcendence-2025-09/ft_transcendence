@@ -435,7 +435,9 @@ export const Dashboard = async (): Promise<ElComponent> => {
                 ...match.score_logs,
               ];
 
-              const labels = logsWithInitial.map((log) => `${log.elapsed_seconds}s`);
+              const labels = logsWithInitial.map(
+                (log) => `${log.elapsed_seconds}s`,
+              );
               const player1Data = logsWithInitial.map(
                 (log) => log.current_player1_score,
               );

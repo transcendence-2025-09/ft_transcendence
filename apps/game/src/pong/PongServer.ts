@@ -43,7 +43,11 @@ export class PongServer {
   private isRunning = false;
   private isPaused = false;
   private lastScored: "left" | "right" | null = null;
-  private scoreLogs: Array<{ left: number; right: number; elapsedSeconds: number }> = [];
+  private scoreLogs: Array<{
+    left: number;
+    right: number;
+    elapsedSeconds: number;
+  }> = [];
   private matchStartTime: number | null = null;
 
   // メタ
