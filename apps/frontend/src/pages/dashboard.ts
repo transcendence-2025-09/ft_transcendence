@@ -191,36 +191,43 @@ export const Dashboard = async (): Promise<ElComponent> => {
               scored_player_id: data.id,
               current_player1_score: 1,
               current_player2_score: 0,
+              elapsed_seconds: 5,
             },
             {
               scored_player_id: 2,
               current_player1_score: 1,
               current_player2_score: 1,
+              elapsed_seconds: 12,
             },
             {
               scored_player_id: 2,
               current_player1_score: 1,
               current_player2_score: 2,
+              elapsed_seconds: 18,
             },
             {
               scored_player_id: data.id,
               current_player1_score: 2,
               current_player2_score: 2,
+              elapsed_seconds: 25,
             },
             {
               scored_player_id: 2,
               current_player1_score: 2,
               current_player2_score: 3,
+              elapsed_seconds: 32,
             },
             {
               scored_player_id: 2,
               current_player1_score: 2,
               current_player2_score: 4,
+              elapsed_seconds: 40,
             },
             {
               scored_player_id: 2,
               current_player1_score: 2,
               current_player2_score: 5,
+              elapsed_seconds: 48,
             },
           ],
         },
@@ -241,36 +248,43 @@ export const Dashboard = async (): Promise<ElComponent> => {
               scored_player_id: 3,
               current_player1_score: 1,
               current_player2_score: 0,
+              elapsed_seconds: 4,
             },
             {
               scored_player_id: data.id,
               current_player1_score: 1,
               current_player2_score: 1,
+              elapsed_seconds: 11,
             },
             {
               scored_player_id: 3,
               current_player1_score: 2,
               current_player2_score: 1,
+              elapsed_seconds: 17,
             },
             {
               scored_player_id: 3,
               current_player1_score: 3,
               current_player2_score: 1,
+              elapsed_seconds: 24,
             },
             {
               scored_player_id: data.id,
               current_player1_score: 3,
               current_player2_score: 2,
+              elapsed_seconds: 30,
             },
             {
               scored_player_id: 3,
               current_player1_score: 4,
               current_player2_score: 2,
+              elapsed_seconds: 38,
             },
             {
               scored_player_id: 3,
               current_player1_score: 5,
               current_player2_score: 2,
+              elapsed_seconds: 45,
             },
           ],
         },
@@ -361,13 +375,9 @@ export const Dashboard = async (): Promise<ElComponent> => {
                   scoreLogsHtml
                     ? `
                   <div class="bg-gray-100 rounded p-2 mb-2">
-                    <p class="text-gray-600 font-semibold text-xs mb-2">得点推移グラフ:</p>
+                    <p class="text-gray-600 font-semibold text-xs mb-2">スコア推移:</p>
                     <div style="position: relative; height: 200px; margin-bottom: 8px;">
                       <canvas id="chart-${match.id}"></canvas>
-                    </div>
-                    <p class="text-gray-600 font-semibold text-xs mb-1">得点イベント:</p>
-                    <div class="flex flex-wrap gap-1">
-                      ${scoreLogsHtml}
                     </div>
                   </div>
                 `
@@ -404,6 +414,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
                 scored_player_id: number;
                 current_player1_score: number;
                 current_player2_score: number;
+                elapsed_seconds?: number;
               }>;
             }) => {
               if (!match.score_logs || match.score_logs.length === 0) return;
@@ -413,11 +424,22 @@ export const Dashboard = async (): Promise<ElComponent> => {
               ) as HTMLCanvasElement | null;
               if (!canvasElement) return;
 
-              const labels = match.score_logs.map((_, i) => `Event ${i + 1}`);
-              const player1Data = match.score_logs.map(
+              // 初期値（0秒、0対0）を先頭に追加
+              const logsWithInitial = [
+                {
+                  scored_player_id: 0,
+                  current_player1_score: 0,
+                  current_player2_score: 0,
+                  elapsed_seconds: 0,
+                },
+                ...match.score_logs,
+              ];
+
+              const labels = logsWithInitial.map((log) => `${log.elapsed_seconds}s`);
+              const player1Data = logsWithInitial.map(
                 (log) => log.current_player1_score,
               );
-              const player2Data = match.score_logs.map(
+              const player2Data = logsWithInitial.map(
                 (log) => log.current_player2_score,
               );
 
@@ -469,11 +491,21 @@ export const Dashboard = async (): Promise<ElComponent> => {
                     },
                   },
                   scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: "Elapsed Time (seconds)",
+                      },
+                    },
                     y: {
                       beginAtZero: true,
                       max: Math.max(...player1Data, ...player2Data) + 1,
                       ticks: {
                         stepSize: 1,
+                      },
+                      title: {
+                        display: true,
+                        text: "Score",
                       },
                     },
                   },

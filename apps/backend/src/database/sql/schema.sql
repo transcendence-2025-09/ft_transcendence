@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS score_logs (
   scored_player_id INTEGER NOT NULL, -- 点を取ったプレイヤーのID
   current_player1_score INTEGER NOT NULL, -- 点を取った直後のplayer1のスコア
   current_player2_score INTEGER NOT NULL, -- 点を取った直後のplayer2のスコア
+  elapsed_seconds INTEGER NOT NULL DEFAULT 0, -- 試合開始からの経過秒数
   FOREIGN KEY (scored_player_id) REFERENCES users(id),
   FOREIGN KEY (match_id) REFERENCES matches(id)
 )

@@ -30,6 +30,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                       scored_player_id: Type.Number(),
                       current_player1_score: Type.Number(),
                       current_player2_score: Type.Number(),
+                      elapsed_seconds: Type.Optional(Type.Number()),
                     }),
                   ),
                 ),
@@ -85,7 +86,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               SELECT 
                 scored_player_id,
                 current_player1_score,
-                current_player2_score
+                current_player2_score,
+                elapsed_seconds
               FROM score_logs
               WHERE match_id = ?
               ORDER BY rowid ASC
@@ -116,6 +118,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               scored_player_id: number;
               current_player1_score: number;
               current_player2_score: number;
+              elapsed_seconds?: number;
             }>;
           }>,
         });
