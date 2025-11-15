@@ -46,8 +46,8 @@ const renderMatches = (stats: UserStatsResponse | null) => {
     return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
 
   return `
-    <div class="p-4">
-      <p class="text-gray-500">試合履歴は実装中です...</p>
+    <div id="matchesContainer" class="p-4">
+      <p class="text-gray-500">読み込み中...</p>
     </div>
   `;
 };
@@ -153,8 +153,383 @@ export const Dashboard = async (): Promise<ElComponent> => {
   const tabs = el.querySelectorAll(".tab-btn");
   const contents = el.querySelectorAll(".tab-content");
 
+  // マッチ履歴を取得して表示
+  async function loadMatchHistory() {
+    const matchesContainer = el.querySelector("#matchesContainer");
+    if (!matchesContainer) return;
+
+    try {
+      const response = await fetch("/api/user/matches", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        matchesContainer.innerHTML =
+          '<p class="text-gray-500 italic p-4">試合履歴の読み込みに失敗しました</p>';
+        return;
+      }
+
+      const data = await response.json();
+      const matches = data.matches || [];
+      // 外観確認用のダミーデータ
+      // const matches = [
+      //   {
+      //     id: "match1",
+      //     tournament_id: "tourn1",
+      //     round: 1,
+      //     player1_id: data.id,
+      //     player2_id: 2,
+      //     player1_score: 2,
+      //     player2_score: 5,
+      //     winner_id: data.id,
+      //     played_at: new Date().toISOString(),
+      //     ball_speed: 3,
+      //     ball_radius: 3,
+      //     score_logs: [
+      //       {
+      //         scored_player_id: data.id,
+      //         current_player1_score: 1,
+      //         current_player2_score: 0,
+      //         elapsed_seconds: 5,
+      //       },
+      //       {
+      //         scored_player_id: 2,
+      //         current_player1_score: 1,
+      //         current_player2_score: 1,
+      //         elapsed_seconds: 12,
+      //       },
+      //       {
+      //         scored_player_id: 2,
+      //         current_player1_score: 1,
+      //         current_player2_score: 2,
+      //         elapsed_seconds: 18,
+      //       },
+      //       {
+      //         scored_player_id: data.id,
+      //         current_player1_score: 2,
+      //         current_player2_score: 2,
+      //         elapsed_seconds: 25,
+      //       },
+      //       {
+      //         scored_player_id: 2,
+      //         current_player1_score: 2,
+      //         current_player2_score: 3,
+      //         elapsed_seconds: 32,
+      //       },
+      //       {
+      //         scored_player_id: 2,
+      //         current_player1_score: 2,
+      //         current_player2_score: 4,
+      //         elapsed_seconds: 40,
+      //       },
+      //       {
+      //         scored_player_id: 2,
+      //         current_player1_score: 2,
+      //         current_player2_score: 5,
+      //         elapsed_seconds: 48,
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     id: "match2",
+      //     tournament_id: "tourn1",
+      //     round: 2,
+      //     player1_id: 3,
+      //     player2_id: data.id,
+      //     player1_score: 5,
+      //     player2_score: 2,
+      //     winner_id: 3,
+      //     played_at: new Date().toISOString(),
+      //     ball_speed: 4,
+      //     ball_radius: 2,
+      //     score_logs: [
+      //       {
+      //         scored_player_id: 3,
+      //         current_player1_score: 1,
+      //         current_player2_score: 0,
+      //         elapsed_seconds: 4,
+      //       },
+      //       {
+      //         scored_player_id: data.id,
+      //         current_player1_score: 1,
+      //         current_player2_score: 1,
+      //         elapsed_seconds: 11,
+      //       },
+      //       {
+      //         scored_player_id: 3,
+      //         current_player1_score: 2,
+      //         current_player2_score: 1,
+      //         elapsed_seconds: 17,
+      //       },
+      //       {
+      //         scored_player_id: 3,
+      //         current_player1_score: 3,
+      //         current_player2_score: 1,
+      //         elapsed_seconds: 24,
+      //       },
+      //       {
+      //         scored_player_id: data.id,
+      //         current_player1_score: 3,
+      //         current_player2_score: 2,
+      //         elapsed_seconds: 30,
+      //       },
+      //       {
+      //         scored_player_id: 3,
+      //         current_player1_score: 4,
+      //         current_player2_score: 2,
+      //         elapsed_seconds: 38,
+      //       },
+      //       {
+      //         scored_player_id: 3,
+      //         current_player1_score: 5,
+      //         current_player2_score: 2,
+      //         elapsed_seconds: 45,
+      //       },
+      //     ],
+      //   },
+      // ];
+
+      if (matches.length === 0) {
+        matchesContainer.innerHTML =
+          '<p class="text-gray-500 italic p-4">試合履歴がありません</p>';
+        return;
+      }
+
+      // マッチ履歴を表示
+      const matchesHtml = matches
+        .map(
+          (match: {
+            id: string;
+            tournament_id: string;
+            round: number;
+            player1_id: number;
+            player2_id: number;
+            player1_score: number;
+            player2_score: number;
+            winner_id: number;
+            played_at: string;
+            ball_speed?: number;
+            ball_radius?: number;
+            score_logs?: Array<{
+              scored_player_id: number;
+              current_player1_score: number;
+              current_player2_score: number;
+            }>;
+          }) => {
+            const isWin = match.winner_id === data.id;
+            const opponent =
+              match.player1_id === data.id
+                ? `Player ${match.player2_id}`
+                : `Player ${match.player1_id}`;
+            const score =
+              match.player1_id === data.id
+                ? `${match.player1_score} - ${match.player2_score}`
+                : `${match.player2_score} - ${match.player1_score}`;
+            const resultClass = isWin
+              ? "text-green-600 font-bold"
+              : "text-red-600";
+            const result = isWin ? "勝利" : "敗北";
+            const playedAt = new Date(match.played_at).toLocaleString("ja-JP");
+
+            // 得点推移をHTMLで生成
+            const scoreLogsHtml = (match.score_logs || [])
+              .map((log) => {
+                const isCurrentUserScored = log.scored_player_id === data.id;
+                return `
+                  <div class="text-xs py-1 px-2 ${
+                    isCurrentUserScored
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }">
+                    ${log.current_player1_score} - ${log.current_player2_score}
+                  </div>
+                `;
+              })
+              .join("");
+
+            return `
+              <div class="bg-white shadow rounded-lg p-4 mb-3 hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex-1">
+                    <p class="text-gray-600 text-sm">対戦相手: ${opponent}</p>
+                    <p class="text-lg font-semibold mt-1">${score}</p>
+                    <p class="text-gray-500 text-xs mt-1">Round: ${match.round} | ${playedAt}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="${resultClass}">${result}</p>
+                  </div>
+                </div>
+
+                <!-- ゲーム設定 -->
+                <div class="bg-gray-50 rounded p-2 mb-2 text-xs">
+                  <p class="text-gray-700">
+                    Ball Speed: ${match.ball_speed ?? "N/A"} | Ball Radius: ${
+                      match.ball_radius ?? "N/A"
+                    }
+                  </p>
+                </div>
+
+                <!-- 得点推移 -->
+                ${
+                  scoreLogsHtml
+                    ? `
+                  <div class="bg-gray-100 rounded p-2 mb-2">
+                    <p class="text-gray-600 font-semibold text-xs mb-2">スコア推移:</p>
+                    <div style="position: relative; height: 200px; margin-bottom: 8px;">
+                      <canvas id="chart-${match.id}"></canvas>
+                    </div>
+                  </div>
+                `
+                    : '<p class="text-gray-500 text-xs italic">得点データなし</p>'
+                }
+              </div>
+            `;
+          },
+        )
+        .join("");
+
+      matchesContainer.innerHTML = matchesHtml;
+
+      // すべてのグラフを描画
+      const loadChartLibrary = async () => {
+        try {
+          const ChartModule = await import("chart.js/auto");
+          const Chart = ChartModule.default;
+
+          matches.forEach(
+            (match: {
+              id: string;
+              tournament_id: string;
+              round: number;
+              player1_id: number;
+              player2_id: number;
+              player1_score: number;
+              player2_score: number;
+              winner_id: number;
+              played_at: string;
+              ball_speed?: number;
+              ball_radius?: number;
+              score_logs?: Array<{
+                scored_player_id: number;
+                current_player1_score: number;
+                current_player2_score: number;
+                elapsed_seconds?: number;
+              }>;
+            }) => {
+              if (!match.score_logs || match.score_logs.length === 0) return;
+
+              const canvasElement = el.querySelector(
+                `#chart-${match.id}`,
+              ) as HTMLCanvasElement | null;
+              if (!canvasElement) return;
+
+              // 初期値（0秒、0対0）を先頭に追加
+              const logsWithInitial = [
+                {
+                  scored_player_id: 0,
+                  current_player1_score: 0,
+                  current_player2_score: 0,
+                  elapsed_seconds: 0,
+                },
+                ...match.score_logs,
+              ];
+
+              const labels = logsWithInitial.map(
+                (log) => `${log.elapsed_seconds}s`,
+              );
+              const player1Data = logsWithInitial.map(
+                (log) => log.current_player1_score,
+              );
+              const player2Data = logsWithInitial.map(
+                (log) => log.current_player2_score,
+              );
+
+              const player1Name =
+                match.player1_id === data.id
+                  ? "You"
+                  : `Player ${match.player1_id}`;
+              const player2Name =
+                match.player2_id === data.id
+                  ? "You"
+                  : `Player ${match.player2_id}`;
+
+              new Chart(canvasElement, {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [
+                    {
+                      label: player1Name,
+                      data: player1Data,
+                      borderColor: "#3B82F6",
+                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.3,
+                    },
+                    {
+                      label: player2Name,
+                      data: player2Data,
+                      borderColor: "#EF4444",
+                      backgroundColor: "rgba(239, 68, 68, 0.1)",
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.3,
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top" as const,
+                      labels: {
+                        font: {
+                          size: 12,
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: "Elapsed Time (seconds)",
+                      },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      max: Math.max(...player1Data, ...player2Data) + 1,
+                      ticks: {
+                        stepSize: 1,
+                      },
+                      title: {
+                        display: true,
+                        text: "Score",
+                      },
+                    },
+                  },
+                },
+              });
+            },
+          );
+        } catch (err) {
+          console.error("Failed to load chart library:", err);
+        }
+      };
+
+      loadChartLibrary();
+    } catch (error) {
+      console.error("Failed to load match history:", error);
+      matchesContainer.innerHTML =
+        '<p class="text-gray-500 italic p-4">試合履歴の読み込みに失敗しました</p>';
+    }
+  }
+
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       const target = tab.getAttribute("data-tab");
 
       // タブボタンのスタイル更新
@@ -182,6 +557,10 @@ export const Dashboard = async (): Promise<ElComponent> => {
       contents.forEach((content) => {
         if (content.id === target) {
           content.classList.remove("hidden");
+          // Matches タブが選択された時にマッチ履歴を読み込む
+          if (target === "matches") {
+            loadMatchHistory();
+          }
         } else {
           content.classList.add("hidden");
         }

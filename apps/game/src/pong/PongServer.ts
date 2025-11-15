@@ -43,7 +43,12 @@ export class PongServer {
   private isRunning = false;
   private isPaused = false;
   private lastScored: "left" | "right" | null = null;
-  private scoreLogs: Array<{ left: number; right: number }> = [];
+  private scoreLogs: Array<{
+    left: number;
+    right: number;
+    elapsedSeconds: number;
+  }> = [];
+  private matchStartTime: number | null = null;
 
   // メタ
   private tournamentId: string | null = null;
@@ -220,7 +225,14 @@ export class PongServer {
     if (this.ballX + this.ballRadius < 0) {
       this.rightScore += 1;
       this.lastScored = "right";
-      this.scoreLogs.push({ left: this.leftScore, right: this.rightScore });
+      const elapsedSeconds = this.matchStartTime
+        ? Math.floor((Date.now() - this.matchStartTime) / 1000)
+        : 0;
+      this.scoreLogs.push({
+        left: this.leftScore,
+        right: this.rightScore,
+        elapsedSeconds,
+      });
       //試合終了かどうかを判断
       if (this.rightScore === this.winScore) {
         this.finishGame();
@@ -230,7 +242,14 @@ export class PongServer {
     } else if (this.ballX - this.ballRadius > this.width) {
       this.leftScore += 1;
       this.lastScored = "left";
-      this.scoreLogs.push({ left: this.leftScore, right: this.rightScore });
+      const elapsedSeconds = this.matchStartTime
+        ? Math.floor((Date.now() - this.matchStartTime) / 1000)
+        : 0;
+      this.scoreLogs.push({
+        left: this.leftScore,
+        right: this.rightScore,
+        elapsedSeconds,
+      });
       //試合終了かどうかを判断
       if (this.leftScore === this.winScore) {
         this.finishGame();
@@ -370,6 +389,11 @@ export class PongServer {
     const dirY = Math.random() < 0.5 ? 1 : -1;
     this.ballVelX = dirX * this.ballSpeed;
     this.ballVelY = dirY * this.ballSpeed;
+
+    // 試合開始時刻を記録（初回のみ）
+    if (this.matchStartTime === null) {
+      this.matchStartTime = Date.now();
+    }
 
     this.isPaused = false;
     this.isRunning = true;
