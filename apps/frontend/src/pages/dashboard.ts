@@ -46,8 +46,8 @@ const renderMatches = (stats: UserStatsResponse | null) => {
     return '<p class="text-gray-500 italic p-4">有効な試合データがありません</p>';
 
   return `
-    <div class="p-4">
-      <p class="text-gray-500">試合履歴は実装中です...</p>
+    <div id="matchesContainer" class="p-4">
+      <p class="text-gray-500">読み込み中...</p>
     </div>
   `;
 };
@@ -153,8 +153,112 @@ export const Dashboard = async (): Promise<ElComponent> => {
   const tabs = el.querySelectorAll(".tab-btn");
   const contents = el.querySelectorAll(".tab-content");
 
+  // マッチ履歴を取得して表示
+  async function loadMatchHistory() {
+    const matchesContainer = el.querySelector("#matchesContainer");
+    if (!matchesContainer) return;
+
+    try {
+      const response = await fetch("/api/user/matches", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        matchesContainer.innerHTML =
+          '<p class="text-gray-500 italic p-4">試合履歴の読み込みに失敗しました</p>';
+        return;
+      }
+
+      const data = await response.json();
+      const matches = data.matches || [];
+      // 外観確認用のダミーデータ
+      // const matches = [
+      //   {
+      //     id: "match1",
+      //     tournament_id: "tourn1",
+      //     round: 1,
+      //     player1_id: data.id,
+      //     player2_id: 2,
+      //     player1_score: 10,
+      //     player2_score: 8,
+      //     winner_id: data.id,
+      //     played_at: new Date().toISOString(),
+      //   },
+      //   {
+      //     id: "match2",
+      //     tournament_id: "tourn1",
+      //     round: 2,
+      //     player1_id: 3,
+      //     player2_id: data.id,
+      //     player1_score: 11,
+      //     player2_score: 9,
+      //     winner_id: 3,
+      //     played_at: new Date().toISOString(),
+      //   },
+      // ];
+
+      if (matches.length === 0) {
+        matchesContainer.innerHTML =
+          '<p class="text-gray-500 italic p-4">試合履歴がありません</p>';
+        return;
+      }
+
+      // マッチ履歴を表示
+      const matchesHtml = matches
+        .map(
+          (match: {
+            id: string;
+            tournament_id: string;
+            round: number;
+            player1_id: number;
+            player2_id: number;
+            player1_score: number;
+            player2_score: number;
+            winner_id: number;
+            played_at: string;
+          }) => {
+            const isWin = match.winner_id === data.id;
+            const opponent =
+              match.player1_id === data.id
+                ? `Player ${match.player2_id}`
+                : `Player ${match.player1_id}`;
+            const score =
+              match.player1_id === data.id
+                ? `${match.player1_score} - ${match.player2_score}`
+                : `${match.player2_score} - ${match.player1_score}`;
+            const resultClass = isWin ? "text-green-600 font-bold" : "text-red-600";
+            const result = isWin ? "勝利" : "敗北";
+            const playedAt = new Date(match.played_at).toLocaleString("ja-JP");
+
+            return `
+              <div class="bg-white shadow rounded-lg p-4 mb-3 hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <p class="text-gray-600 text-sm">対戦相手: ${opponent}</p>
+                    <p class="text-lg font-semibold mt-1">${score}</p>
+                    <p class="text-gray-500 text-xs mt-1">Round: ${match.round} | ${playedAt}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="${resultClass}">${result}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          },
+        )
+        .join("");
+
+      matchesContainer.innerHTML = matchesHtml;
+    } catch (error) {
+      console.error("Failed to load match history:", error);
+      matchesContainer.innerHTML =
+        '<p class="text-gray-500 italic p-4">試合履歴の読み込みに失敗しました</p>';
+    }
+  }
+
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       const target = tab.getAttribute("data-tab");
 
       // タブボタンのスタイル更新
@@ -182,6 +286,10 @@ export const Dashboard = async (): Promise<ElComponent> => {
       contents.forEach((content) => {
         if (content.id === target) {
           content.classList.remove("hidden");
+          // Matches タブが選択された時にマッチ履歴を読み込む
+          if (target === "matches") {
+            loadMatchHistory();
+          }
         } else {
           content.classList.add("hidden");
         }
