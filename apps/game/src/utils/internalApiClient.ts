@@ -8,6 +8,9 @@ interface MatchResultPayload {
     leftPlayer: number;
     rightPlayer: number;
   };
+  ballSpeed?: number;
+  ballRadius?: number;
+  scoreLogs?: Array<{ left: number; right: number }>;
 }
 
 interface MatchResultResponse {
@@ -33,17 +36,30 @@ export class InternalApiClient {
   async submitMatchResult(
     payload: MatchResultPayload,
   ): Promise<MatchResultResponse> {
-    const { tournamentId, matchId, winnerId, score } = payload;
+    const {
+      tournamentId,
+      matchId,
+      winnerId,
+      score,
+      ballSpeed,
+      ballRadius,
+      scoreLogs,
+    } = payload;
     const url = `${this.baseUrl}/internal/tournaments/${tournamentId}/matches/${matchId}/result`;
 
     try {
+      const body: Record<string, unknown> = { winnerId, score };
+      if (ballSpeed !== undefined) body.ballSpeed = ballSpeed;
+      if (ballRadius !== undefined) body.ballRadius = ballRadius;
+      if (scoreLogs !== undefined) body.scoreLogs = scoreLogs;
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.apiSecret}`,
         },
-        body: JSON.stringify({ winnerId, score }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {

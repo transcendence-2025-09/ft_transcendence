@@ -22,12 +22,14 @@ CREATE TABLE IF NOT EXISTS matches (
   id TEXT NOT NULL PRIMARY KEY, -- UUID?
   tournament_id TEXT NOT NULL,
   round INTEGER NOT NULL, -- 1回戦なら1, 2回戦なら2など
-  player1_id INTEGER NOT NULL,
-  player2_id INTEGER NOT NULL,
-  player1_score INTEGER NOT NULL,
-  player2_score INTEGER NOT NULL,
+  player1_id INTEGER NOT NULL, -- left
+  player2_id INTEGER NOT NULL, -- right
+  player1_score INTEGER NOT NULL, -- left
+  player2_score INTEGER NOT NULL, -- right
   winner_id INTEGER, -- スコアから判断できるが、クエリを簡単にするため
   played_at DATETIME DEFAULT (datetime('now', 'localtime')),
+  ball_speed INTEGER NOT NULL, -- ゲーム設定: ボール速度[3: 遅い, 6, 普通, 15: 速い]
+  ball_radius INTEGER NOT NULL, -- ゲーム設定: ボール半径[3: 小さい, 12, 普通, 48: 大きい]
   FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
   FOREIGN KEY (player1_id) REFERENCES users(id),
   FOREIGN KEY (player2_id) REFERENCES users(id),
@@ -48,4 +50,15 @@ CREATE TABLE IF NOT EXISTS user_stats (
   last_updated DATETIME DEFAULT (datetime('now', 'localtime')),
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (last_match_id) REFERENCES matches(id)
+);
+
+-- 獲得点推移を保存するテーブル
+CREATE TABLE IF NOT EXISTS score_logs (
+  id TEXT NOT NULL PRIMARY KEY, -- uuidv7
+  match_id TEXT NOT NULL,
+  scored_player_id INTEGER NOT NULL, -- 点を取ったプレイヤーのID
+  current_player1_score INTEGER NOT NULL, -- 点を取った直後のplayer1のスコア
+  current_player2_score INTEGER NOT NULL, -- 点を取った直後のplayer2のスコア
+  FOREIGN KEY (scored_player_id) REFERENCES users(id),
+  FOREIGN KEY (match_id) REFERENCES matches(id)
 )
