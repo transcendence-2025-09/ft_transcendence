@@ -24,6 +24,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                 played_at: Type.String(),
                 ball_speed: Type.Optional(Type.Number()),
                 ball_radius: Type.Optional(Type.Number()),
+                score_logs: Type.Optional(
+                  Type.Array(
+                    Type.Object({
+                      scored_player_id: Type.Number(),
+                      current_player1_score: Type.Number(),
+                      current_player2_score: Type.Number(),
+                    }),
+                  ),
+                ),
               }),
             ),
           }),
@@ -67,7 +76,48 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           [userId, userId],
         );
 
-        return reply.status(200).send({ matches: matches || [] });
+        // 各マッチの score_logs を取得
+        const matchesWithLogs: Array<Record<string, unknown>> = await Promise.all(
+          (matches || []).map(async (match: Record<string, unknown>) => {
+            const logs = await fastify.db.all(
+              `
+              SELECT 
+                scored_player_id,
+                current_player1_score,
+                current_player2_score
+              FROM score_logs
+              WHERE match_id = ?
+              ORDER BY rowid ASC
+              `,
+              [match.id],
+            );
+            return {
+              ...match,
+              score_logs: logs || [],
+            };
+          }),
+        );
+
+        return reply.status(200).send({ 
+          matches: (matchesWithLogs || []) as Array<{
+            id: string;
+            tournament_id: string;
+            round: number;
+            player1_id: number;
+            player2_id: number;
+            player1_score: number;
+            player2_score: number;
+            winner_id: number;
+            played_at: string;
+            ball_speed?: number;
+            ball_radius?: number;
+            score_logs?: Array<{
+              scored_player_id: number;
+              current_player1_score: number;
+              current_player2_score: number;
+            }>;
+          }>,
+        });
       } catch (error) {
         fastify.log.error({ error }, "Failed to fetch user matches");
         return reply.status(500).send({ error: "Internal server error" });

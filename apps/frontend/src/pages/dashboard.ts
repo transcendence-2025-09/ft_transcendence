@@ -171,32 +171,54 @@ export const Dashboard = async (): Promise<ElComponent> => {
       }
 
       const data = await response.json();
-      const matches = data.matches || [];
+      // const matches = data.matches || [];
       // 外観確認用のダミーデータ
-      // const matches = [
-      //   {
-      //     id: "match1",
-      //     tournament_id: "tourn1",
-      //     round: 1,
-      //     player1_id: data.id,
-      //     player2_id: 2,
-      //     player1_score: 10,
-      //     player2_score: 8,
-      //     winner_id: data.id,
-      //     played_at: new Date().toISOString(),
-      //   },
-      //   {
-      //     id: "match2",
-      //     tournament_id: "tourn1",
-      //     round: 2,
-      //     player1_id: 3,
-      //     player2_id: data.id,
-      //     player1_score: 11,
-      //     player2_score: 9,
-      //     winner_id: 3,
-      //     played_at: new Date().toISOString(),
-      //   },
-      // ];
+      const matches = [
+        {
+          id: "match1",
+          tournament_id: "tourn1",
+          round: 1,
+          player1_id: data.id,
+          player2_id: 2,
+          player1_score: 2,
+          player2_score: 5,
+          winner_id: data.id,
+          played_at: new Date().toISOString(),
+          ball_speed: 3,
+          ball_radius: 3,
+          score_logs: [
+            { scored_player_id: data.id, current_player1_score: 1, current_player2_score: 0 },
+            { scored_player_id: 2, current_player1_score: 1, current_player2_score: 1 },
+            { scored_player_id: 2, current_player1_score: 1, current_player2_score: 2 },
+            { scored_player_id: data.id, current_player1_score: 2, current_player2_score: 2 },
+            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 3 },
+            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 4 },
+            { scored_player_id: 2, current_player1_score: 2, current_player2_score: 5 },
+          ],
+        },
+        {
+          id: "match2",
+          tournament_id: "tourn1",
+          round: 2,
+          player1_id: 3,
+          player2_id: data.id,
+          player1_score: 5,
+          player2_score: 2,
+          winner_id: 3,
+          played_at: new Date().toISOString(),
+          ball_speed: 4,
+          ball_radius: 2,
+          score_logs: [
+            { scored_player_id: 3, current_player1_score: 1, current_player2_score: 0 },
+            { scored_player_id: data.id, current_player1_score: 1, current_player2_score: 1 },
+            { scored_player_id: 3, current_player1_score: 2, current_player2_score: 1 },
+            { scored_player_id: 3, current_player1_score: 3, current_player2_score: 1 },
+            { scored_player_id: data.id, current_player1_score: 3, current_player2_score: 2 },
+            { scored_player_id: 3, current_player1_score: 4, current_player2_score: 2 },
+            { scored_player_id: 3, current_player1_score: 5, current_player2_score: 2 }
+          ],
+        },
+      ];
 
       if (matches.length === 0) {
         matchesContainer.innerHTML =
@@ -217,6 +239,13 @@ export const Dashboard = async (): Promise<ElComponent> => {
             player2_score: number;
             winner_id: number;
             played_at: string;
+            ball_speed?: number;
+            ball_radius?: number;
+            score_logs?: Array<{
+              scored_player_id: number;
+              current_player1_score: number;
+              current_player2_score: number;
+            }>;
           }) => {
             const isWin = match.winner_id === data.id;
             const opponent =
@@ -233,9 +262,25 @@ export const Dashboard = async (): Promise<ElComponent> => {
             const result = isWin ? "勝利" : "敗北";
             const playedAt = new Date(match.played_at).toLocaleString("ja-JP");
 
+            // 得点推移をHTMLで生成
+            const scoreLogsHtml = (match.score_logs || [])
+              .map((log) => {
+                const isCurrentUserScored = log.scored_player_id === data.id;
+                return `
+                  <div class="text-xs py-1 px-2 ${
+                    isCurrentUserScored
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }">
+                    ${log.current_player1_score} - ${log.current_player2_score}
+                  </div>
+                `;
+              })
+              .join("");
+
             return `
               <div class="bg-white shadow rounded-lg p-4 mb-3 hover:shadow-lg transition-shadow">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between mb-3">
                   <div class="flex-1">
                     <p class="text-gray-600 text-sm">対戦相手: ${opponent}</p>
                     <p class="text-lg font-semibold mt-1">${score}</p>
@@ -245,6 +290,33 @@ export const Dashboard = async (): Promise<ElComponent> => {
                     <p class="${resultClass}">${result}</p>
                   </div>
                 </div>
+
+                <!-- ゲーム設定 -->
+                <div class="bg-gray-50 rounded p-2 mb-2 text-xs">
+                  <p class="text-gray-700">
+                    Ball Speed: ${match.ball_speed ?? "N/A"} | Ball Radius: ${
+              match.ball_radius ?? "N/A"
+            }
+                  </p>
+                </div>
+
+                <!-- 得点推移 -->
+                ${
+                  scoreLogsHtml
+                    ? `
+                  <div class="bg-gray-100 rounded p-2 mb-2">
+                    <p class="text-gray-600 font-semibold text-xs mb-2">得点推移グラフ:</p>
+                    <div style="position: relative; height: 200px; margin-bottom: 8px;">
+                      <canvas id="chart-${match.id}"></canvas>
+                    </div>
+                    <p class="text-gray-600 font-semibold text-xs mb-1">得点イベント:</p>
+                    <div class="flex flex-wrap gap-1">
+                      ${scoreLogsHtml}
+                    </div>
+                  </div>
+                `
+                    : '<p class="text-gray-500 text-xs italic">得点データなし</p>'
+                }
               </div>
             `;
           },
@@ -252,6 +324,117 @@ export const Dashboard = async (): Promise<ElComponent> => {
         .join("");
 
       matchesContainer.innerHTML = matchesHtml;
+
+      // すべてのグラフを描画
+      const loadChartLibrary = async () => {
+        try {
+          const ChartModule = await import("chart.js/auto");
+          const Chart = ChartModule.default;
+
+          matches.forEach(
+            (match: {
+              id: string;
+              tournament_id: string;
+              round: number;
+              player1_id: number;
+              player2_id: number;
+              player1_score: number;
+              player2_score: number;
+              winner_id: number;
+              played_at: string;
+              ball_speed?: number;
+              ball_radius?: number;
+              score_logs?: Array<{
+                scored_player_id: number;
+                current_player1_score: number;
+                current_player2_score: number;
+              }>;
+            }) => {
+              if (!match.score_logs || match.score_logs.length === 0) return;
+
+              const canvasElement = el.querySelector(
+                `#chart-${match.id}`,
+              ) as HTMLCanvasElement | null;
+              if (!canvasElement) return;
+
+              const labels = match.score_logs.map((_, i) => `Event ${i + 1}`);
+              const player1Data = match.score_logs.map(
+                (log) => log.current_player1_score,
+              );
+              const player2Data = match.score_logs.map(
+                (log) => log.current_player2_score,
+              );
+
+              const player1Name =
+                match.player1_id === data.id
+                  ? "You"
+                  : `Player ${match.player1_id}`;
+              const player2Name =
+                match.player2_id === data.id
+                  ? "You"
+                  : `Player ${match.player2_id}`;
+
+              new Chart(canvasElement, {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [
+                    {
+                      label: player1Name,
+                      data: player1Data,
+                      borderColor: "#3B82F6",
+                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.3,
+                    },
+                    {
+                      label: player2Name,
+                      data: player2Data,
+                      borderColor: "#EF4444",
+                      backgroundColor: "rgba(239, 68, 68, 0.1)",
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.3,
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top" as const,
+                      labels: {
+                        font: {
+                          size: 12,
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      max:
+                        Math.max(
+                          ...player1Data,
+                          ...player2Data,
+                        ) + 1,
+                      ticks: {
+                        stepSize: 1,
+                      },
+                    },
+                  },
+                },
+              });
+            },
+          );
+        } catch (err) {
+          console.error("Failed to load chart library:", err);
+        }
+      };
+
+      loadChartLibrary();
     } catch (error) {
       console.error("Failed to load match history:", error);
       matchesContainer.innerHTML =
