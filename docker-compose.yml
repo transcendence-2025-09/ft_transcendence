@@ -6,9 +6,9 @@ services:
       dockerfile: apps/backend/Dockerfile
     environment:
       - NODE_ENV=production
-      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
-      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
-      - CLIENT_SECRET=${CLIENT_SECRET}
+      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID_PROD}
+      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI_PROD}
+      - CLIENT_SECRET=${CLIENT_SECRET_PROD}
       - JWT_SECRET=${JWT_SECRET}
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     ports:
@@ -21,8 +21,11 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
       args:
-        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
-        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
+        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID_PROD}
+        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI_PROD}
+    environment:
+      - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID_PROD}
+      - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI_PROD}
     ports:
       - "5173:5173"
     depends_on:
@@ -37,9 +40,29 @@ services:
       dockerfile: apps/game/Dockerfile
     environment:
         - NODE_ENV=production
-        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID}
-        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI}
+        - VITE_42_CLIENT_ID=${VITE_42_CLIENT_ID_PROD}
+        - VITE_42_REDIRECT_URI=${VITE_42_REDIRECT_URI_PROD}
         - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     ports:
         - "3001:3001"
     restart: unless-stopped
+
+  ngrok:
+    container_name: ngrok
+    image: ngrok/ngrok:latest
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}
+    restart: unless-stopped
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    volumes:
+      - ./ngrok.yml:/etc/ngrok.yml
+    ports:
+      - "4040:4040"
+    depends_on:
+      - backend
+      - game
+      - frontend

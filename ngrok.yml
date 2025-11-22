@@ -1,0 +1,7 @@
+version: "2"
+web_addr: localhost:4040
+
+tunnels:
+  frontend:
+    addr: frontend:5173
+    proto: http
