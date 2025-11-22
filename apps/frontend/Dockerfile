@@ -10,8 +10,8 @@ RUN npx turbo@2.5.6 prune --scope=frontend --docker
 
 FROM base AS builder
 
-ENV VITE_42_CLIENT_ID=$VITE_42_CLIENT_ID
-ENV VITE_42_REDIRECT_URI=$VITE_42_REDIRECT_URI
+ARG VITE_42_CLIENT_ID
+ARG VITE_42_REDIRECT_URI
 
 WORKDIR /builder
 COPY --from=pruner /pruner/out/json ./
