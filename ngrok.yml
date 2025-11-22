@@ -3,5 +3,5 @@ web_addr: localhost:4040
 
 tunnels:
   frontend:
-    addr: 5173
+    addr: frontend:5173
     proto: http
