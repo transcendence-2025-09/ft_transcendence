@@ -3,6 +3,7 @@ import { pageFactory } from "../../factory/pageFactory";
 import type { RouteCtx } from "../../routing/routeList";
 import {
   startTournament as apiStartTournament,
+  cancelJoinTournament,
   fetchTournament,
   getCurrentUser,
   joinTournament,
@@ -124,50 +125,86 @@ export function TournamentDetail(ctx: RouteCtx) {
         </div>
       `;
 
-      // ユーザーの状態に応じてボタンを表示
-      const actionButtonsContainer =
-        detailContainer.querySelector("#actionButtons");
+      // ユーザーの状態に応じて処理を分岐
       const isHost = currentUser.id === tournament.hostId;
       const isParticipant =
         tournament.players?.some((p) => p.userId === currentUser.id) ?? false;
 
-      if (actionButtonsContainer) {
-        if (isParticipant) {
-          // 既に参加している場合は「待機中」を表示
-          actionButtonsContainer.innerHTML = `
-            <span class="text-gray-600 font-semibold py-2 px-6">待機中...</span>
-          `;
-        } else {
-          // まだ参加していない場合は「参加する」ボタンを表示
-          actionButtonsContainer.innerHTML = `
-            <button id="joinBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
-              参加する
-            </button>
-          `;
+      if (isHost && !isParticipant) {
+        try {
+          // ホストが未参加の場合、自動的に参加させる
+          await joinTournament(tournamentId, currentUser.name);
+          loadTournamentDetail(); // トーナメント詳細を再読み込み
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+          alert(`自動参加に失敗しました: ${errorMessage}`);
+          console.error("自動参加エラー: ", error);
         }
+      }
 
-        // ホストの場合のみ開始ボタンを追加
+      // actionButtonsContainer を再定義
+      const actionButtonsContainer =
+        detailContainer.querySelector("#actionButtons");
+
+      if (actionButtonsContainer) {
         if (isHost) {
+          // ホストの場合: キャンセルボタン非表示、開始ボタン表示
           const canStart =
             (tournament.players?.length ?? 0) >= tournament.maxPlayers;
-          actionButtonsContainer.innerHTML += `
+          actionButtonsContainer.innerHTML = `
             <button id="startBtn" class="${canStart ? "bg-blue-500 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"} text-white font-bold py-2 px-6 rounded" ${canStart ? "" : "disabled"}>
               開始する ${canStart ? "" : `(${tournament.players?.length ?? 0}/${tournament.maxPlayers}人)`}
             </button>
           `;
+
+          // 開始ボタンのイベントリスナーを設定
+          const startBtn = detailContainer.querySelector("#startBtn");
+          if (startBtn) {
+            startBtn.addEventListener("click", () => handleStart());
+          }
+        } else {
+          // ゲストの場合: 参加ボタン表示、キャンセルボタン表示、開始ボタン非表示
+          if (isParticipant) {
+            actionButtonsContainer.innerHTML = `
+              <button id="cancelJoinBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+                参加をキャンセルする
+              </button>
+            `;
+
+            // キャンセルボタンのイベントリスナーを設定
+            const cancelJoinBtn =
+              detailContainer.querySelector("#cancelJoinBtn");
+            if (cancelJoinBtn) {
+              cancelJoinBtn.addEventListener("click", async () => {
+                alert("参加キャンセル処理を実行します");
+                try {
+                  await cancelJoinTournament(tournamentId);
+                  loadTournamentDetail(); // トーナメント詳細を再読み込み
+                } catch (error) {
+                  const errorMessage =
+                    error instanceof Error
+                      ? error.message
+                      : ERROR_MESSAGES.GENERIC;
+                  alert(`キャンセルに失敗しました: ${errorMessage}`);
+                  console.error("キャンセルエラー: ", error);
+                }
+              });
+            }
+          } else {
+            actionButtonsContainer.innerHTML = `
+              <button id="joinBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+                参加する
+              </button>
+            `;
+
+            // 参加ボタンのイベントリスナーを設定
+            const joinBtn = detailContainer.querySelector("#joinBtn");
+            if (joinBtn) {
+              joinBtn.addEventListener("click", () => handleJoin());
+            }
+          }
         }
-      }
-
-      // 参加ボタンのイベントリスナーを設定
-      const joinBtn = detailContainer.querySelector("#joinBtn");
-      if (joinBtn) {
-        joinBtn.addEventListener("click", () => handleJoin());
-      }
-
-      // 開始ボタンのイベントリスナーを設定
-      const startBtn = detailContainer.querySelector("#startBtn");
-      if (startBtn) {
-        startBtn.addEventListener("click", () => handleStart());
       }
     } catch (error) {
       showError(detailContainer);
@@ -177,10 +214,10 @@ export function TournamentDetail(ctx: RouteCtx) {
 
   // トーナメントに参加
   async function handleJoin() {
-    const alias = prompt("プレイヤー名を入力してください:");
-    if (!alias) return;
-
     try {
+      const currentUser = await getCurrentUser();
+      const alias = currentUser.name; // 現在のユーザー名を取得
+
       await joinTournament(tournamentId, alias);
       loadTournamentDetail();
     } catch (error) {
@@ -205,32 +242,21 @@ export function TournamentDetail(ctx: RouteCtx) {
   // ポーリング: トーナメントの状態を定期的にチェック
   let pollingInterval: number | null = null;
 
-  async function checkTournamentStatus() {
-    try {
-      const tournament = await fetchTournament(tournamentId);
-      // トーナメントが開始されたら、マッチ画面に遷移
-      if (tournament.status === "in_progress") {
-        navigateTo(`/tournaments/${tournamentId}/matches`);
-        return;
-      }
-      // トーナメントが完了したら、結果タブに遷移
-      if (tournament.status === "completed") {
-        navigateTo(`/tournaments/${tournamentId}/matches?tab=results`);
-        return;
-      }
-    } catch (error) {
-      console.error("Failed to check tournament status:", error);
-    }
+  // 定期的にトーナメントの状態を確認するポーリングを設定
+  if (pollingInterval !== null) {
+    clearInterval(pollingInterval);
   }
 
-  // 5秒ごとにトーナメントの状態をチェック
-  pollingInterval = window.setInterval(checkTournamentStatus, 5000);
+  pollingInterval = window.setInterval(async () => {
+    try {
+      await loadTournamentDetail();
+    } catch (error) {
+      console.error("ポーリング中にエラーが発生しました: ", error);
+    }
+  }, 5000); // 5秒ごとに実行
 
-  loadTournamentDetail();
-
+  // コンポーネントのアンマウント時にポーリングを停止
   const component = componentFactory(el);
-
-  // オリジナルのunmountを拡張してポーリングをクリーンアップ
   const originalUnmount = component.unmount;
   component.unmount = () => {
     if (pollingInterval !== null) {
@@ -239,6 +265,8 @@ export function TournamentDetail(ctx: RouteCtx) {
     }
     originalUnmount();
   };
+
+  loadTournamentDetail();
 
   return pageFactory([component]);
 }
