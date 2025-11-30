@@ -136,7 +136,10 @@ function createTournamentsPage() {
   // モーダルをbody直下に生成
   createTournamentBtn.addEventListener("click", () => {
     const overlay = document.createElement("div");
-    overlay.setAttribute("class", "fixed inset-0 flex items-center justify-center");
+    overlay.setAttribute(
+      "class",
+      "fixed inset-0 flex items-center justify-center",
+    );
     overlay.style.backgroundColor = "rgba(0,0,0,0.8)";
     overlay.style.setProperty("backdrop-filter", "blur(4px)");
     overlay.style.zIndex = "9999";
