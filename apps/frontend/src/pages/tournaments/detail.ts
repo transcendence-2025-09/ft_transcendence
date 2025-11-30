@@ -177,10 +177,10 @@ export function TournamentDetail(ctx: RouteCtx) {
 
   // トーナメントに参加
   async function handleJoin() {
-    const alias = prompt("プレイヤー名を入力してください:");
-    if (!alias) return;
-
     try {
+      const currentUser = await getCurrentUser();
+      const alias = currentUser.name; // 現在のユーザー名を取得
+
       await joinTournament(tournamentId, alias);
       loadTournamentDetail();
     } catch (error) {
