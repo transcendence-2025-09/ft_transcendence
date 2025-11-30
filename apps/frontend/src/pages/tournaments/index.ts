@@ -177,8 +177,13 @@ function createTournamentsPage() {
 
       try {
         await createTournament(name, gameOptions);
-        loadTournaments();
-        close();
+        const createdTournament = await fetchAllTournaments(); // トーナメント一覧を再取得
+        const newTournament = createdTournament.find((t) => t.name === name);
+        if (newTournament) {
+          navigateTo(`/tournaments/${newTournament.id}`); // 作成したトーナメントの詳細ページに遷移
+        } else {
+          console.error("作成したトーナメントが見つかりませんでした");
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
