@@ -3,10 +3,10 @@ import { pageFactory } from "../../factory/pageFactory";
 import type { RouteCtx } from "../../routing/routeList";
 import {
   startTournament as apiStartTournament,
+  cancelJoinTournament,
   fetchTournament,
   getCurrentUser,
   joinTournament,
-  cancelJoinTournament
 } from "./api";
 import { ERROR_MESSAGES } from "./constants";
 import type { Player } from "./types";
