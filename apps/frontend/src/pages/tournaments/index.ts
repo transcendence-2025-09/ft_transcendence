@@ -163,30 +163,29 @@ function createTournamentsPage() {
     overlay.addEventListener("click", (ev) => {
       if (ev.target === overlay) close();
     });
-  });
+    createBtn.addEventListener("click", async () => {
+      const name = tournamentNameInput.value.trim();
+      if (!name) {
+        alert("トーナメント名を入力してください");
+        return;
+      }
 
-  // トーナメントを作成
-  createBtn.addEventListener("click", async () => {
-    const name = tournamentNameInput.value.trim();
-    if (!name) {
-      alert("トーナメント名を入力してください");
-      return;
-    }
+      const gameOptions = {
+        ballSpeed: Number(ballSpeedSelect.value),
+        ballRadius: Number(ballRadiusSelect.value),
+      };
 
-    const gameOptions = {
-      ballSpeed: Number(ballSpeedSelect.value),
-      ballRadius: Number(ballRadiusSelect.value),
-    };
-
-    try {
-      await createTournament(name, gameOptions);
-      loadTournaments();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
-      alert(`作成に失敗しました: ${errorMessage}`);
-      console.error("Failed to create tournament:", error);
-    }
+      try {
+        await createTournament(name, gameOptions);
+        loadTournaments();
+        close();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+        alert(`作成に失敗しました: ${errorMessage}`);
+        console.error("Failed to create tournament:", error);
+      }
+    });
   });
 
   // 初期読み込み
