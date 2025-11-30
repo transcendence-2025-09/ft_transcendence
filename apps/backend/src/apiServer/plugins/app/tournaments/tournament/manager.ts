@@ -102,13 +102,18 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
 
-      const playerIndex = tournament.players.findIndex((p) => p.userId === userId);
+      const playerIndex = tournament.players.findIndex(
+        (p) => p.userId === userId,
+      );
       if (playerIndex === -1) return false;
 
       tournament.players.splice(playerIndex, 1);
 
       // ステータスを更新
-      if (tournament.status === "ready" && tournament.players.length < tournament.maxPlayers) {
+      if (
+        tournament.status === "ready" &&
+        tournament.players.length < tournament.maxPlayers
+      ) {
         tournament.status = "waiting";
       }
 
