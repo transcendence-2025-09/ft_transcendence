@@ -242,32 +242,21 @@ export function TournamentDetail(ctx: RouteCtx) {
   // ポーリング: トーナメントの状態を定期的にチェック
   let pollingInterval: number | null = null;
 
-  async function checkTournamentStatus() {
-    try {
-      const tournament = await fetchTournament(tournamentId);
-      // トーナメントが開始されたら、マッチ画面に遷移
-      if (tournament.status === "in_progress") {
-        navigateTo(`/tournaments/${tournamentId}/matches`);
-        return;
-      }
-      // トーナメントが完了したら、結果タブに遷移
-      if (tournament.status === "completed") {
-        navigateTo(`/tournaments/${tournamentId}/matches?tab=results`);
-        return;
-      }
-    } catch (error) {
-      console.error("Failed to check tournament status:", error);
-    }
+  // 定期的にトーナメントの状態を確認するポーリングを設定
+  if (pollingInterval !== null) {
+    clearInterval(pollingInterval);
   }
 
-  // 5秒ごとにトーナメントの状態をチェック
-  pollingInterval = window.setInterval(checkTournamentStatus, 5000);
+  pollingInterval = window.setInterval(async () => {
+    try {
+      await loadTournamentDetail();
+    } catch (error) {
+      console.error("ポーリング中にエラーが発生しました: ", error);
+    }
+  }, 5000); // 5秒ごとに実行
 
-  loadTournamentDetail();
-
+  // コンポーネントのアンマウント時にポーリングを停止
   const component = componentFactory(el);
-
-  // オリジナルのunmountを拡張してポーリングをクリーンアップ
   const originalUnmount = component.unmount;
   component.unmount = () => {
     if (pollingInterval !== null) {
@@ -276,6 +265,8 @@ export function TournamentDetail(ctx: RouteCtx) {
     }
     originalUnmount();
   };
+
+  loadTournamentDetail();
 
   return pageFactory([component]);
 }
