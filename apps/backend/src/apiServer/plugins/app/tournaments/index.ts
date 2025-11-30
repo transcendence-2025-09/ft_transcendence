@@ -62,6 +62,7 @@ export function createTournamentsManager(fastify: FastifyInstance) {
     joinTournament: tournamentManager.joinTournament,
     isReady: tournamentManager.isReady,
     deleteTournament: tournamentManager.deleteTournament,
+    cancelJoinTournament: tournamentManager.cancelJoinTournament,
 
     /**
      * トーナメント開始（マッチ生成を含む）

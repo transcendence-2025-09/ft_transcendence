@@ -91,5 +91,28 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
     deleteTournament(tournamentId: string): boolean {
       return tournaments.delete(tournamentId);
     },
+
+    /**
+     * トーナメントへの参加をキャンセル
+     * @param tournamentId トーナメントID
+     * @param userId ユーザーID
+     * @returns 成功した場合true、トーナメントが存在しないかプレイヤーが参加していない場合false
+     */
+    cancelJoinTournament(tournamentId: string, userId: number): boolean {
+      const tournament = tournaments.get(tournamentId);
+      if (!tournament) return false;
+
+      const playerIndex = tournament.players.findIndex((p) => p.userId === userId);
+      if (playerIndex === -1) return false;
+
+      tournament.players.splice(playerIndex, 1);
+
+      // ステータスを更新
+      if (tournament.status === "ready" && tournament.players.length < tournament.maxPlayers) {
+        tournament.status = "waiting";
+      }
+
+      return true;
+    },
   };
 }
