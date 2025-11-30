@@ -32,7 +32,7 @@ function createTournamentsPage() {
     </div>
 
     <!-- 新規作成モーダル -->
-    <div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div id="createModal" class="hidden fixed inset-0 items-center justify-center">
       <div class="bg-white p-6 rounded-lg max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">トーナメント作成</h2>
         <input
@@ -133,18 +133,34 @@ function createTournamentsPage() {
     }
   }
 
-  // 作成モーダルを表示
+  // モーダルをbody直下に生成
   createTournamentBtn.addEventListener("click", () => {
+    const overlay = document.createElement("div");
+    overlay.setAttribute("class", "fixed inset-0 flex items-center justify-center");
+    overlay.style.backgroundColor = "rgba(0,0,0,0.8)";
+    overlay.style.setProperty("backdrop-filter", "blur(4px)");
+    overlay.style.zIndex = "9999";
+
+    // モーダル本体を移動
     createModal.classList.remove("hidden");
+    createModal.style.margin = "auto"; // モーダルを中央に配置
+    createModal.style.position = "relative"; // モーダルの位置を調整
+    createModal.style.maxWidth = "500px"; // モーダルの最大幅を設定
+    createModal.style.width = "100%"; // モーダルの幅を設定
+    overlay.appendChild(createModal);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = "hidden";
+
+    const close = () => {
+      if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
+      document.body.style.overflow = "";
+    };
+
+    cancelBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (ev) => {
+      if (ev.target === overlay) close();
+    });
   });
-
-  // モーダルを閉じる
-  function closeModal() {
-    createModal.classList.add("hidden");
-    tournamentNameInput.value = "";
-  }
-
-  cancelBtn.addEventListener("click", closeModal);
 
   // トーナメントを作成
   createBtn.addEventListener("click", async () => {
@@ -161,7 +177,6 @@ function createTournamentsPage() {
 
     try {
       await createTournament(name, gameOptions);
-      closeModal();
       loadTournaments();
     } catch (error) {
       const errorMessage =
