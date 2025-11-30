@@ -6,6 +6,7 @@ import {
   fetchTournament,
   getCurrentUser,
   joinTournament,
+  cancelJoinTournament
 } from "./api";
 import { ERROR_MESSAGES } from "./constants";
 import type { Player } from "./types";
@@ -133,9 +134,11 @@ export function TournamentDetail(ctx: RouteCtx) {
 
       if (actionButtonsContainer) {
         if (isParticipant) {
-          // 既に参加している場合は「待機中」を表示
+          // 既に参加している場合は「参加をキャンセルする」ボタンを表示
           actionButtonsContainer.innerHTML = `
-            <span class="text-gray-600 font-semibold py-2 px-6">待機中...</span>
+            <button id="cancelJoinBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+              参加をキャンセルする
+            </button>
           `;
         } else {
           // まだ参加していない場合は「参加する」ボタンを表示
@@ -164,6 +167,12 @@ export function TournamentDetail(ctx: RouteCtx) {
         joinBtn.addEventListener("click", () => handleJoin());
       }
 
+      // 参加キャンセルボタンのイベントリスナーを設定
+      const cancelJoinBtn = detailContainer.querySelector("#cancelJoinBtn");
+      if (cancelJoinBtn) {
+        cancelJoinBtn.addEventListener("click", async () => handleCancelJoin());
+      }
+
       // 開始ボタンのイベントリスナーを設定
       const startBtn = detailContainer.querySelector("#startBtn");
       if (startBtn) {
@@ -187,6 +196,18 @@ export function TournamentDetail(ctx: RouteCtx) {
       const errorMessage =
         error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
       alert(`参加に失敗しました: ${errorMessage}`);
+    }
+  }
+
+  // トーナメント参加をキャンセル
+  async function handleCancelJoin() {
+    try {
+      await cancelJoinTournament(tournamentId);
+      loadTournamentDetail();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`参加キャンセルに失敗しました: ${errorMessage}`);
     }
   }
 

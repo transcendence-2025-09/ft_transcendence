@@ -125,6 +125,23 @@ export async function joinTournament(
 }
 
 /**
+ * トーナメント参加をキャンセル
+ */
+export async function cancelJoinTournament(
+  tournamentId: string,
+): Promise<void> {
+  const response = await fetch(`/api/tournaments/${tournamentId}/cancel`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to cancel join tournament");
+  }
+}
+
+/**
  * トーナメントを開始
  */
 export async function startTournament(tournamentId: string): Promise<void> {
