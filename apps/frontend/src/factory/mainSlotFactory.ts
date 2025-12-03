@@ -7,7 +7,7 @@ export type MainSlot = ElComponent & {
 };
 
 export const mainSlotFactory = (): MainSlot => {
-  const el = eh<"main">("main", { tabindex: -1 });
+  const el = eh<"main">("main", { className: "flex-1", tabindex: -1 });
   const slotAnchor = document.createComment("page-slot");
   el.appendChild(slotAnchor);
 

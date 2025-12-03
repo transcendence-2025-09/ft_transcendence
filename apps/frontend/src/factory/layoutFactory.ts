@@ -14,7 +14,10 @@ export type Layout = ElComponent & {
 
 //propsとして渡されるmainはmainFactoryで作られたもの。layoutの中ではsetPageでページを変更する。
 export const layoutFactory = (props: LayoutProps): Layout => {
-  const container: HTMLElement = eh<"div">("div", { id: "layout" });
+  const container: HTMLElement = eh<"div">("div", {
+    className: "min-h-dvh flex flex-col",
+    id: "layout",
+  });
   let mounted: boolean = false;
   let currentPage: ElComponent | null = null;
 

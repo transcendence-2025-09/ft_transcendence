@@ -1,16 +1,6 @@
-//このクラスはあくまで描画の管理のみ。データの変更などはAPIを通じて行う.
-//
-// import WebSocket from "ws";
-
-// import * as BABYLON from "babylonjs";
 import * as BABYLON from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
-import type {
-  Match,
-  Player,
-  // MatchRound,
-  // MatchStatus,
-} from "../../pages/tournaments/types";
+import type { Match, Player } from "../../pages/tournaments/types";
 import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
 import type { MatchData, MatchResult, MatchState, WsMessage } from "./types";
@@ -34,9 +24,6 @@ export type RenderOption = {
   winScore: number;
 };
 
-//あとで環境変数として登録しておく？
-// const URL = "ws://localhost:3001";
-
 export class PongGame {
   //基本定数(固定値)
   private width: number;
@@ -57,7 +44,7 @@ export class PongGame {
   private leftInput: { up: boolean; down: boolean };
   private rightInput: { up: boolean; down: boolean };
   private winScore: number;
-  private winnerId: string | null;
+  private winnerId: number | null;
   private isFinish: boolean;
   //制御データ
   private canvas: HTMLCanvasElement;
@@ -253,7 +240,7 @@ export class PongGame {
   private finishGame = (data: MatchResult): void => {
     this.leftScore = data.leftScore;
     this.rightScore = data.rightScore;
-    this.winnerId = data.winnerId;
+    this.winnerId = Number(data.winnerId);
     //isFinishフラグを上げる。
     this.isFinish = data.isFinish;
     //終了時間を記録
@@ -458,181 +445,233 @@ export class PongGame {
 
   private init3D = (): void => {
     const canvas = this.canvas;
-    //描画エンジンの作成
+
+    // ========= Engine & Scene =========
     this.engine = new BABYLON.Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
     });
-    //Sceneの作成
+
     this.scene = new BABYLON.Scene(this.engine);
-    this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1.0);
-    //Cameraの作成
+    // ちょい暗めなネイビー系背景
+    this.scene.clearColor = new BABYLON.Color4(0.02, 0.04, 0.1, 1.0);
+
+    // ========= Camera =========
     this.camera = new BABYLON.ArcRotateCamera(
       "camera",
-      -Math.PI / 2,
-      Math.PI / 10,
-      Math.max(this.width, this.height) * 1.2,
-      new BABYLON.Vector3(0, 1, 0),
+      -Math.PI / 2, // ← 元の alpha（横方向の角度）
+      Math.PI / 10, // ← 元の beta（縦方向の角度）
+      Math.max(this.width, this.height) * 1.2, // ← 元の距離
+      new BABYLON.Vector3(0, 1, 0), // ← 注視点（コート中央）
       this.scene,
     );
-    //cameraをcanvasにアタッチする
+    this.camera.lowerRadiusLimit = Math.max(this.width, this.height) * 1.1;
+    this.camera.upperRadiusLimit = Math.max(this.width, this.height) * 1.8;
+    this.camera.wheelDeltaPercentage = 0.01;
+    this.camera.panningSensibility = 2000;
     this.camera.attachControl(canvas, true);
-    //lightの作成
-    const light = new BABYLON.HemisphericLight(
-      "light",
+
+    // ========= Lights =========
+    // 柔らかい環境光
+    const hemi = new BABYLON.HemisphericLight(
+      "hemi",
       new BABYLON.Vector3(0, 1, 0),
       this.scene,
     );
-    light.intensity = 0.9;
+    hemi.intensity = 0.6;
 
-    //Groundの作成
+    // ちょっとだけ方向性のあるライト
+    const dirLight = new BABYLON.DirectionalLight(
+      "dir",
+      new BABYLON.Vector3(-0.5, -1, -0.2),
+      this.scene,
+    );
+    dirLight.position = new BABYLON.Vector3(0, 20, 0);
+    dirLight.intensity = 0.45;
+
+    const glow = new BABYLON.GlowLayer("glow", this.scene);
+    glow.intensity = 0.7;
+
     const ground = BABYLON.MeshBuilder.CreateGround(
       "ground",
       { width: this.width, height: this.height },
       this.scene,
     );
+
     const groundMat = new BABYLON.StandardMaterial("groundMat", this.scene);
-    groundMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    groundMat.diffuseColor = new BABYLON.Color3(0.05, 0.08, 0.14);
+    groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    groundMat.emissiveColor = new BABYLON.Color3(0.02, 0.04, 0.08);
     ground.material = groundMat;
 
-    //center lineの作成
     const dashedLine = BABYLON.MeshBuilder.CreateDashedLines(
       "dashedLine",
       {
         points: [
-          new BABYLON.Vector3(0, 1, -this.height / 2),
-          new BABYLON.Vector3(0, 1, this.height / 2),
+          new BABYLON.Vector3(0, 1.01, -this.height / 2),
+          new BABYLON.Vector3(0, 1.01, this.height / 2),
         ],
-        dashSize: this.height / 25,
-        gapSize: this.height / 50,
-        dashNb: 20,
+        dashSize: this.height / 28,
+        gapSize: this.height / 60,
+        dashNb: 28,
       },
       this.scene,
     );
-    dashedLine.color = new BABYLON.Color3(1, 1, 1);
+    dashedLine.color = new BABYLON.Color3(0.5, 0.5, 0.8);
 
-    //paddleの作成
-    //左側パドル
-    const yThicness = 1.0;
+    const yThickness = 1.0;
     const left = BABYLON.MeshBuilder.CreateBox(
       "left",
       {
         width: this.paddleWidth,
-        height: yThicness,
+        height: yThickness,
         depth: this.paddleHeight,
       },
       this.scene,
     );
-
-    //右側パドル(左側のコピー)
     const right = left.clone("right") as BABYLON.Mesh;
-    const lmat = new BABYLON.StandardMaterial("lmat", this.scene);
-    lmat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-    left.material = lmat;
-    right.material = lmat;
 
-    //ball
+    const paddleMat = new BABYLON.StandardMaterial("paddleMat", this.scene);
+    paddleMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.25);
+    paddleMat.emissiveColor = new BABYLON.Color3(0.2, 0.9, 0.6);
+    paddleMat.specularPower = 64;
+    left.material = paddleMat;
+    right.material = paddleMat;
+
     const ball = BABYLON.MeshBuilder.CreateSphere(
       "ball",
       {
         diameter: this.ballRadius * 2,
+        segments: 24,
       },
       this.scene,
     );
-    const bmat = new BABYLON.StandardMaterial("bmat", this.scene);
-    bmat.diffuseColor = new BABYLON.Color3(1, 1, 1);
-    ball.material = bmat;
 
-    this.meshes = { left: left, right: right, ball: ball };
+    const ballMat = new BABYLON.StandardMaterial("ballMat", this.scene);
+    ballMat.diffuseColor = new BABYLON.Color3(0.95, 0.95, 1.0);
+    ballMat.emissiveColor = new BABYLON.Color3(1.0, 0.8, 0.3); // ちょいオレンジ系
+    ballMat.specularPower = 96;
+    ball.material = ballMat;
 
-    //babylonGUIを使ってscoreやpause, 試合終了時のテキストの描画
+    const ballShadow = BABYLON.MeshBuilder.CreateDisc(
+      "ballShadow",
+      { radius: this.ballRadius * 0.9, tessellation: 24 },
+      this.scene,
+    );
+    ballShadow.rotation.x = Math.PI / 2;
+    ballShadow.position.y = 0.01;
+    const shadowMat = new BABYLON.StandardMaterial("shadowMat", this.scene);
+    shadowMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    shadowMat.alpha = 0.35;
+    ballShadow.material = shadowMat;
+
+    this.meshes = { left, right, ball };
+
     const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
       "UI",
       true,
       this.scene,
     );
 
-    // スコア（左）
+    const scoreBar = new GUI.Rectangle("scoreBar");
+    scoreBar.width = "60%";
+    scoreBar.height = "64px";
+    scoreBar.cornerRadius = 18;
+    scoreBar.thickness = 0;
+    scoreBar.background = "rgba(15,23,42,0.85)"; // #0f172a 相当
+    scoreBar.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    scoreBar.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    scoreBar.top = "16px";
+    gui.addControl(scoreBar);
+
+    const leftScoreContainer = new GUI.Rectangle("leftScoreContainer");
+    leftScoreContainer.width = "50%";
+    leftScoreContainer.thickness = 0;
+    leftScoreContainer.background = "transparent";
+    leftScoreContainer.horizontalAlignment =
+      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    scoreBar.addControl(leftScoreContainer);
+
+    const rightScoreContainer = new GUI.Rectangle("rightScoreContainer");
+    rightScoreContainer.width = "50%";
+    rightScoreContainer.thickness = 0;
+    rightScoreContainer.background = "transparent";
+    rightScoreContainer.horizontalAlignment =
+      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    scoreBar.addControl(rightScoreContainer);
+
     const leftScoreText = new GUI.TextBlock("leftScore");
     leftScoreText.text = "0";
-    leftScoreText.color = "#22c553";
-    leftScoreText.fontSize = 28;
+    leftScoreText.color = "#4ade80";
+    leftScoreText.fontSize = 32;
+    leftScoreText.fontWeight = "700";
     leftScoreText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    leftScoreText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    leftScoreText.top = "16px";
-    leftScoreText.left = "-25%"; // 画面幅の25%左側（= 左寄り）
-    gui.addControl(leftScoreText);
+      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    leftScoreText.paddingLeft = "24px";
+    leftScoreContainer.addControl(leftScoreText);
 
-    // スコア（右）
     const rightScoreText = new GUI.TextBlock("rightScore");
     rightScoreText.text = "0";
-    rightScoreText.color = "#22c553";
-    rightScoreText.fontSize = 28;
+    rightScoreText.color = "#22d3ee"; // cyan系
+    rightScoreText.fontSize = 32;
+    rightScoreText.fontWeight = "700";
     rightScoreText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    rightScoreText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    rightScoreText.top = "16px";
-    rightScoreText.left = "25%"; // 画面幅の25%右側
-    gui.addControl(rightScoreText);
+      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    rightScoreText.paddingRight = "24px";
+    rightScoreContainer.addControl(rightScoreText);
 
-    //pauseの描画
-    //pauseを描画するための背景の作成
     const pauseOverlay = new GUI.Rectangle("pauseOverlay");
     pauseOverlay.width = "100%";
     pauseOverlay.height = "100%";
     pauseOverlay.thickness = 0;
-    pauseOverlay.background = "rgba(0,0,0,0.75)";
-    //pauseではないときは非表示
+    pauseOverlay.background = "rgba(15,23,42,0.70)";
     pauseOverlay.isVisible = false;
     gui.addControl(pauseOverlay);
 
-    //pauseのテキストを表示
     const pauseText = new GUI.TextBlock("pauseText", "PAUSED");
-    pauseText.color = "#FFFFFF";
-    pauseText.fontSize = 48;
+    pauseText.color = "#e5e7eb"; // gray-200
+    pauseText.fontSize = 52;
+    pauseText.fontWeight = "700";
     pauseText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     pauseText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
     pauseOverlay.addControl(pauseText);
 
-    //試合が買った時のテキストの背景
     const winnerOverlay = new GUI.Rectangle("winnerOverlay");
     winnerOverlay.width = "100%";
     winnerOverlay.height = "100%";
     winnerOverlay.thickness = 0;
-    winnerOverlay.background = "rgba(0,0,0,0.75)";
+    winnerOverlay.background = "rgba(15,23,42,0.90)";
     winnerOverlay.isVisible = false;
     gui.addControl(winnerOverlay);
 
-    // タイトル行
     const winnerTitle = new GUI.TextBlock("winnerTitle", "Winner");
-    winnerTitle.color = "#FFFFFF";
-    winnerTitle.fontSize = 48;
+    winnerTitle.color = "#e5e7eb";
+    winnerTitle.fontSize = 40;
+    winnerTitle.fontWeight = "700";
     winnerTitle.textHorizontalAlignment =
       GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     winnerTitle.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    winnerTitle.top = "-40px";
+    winnerTitle.top = "-32px";
     winnerOverlay.addControl(winnerTitle);
 
-    // Winner名
     const winnerName = new GUI.TextBlock("winnerName", "");
-    winnerName.color = "#FFFFFF";
-    winnerName.fontSize = 36;
+    winnerName.color = "#f97316"; // orange-500
+    winnerName.fontSize = 32;
+    winnerName.fontWeight = "700";
     winnerName.textHorizontalAlignment =
       GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     winnerName.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
     winnerName.top = "10px";
     winnerOverlay.addControl(winnerName);
 
-    // カウントダウン（任意）
     const winnerCountdown = new GUI.TextBlock("winnerCountdown", "");
-    winnerCountdown.color = "#AAAAAA";
-    winnerCountdown.fontSize = 24;
+    winnerCountdown.color = "#9ca3af"; // gray-400
+    winnerCountdown.fontSize = 22;
     winnerCountdown.textHorizontalAlignment =
       GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     winnerCountdown.textVerticalAlignment =
       GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    winnerCountdown.top = "56px";
+    winnerCountdown.top = "52px";
     winnerOverlay.addControl(winnerCountdown);
 
     this.scene.onBeforeRenderObservable.add(() => {
@@ -645,21 +684,26 @@ export class PongGame {
         paddleRightY: shot?.paddleRightY ?? this.paddleRightY,
       });
 
-      //scoreの更新
+      if (!this.meshes) return;
+      ballShadow.position.x = this.meshes.ball.position.x;
+      ballShadow.position.z = this.meshes.ball.position.z;
+
       leftScoreText.text = String(this.leftScore);
       rightScoreText.text = String(this.rightScore);
 
-      // Pause表示（試合中のみ）
       pauseOverlay.isVisible = this.isPaused && !this.isFinish;
-      // Winner表示（試合終了時）
       winnerOverlay.isVisible = this.isFinish;
       if (this.isFinish) {
-        winnerName.text = String(this.winnerId ?? "");
+        winnerName.text = String(
+          this.winnerId != null && this.winnerId === this.leftPlayer?.userId
+            ? this.leftPlayer?.alias
+            : this.rightPlayer?.alias,
+        );
         if (this.finishTime) {
           const elapsed = performance.now() - this.finishTime;
           const remaining = Math.max(0, this.redirectDelay - elapsed);
           const seconds = Math.ceil(remaining / 1000);
-          winnerCountdown.text = `Returning in ${seconds}s...`;
+          winnerCountdown.text = `Returning in ${seconds}s…`;
         } else {
           winnerCountdown.text = "";
         }
@@ -668,10 +712,13 @@ export class PongGame {
         winnerCountdown.text = "";
       }
     });
-    this.engine?.runRenderLoop(() => this.scene?.render());
+
+    this.engine.runRenderLoop(() => {
+      this.scene?.render();
+    });
+
     window.addEventListener("resize", () => this.engine?.resize());
   };
-
   //canvasとBabylonjsで座標原点が異なるから中身を揃える処理を加える
   private twoDtothreeD = (
     x2d: number,
@@ -708,5 +755,15 @@ export class PongGame {
 
     // ボール中心
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
+  };
+
+  public getPlayerName = (): {
+    leftPlayerName: string;
+    rightPlayerName: string;
+  } => {
+    return {
+      leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "Waiting...",
+      rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "Waiting...",
+    };
   };
 }

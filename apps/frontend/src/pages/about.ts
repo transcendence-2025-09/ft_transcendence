@@ -20,7 +20,3 @@ const Text: ElComponent = componentFactory(textEl);
 const Link: ElComponent = componentFactory(linkEl);
 
 export const About = pageFactory([Title, Text, Link]);
-
-// export const AboutFactory = () => {
-//   return pageFactory([Title, Text]);
-// };
