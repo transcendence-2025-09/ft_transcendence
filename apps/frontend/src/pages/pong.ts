@@ -1,13 +1,13 @@
 import { pongBackGroundFactory } from "../components/pong/pongBackGround";
 import { pongGame } from "../components/pong/pongGame";
 import { pongHeader } from "../components/pong/pongHeader";
+import type { PongPlayerRowComponent } from "../components/pong/pongPlayerRow";
 import { pongPlayerRow } from "../components/pong/pongPlayerRow";
 import type { ElComponent } from "../factory/componentFactory";
 import { pageFactory } from "../factory/pageFactory";
 import type { RenderOption } from "../logic/pong/pongGame";
 import { PongGame } from "../logic/pong/pongGame";
 import type { RouteCtx } from "../routing/routeList";
-import type { PongPlayerRowComponent } from "../components/pong/pongPlayerRow";
 
 //pong pageを積むためのbackground
 // const pongPageComp = (ctx?: RouteCtx): ElComponent => {

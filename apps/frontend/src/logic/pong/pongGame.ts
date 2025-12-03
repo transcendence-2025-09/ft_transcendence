@@ -684,8 +684,9 @@ export class PongGame {
         paddleRightY: shot?.paddleRightY ?? this.paddleRightY,
       });
 
-      ballShadow.position.x = this.meshes!.ball.position.x;
-      ballShadow.position.z = this.meshes!.ball.position.z;
+      if (!this.meshes) return;
+      ballShadow.position.x = this.meshes.ball.position.x;
+      ballShadow.position.z = this.meshes.ball.position.z;
 
       leftScoreText.text = String(this.leftScore);
       rightScoreText.text = String(this.rightScore);
