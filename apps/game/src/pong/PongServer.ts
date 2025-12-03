@@ -448,4 +448,11 @@ export class PongServer {
     });
     console.log("========================\n");
   };
+
+  // public getPlaterNames(): { leftPlayerName: string; rightPlayerName: string } {
+  //   return {
+  //     leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "TBD",
+  //     rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "TBD",
+  //   };
+  // }
 }

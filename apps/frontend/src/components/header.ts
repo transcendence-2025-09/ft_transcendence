@@ -5,28 +5,51 @@ import { getRouter } from "../routing/instance";
 
 const HeaderEl = eh<"header">(
   "header",
-  { className: "p-3 border-b flex items-center justify-between" },
-  eh("h1", { className: "text-xl font-bold" }, "ft_transcendence"),
+  {
+    className:
+      // レイアウト
+      "sticky top-0 z-40 w-full " +
+      "border-b border-slate-200/70 " +
+      "bg-white/80 backdrop-blur-sm " +
+      "px-4 sm:px-6 py-3 " +
+      "flex items-center justify-between",
+  },
+  // 左側：タイトル
+  eh(
+    "h1",
+    {
+      className:
+        "text-lg sm:text-xl font-semibold tracking-tight text-slate-900",
+    },
+    "ft_transcendence",
+  ),
+  // 右側：ナビゲーション
   eh(
     "nav",
-    { className: "flex gap-2 items-center" },
-    // Homeボタン: ダッシュボードへ移動
+    { className: "flex items-center gap-2" },
+    // Homeボタン
     eh(
       "button",
       {
         className:
-          "px-3 py-1 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors",
+          "px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium " +
+          "text-sky-700 bg-sky-50 hover:bg-sky-100 " +
+          "border border-sky-100 " +
+          "transition-colors",
         "data-page": "home",
         type: "button",
       },
       "Home",
     ),
-    // Aboutボタン: モーダルを表示
+    // Aboutボタン
     eh(
       "button",
       {
         className:
-          "px-3 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors",
+          "px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium " +
+          "text-slate-700 bg-slate-50 hover:bg-slate-100 " +
+          "border border-slate-200/70 " +
+          "transition-colors",
         "data-page": "about",
         type: "button",
       },
@@ -46,7 +69,6 @@ const aboutBtn = HeaderEl.querySelector(
 if (homeBtn) {
   homeBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    // ルーターを使ってSPA遷移する
     const router = getRouter();
     router.navigate("/dashboard");
   });
@@ -57,24 +79,30 @@ function openAboutModal() {
   const overlay = document.createElement("div");
   overlay.setAttribute(
     "class",
-    "fixed inset-0 flex items-center justify-center",
+    "fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm",
   );
-  overlay.style.backgroundColor = "rgba(0,0,0,0.8)";
-  overlay.style.setProperty("backdrop-filter", "blur(4px)");
-  overlay.style.zIndex = "9999";
 
-  // モーダル本体
   const modal = document.createElement("div");
   modal.setAttribute(
     "class",
-    "bg-white rounded-lg shadow-lg max-w-lg w-full mx-4 p-6 relative",
+    "bg-white/95 rounded-2xl shadow-xl border border-slate-200 " +
+      "max-w-md w-full mx-4 p-6 space-y-4 relative",
   );
 
   modal.innerHTML = `
-    <h2 class="text-2xl font-semibold mb-2">About ft_transcendence</h2>
-    <p class="text-gray-600 mb-4">この課題は、 ft_transcendence v18.0に準拠して作成されています。</p>
-    <div class="flex justify-end gap-2">
-      <button id="about-close" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">Close</button>
+    <h2 class="text-xl font-semibold text-slate-900">About ft_transcendence</h2>
+    <p class="text-sm text-slate-600">
+      この課題は、 ft_transcendence v18.0 に準拠して作成されています。
+    </p>
+    <div class="flex justify-end gap-2 pt-2">
+      <button
+        id="about-close"
+        class="px-4 py-2 rounded-lg text-sm font-medium
+               bg-slate-900 text-white hover:bg-slate-800
+               transition-colors"
+      >
+        Close
+      </button>
     </div>
   `;
 

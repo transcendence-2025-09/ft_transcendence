@@ -9,7 +9,7 @@ export const pongBackGroundFactory = (): ElComponent => {
   });
 
   const content = eh("div", {
-    className: "max-w-7xl w-full px-4 sm:px-6 py-6 space-y-6",
+    className: "w-full px-4 sm:px-6 py-6 space-y-6",
     id: "pong-container",
   });
   const slotAnchor = document.createComment("pong-slot");
