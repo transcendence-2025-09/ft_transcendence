@@ -37,7 +37,9 @@ function createPendingMatchCard(match: Match, currentUserId?: number): string {
   const player1Name = escapeHtml(match.leftPlayer?.alias || "TBD");
   const player2Name = escapeHtml(match.rightPlayer?.alias || "TBD");
   const isStartable =
-    match.status === "pending" && match.leftPlayer && match.rightPlayer;
+    (match.status === "pending" || match.status === "in_progress") &&
+    match.leftPlayer &&
+    match.rightPlayer;
 
   // 現在のユーザーが対戦プレイヤーかどうかを判定
   const isParticipant =
