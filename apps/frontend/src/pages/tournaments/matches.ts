@@ -284,6 +284,21 @@ export function TournamentMatches(ctx: RouteCtx) {
    */
   async function handleMatchStart(match: Match) {
     try {
+      // 最新のマッチ情報を取得
+      const matches = await fetchMatches(tournamentId);
+      const currentMatch = matches.find((m) => m.id === match.id);
+
+      if (!currentMatch) {
+        alert("マッチが見つかりませんでした");
+        return;
+      }
+
+      // マッチがすでに開始されている場合は、直接ゲーム画面に遷移
+      if (currentMatch.status === "in_progress") {
+        navigateTo(`/pong/${tournamentId}/${match.id}`);
+        return;
+      }
+
       await apiStartMatch(tournamentId, match.id);
       // Pongゲーム画面に遷移
       navigateTo(`/pong/${tournamentId}/${match.id}`);
