@@ -7,8 +7,14 @@ export default defineConfig({
   plugins: [tailwindcss()],
   server: {
     port: 5173,
+    host: true,
     proxy: {
       "/api": apiBaseUrl,
+      "/ws": {
+        target: "ws://localhost:3001",
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 });

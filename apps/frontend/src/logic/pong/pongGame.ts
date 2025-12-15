@@ -111,9 +111,8 @@ export class PongGame {
     this.matchId = ctx?.params.matchId ?? null;
     this.leftPlayer = null;
     this.rightPlayer = null;
-    this.ws = new WebSocket(
-      "wss://kati-unmaterialised-transcendentally.ngrok-free.dev/ws",
-    );
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    this.ws = new WebSocket(`${scheme}://${location.host}/ws`);
     this.winnerId = null;
     //試合終了の時間
     this.finishTime = null;
