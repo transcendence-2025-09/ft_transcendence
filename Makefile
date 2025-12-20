@@ -8,6 +8,7 @@ down:
 	docker-compose down -v
 
 setup:
+# 	/bin/bash -c "$(curl -fsSL https://rawgit.com/kube/42homebrew/master/install.sh)"
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 	brew install jq
