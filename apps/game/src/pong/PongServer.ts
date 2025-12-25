@@ -71,9 +71,12 @@ export class PongServer {
     console.log(`room created: ${this.id}`);
   }
 
-  // public get isRoomReady(): boolean {
-  //   return this.isReady;
-  // }
+  public isRoomReady(): boolean {
+    if (this.clients.size >= 2) {
+      return true;
+    }
+    return false;
+  }
 
   public join = (ws: WebSocket): void => {
     console.log(`client joined room: ${this.id}`);

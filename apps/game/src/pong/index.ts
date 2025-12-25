@@ -29,7 +29,7 @@ export const pongLogic: FastifyPluginAsync = async (app) => {
         rooms.set(roomKey, session);
       } else {
         console.log(`Existing room found for ${roomKey}`);
-        if (session.isRoomReady) {
+        if (session.isRoomReady()) {
           ws.close(1008, "Room is full");
           return;
         }
