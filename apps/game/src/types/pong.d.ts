@@ -16,6 +16,7 @@ export type MatchData = {
   //APIから取得するデータ(バックエンドにくる時はすでにフロントで取得済み)
   leftPlayer: Player | null;
   rightPlayer: Player | null;
+  clientUserId: number | null;
 };
 
 export type Player = {
@@ -24,15 +25,19 @@ export type Player = {
 };
 
 export type PlayerInput = {
-  leftup: boolean;
-  leftdown: boolean;
-  rightup: boolean;
-  rightdown: boolean;
+  up: boolean;
+  down: boolean;
+  leftorRight: "left" | "right";
+};
+
+export type readyPayload = {
+  position: "left" | "right";
 };
 
 export type WsMessage =
   | { type: "init"; payload: MatchData }
-  | { type: "start" }
+  | { type: "ready"; payload: readyPayload }
+  | { type: "start"; payload: readyPayload }
   | { type: "input"; payload: PlayerInput }
   | { type: "snapshot"; payload: MatchState }
   | { type: "result"; payload: MatchResult }
