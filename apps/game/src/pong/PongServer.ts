@@ -13,7 +13,11 @@ import { internalApiClient } from "../utils/internalApiClient.js";
 
 export class PongServer {
   // 通信
-  private ws: WebSocket;
+  private clients = new Set<WebSocket>();
+  private initialize = false;
+  // private isReady = false;
+  private isLeftReady = false;
+  private isRightReady = false;
 
   // 基本定数
   private width = 0;
@@ -63,20 +67,72 @@ export class PongServer {
   readonly id = randomUUID();
 
   //とりあえず初期化。この時はクライアントからの情報はまだ受け取っていない
-  constructor(ws: WebSocket) {
-    this.ws = ws;
-    console.log(`session connected: ${this.id}`);
-    this.ws.on("close", () => console.log(`session closed: ${this.id}`));
+  constructor() {
+    console.log(`room created: ${this.id}`);
   }
 
+  // public get isRoomReady(): boolean {
+  //   return this.isReady;
+  // }
+
+  public join = (ws: WebSocket): void => {
+    console.log(`client joined room: ${this.id}`);
+    this.clients.add(ws);
+    if (this.initialize) {
+      // this.isReady = true;
+      console.log(`room is ready: ${this.id}`);
+    }
+  };
+
+  public leave = (ws: WebSocket): void => {
+    console.log(`client left room: ${this.id}`);
+    this.clients.delete(ws);
+  };
+
+  public isEmpty = (): boolean => {
+    return this.clients.size === 0;
+  };
+
+  private broadcast = (data: WsMessage): void => {
+    const message = JSON.stringify(data);
+    for (const client of this.clients) {
+      try {
+        client.send(message);
+      } catch (_e) {}
+    }
+  };
   //ここがwsのソケットの入り口。ここでどんなリクエストなのかを判断して処理を選ぶ。
   public onUpdate = (data: WsMessage) => {
     switch (data.type) {
       case "init":
-        this.init(data.payload as MatchData);
+        if (!this.initialize) {
+          const firstClient = this.clients.values().next().value;
+          if (!firstClient) return;
+          firstClient.send(
+            JSON.stringify({ type: "ready", payload: { position: "left" } }),
+          );
+          this.initialize = true;
+          console.log("sent left ready");
+        } else {
+          const secondClient = Array.from(this.clients)[1];
+          if (!secondClient) return;
+          this.init(data.payload);
+          secondClient.send(
+            JSON.stringify({ type: "ready", payload: { position: "right" } }),
+          );
+          console.log("sent right ready");
+          this.init(data.payload);
+          console.log("sent start to both");
+        }
         break;
       case "start":
-        this.handleSpace();
+        if (data.payload.position === "left") this.isLeftReady = true;
+        else if (data.payload.position === "right") this.isRightReady = true;
+        if (this.isLeftReady && this.isRightReady) {
+          setTimeout(() => {
+            this.handleSpace();
+          }, 3000);
+        }
         break;
       case "input":
         this.updateInput(data.payload as PlayerInput);
@@ -86,7 +142,9 @@ export class PongServer {
         break;
       case "close":
         this.stop();
-        this.ws.close(1000, "client request closed");
+        for (const client of this.clients) {
+          client.close(1000, "client request closed");
+        }
         break;
       case "ping":
         this.printMatchState();
@@ -128,11 +186,6 @@ export class PongServer {
     this.start();
     // 必要ならクライアントへ
     console.log("server send init");
-    this.ws.send(
-      JSON.stringify({
-        type: "init",
-      }),
-    );
   };
 
   //処理のスタート
@@ -323,51 +376,62 @@ export class PongServer {
     }
 
     //その処理が終わってからフロント側に返す。
-    this.ws.send(
-      JSON.stringify({
-        type: "result",
-        payload: {
-          leftScore: this.leftScore,
-          rightScore: this.rightScore,
-          winnerId: winId,
-          isFinish: true,
-        } as MatchResult,
-      }),
-    );
-    this.ws.close(1000, "game finish");
+    this.broadcast({
+      type: "result",
+      payload: {
+        leftScore: this.leftScore,
+        rightScore: this.rightScore,
+        winnerId: winId,
+        isFinish: true,
+      } as MatchResult,
+    });
+    for (const client of this.clients) {
+      client.close(1000, "game finish");
+    }
   };
 
   private updateInput = (palyload: PlayerInput): void => {
-    this.leftInput.up = palyload.leftup;
-    this.leftInput.down = palyload.leftdown;
-    this.rightInput.up = palyload.rightup;
-    this.rightInput.down = palyload.rightdown;
+    if (palyload.leftorRight === "left") {
+      this.leftInput.up = palyload.up;
+      this.leftInput.down = palyload.down;
+      console.log(
+        `Left Input Updated: up=${palyload.up}, down=${palyload.down}`,
+      );
+    } else if (palyload.leftorRight === "right") {
+      this.rightInput.up = palyload.up;
+      this.rightInput.down = palyload.down;
+      console.log(
+        `Right Input Updated: up=${palyload.up}, down=${palyload.down}`,
+      );
+    }
+    // this.leftInput.up = palyload.leftup;
+    // this.leftInput.down = palyload.leftdown;
+    // this.rightInput.up = palyload.rightup;
+    // this.rightInput.down = palyload.rightdown;
   };
 
   public sendData = (): void => {
     try {
-      this.ws.send(
-        JSON.stringify({
-          type: "snapshot",
-          payload: {
-            width: this.width,
-            height: this.height,
-            ballX: this.ballX,
-            ballY: this.ballY,
-            ballVelX: this.ballVelX,
-            ballVelY: this.ballVelY,
-            paddleLeftY: this.paddleLeftY,
-            paddleRightY: this.paddleRightY,
-            leftScore: this.leftScore,
-            rightScore: this.rightScore,
-            winScore: this.winScore,
-            isFinish: this.isFinish,
-            isRunning: this.isRunning,
-            isPaused: this.isPaused,
-            lastScored: this.lastScored,
-          } as MatchState,
-        }),
-      );
+      this.broadcast({
+        type: "snapshot",
+        payload: {
+          width: this.width,
+          height: this.height,
+          ballX: this.ballX,
+          ballY: this.ballY,
+          ballVelX: this.ballVelX,
+          ballVelY: this.ballVelY,
+          paddleLeftY: this.paddleLeftY,
+          paddleRightY: this.paddleRightY,
+          leftScore: this.leftScore,
+          rightScore: this.rightScore,
+          winScore: this.winScore,
+          isFinish: this.isFinish,
+          isRunning: this.isRunning,
+          isPaused: this.isPaused,
+          lastScored: this.lastScored,
+        } as MatchState,
+      });
     } catch (_e) {}
   };
 

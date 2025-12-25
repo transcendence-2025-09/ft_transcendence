@@ -41,8 +41,10 @@ export class PongGame {
   private paddleRightY: number;
   private leftScore: number;
   private rightScore: number;
-  private leftInput: { up: boolean; down: boolean };
-  private rightInput: { up: boolean; down: boolean };
+  // private leftInput: { up: boolean; down: boolean };
+  // private rightInput: { up: boolean; down: boolean };
+  private clientInput: { up: boolean; down: boolean };
+  private clientPosition: "left" | "right" | null;
   private winScore: number;
   private winnerId: number | null;
   private isFinish: boolean;
@@ -61,6 +63,7 @@ export class PongGame {
   //APIから取得するデータ
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
+  private clientUserId: string | number | null = null;
   // private status: MatchStatus | null;
   private ws: WebSocket;
   private finishTime: number | null;
@@ -78,6 +81,8 @@ export class PongGame {
     right: BABYLON.Mesh;
     ball: BABYLON.Mesh;
   } | null;
+
+  private canStart: boolean;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -98,8 +103,10 @@ export class PongGame {
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
     this.leftScore = 0;
     this.rightScore = 0;
-    this.leftInput = { up: false, down: false };
-    this.rightInput = { up: false, down: false };
+    // this.leftInput = { up: false, down: false };
+    // this.rightInput = { up: false, down: false };
+    this.clientInput = { up: false, down: false };
+    this.clientPosition = null;
     this.winScore = opt?.winScore ?? 1;
     this.isFinish = false;
     this.canvas = canvas;
@@ -111,8 +118,19 @@ export class PongGame {
     this.matchId = ctx?.params.matchId ?? null;
     this.leftPlayer = null;
     this.rightPlayer = null;
+    this.clientUserId = null;
     const scheme = location.protocol === "https:" ? "wss" : "ws";
-    this.ws = new WebSocket(`${scheme}://${location.host}/ws`);
+    if (this.tournamentId !== null && this.matchId !== null) {
+      const paramStr = new URLSearchParams({
+        tournamentId: this.tournamentId,
+        matchId: this.matchId,
+      });
+      this.ws = new WebSocket(
+        `${scheme}://${location.host}/ws?${paramStr.toString()}`,
+      );
+    } else {
+      this.ws = null as unknown as WebSocket;
+    }
     this.winnerId = null;
     //試合終了の時間
     this.finishTime = null;
@@ -125,6 +143,7 @@ export class PongGame {
     this.scene = null;
     this.camera = null;
     this.meshes = null;
+    this.canStart = false;
   }
 
   private async waitForOpen(ws: WebSocket): Promise<void> {
@@ -141,8 +160,16 @@ export class PongGame {
   public init = async () => {
     //最初にソケットの通信が確立されることをまつ
     await this.waitForOpen(this.ws);
-    //
+    //現在のユーザー情報を取得しておく
+    const res = await fetch("/api/user/me", {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error("Unauthorized");
+    const data = await res.json();
+    this.clientUserId = data.user.id;
 
+    //試合情報を取得しておく
     const match = await this.getMatchInfo();
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
@@ -167,6 +194,7 @@ export class PongGame {
           matchId: this.matchId,
           leftPlayer: this.leftPlayer,
           rightPlayer: this.rightPlayer,
+          clientUserId: this.clientUserId,
         } as MatchData,
       }),
     );
@@ -225,9 +253,11 @@ export class PongGame {
 
   private onReceive = (data: WsMessage): void => {
     switch (data.type) {
-      case "init":
+      case "ready":
         console.log("Connection Start.");
+        this.clientPosition = data.payload.position;
         this.registerKeyEvent();
+        this.canStart = true;
         break;
       case "snapshot":
         this.updateState(data.payload as MatchState);
@@ -288,24 +318,24 @@ export class PongGame {
 
     this.onKeyDownRef = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW":
-          e.preventDefault();
-          this.leftInput.up = true;
-          keyflag = true;
-          break;
-        case "KeyS":
-          e.preventDefault();
-          this.leftInput.down = true;
-          keyflag = true;
-          break;
+        // case "KeyW":
+        //   e.preventDefault();
+        //   this.leftInput.up = true;
+        //   keyflag = true;
+        //   break;
+        // case "KeyS":
+        //   e.preventDefault();
+        //   this.leftInput.down = true;
+        //   keyflag = true;
+        //   break;
         case "ArrowUp":
           e.preventDefault();
-          this.rightInput.up = true;
+          this.clientInput.up = true;
           keyflag = true;
           break;
         case "ArrowDown":
           e.preventDefault();
-          this.rightInput.down = true;
+          this.clientInput.down = true;
           keyflag = true;
           break;
         case "Space":
@@ -322,10 +352,9 @@ export class PongGame {
           JSON.stringify({
             type: "input",
             payload: {
-              leftup: this.leftInput.up,
-              leftdown: this.leftInput.down,
-              rightup: this.rightInput.up,
-              rightdown: this.rightInput.down,
+              up: this.clientInput.up,
+              down: this.clientInput.down,
+              leftorRight: this.clientPosition,
             },
           }),
         );
@@ -334,20 +363,20 @@ export class PongGame {
     this.onKeyUpRef = (e: KeyboardEvent) => {
       let keyflag = false;
       switch (e.code) {
-        case "KeyW":
-          this.leftInput.up = false;
-          keyflag = true;
-          break;
-        case "KeyS":
-          this.leftInput.down = false;
-          keyflag = true;
-          break;
+        // case "KeyW":
+        //   this.leftInput.up = false;
+        //   keyflag = true;
+        //   break;
+        // case "KeyS":
+        //   this.leftInput.down = false;
+        //   keyflag = true;
+        //   break;
         case "ArrowUp":
-          this.rightInput.up = false;
+          this.clientInput.up = false;
           keyflag = true;
           break;
         case "ArrowDown":
-          this.rightInput.down = false;
+          this.clientInput.down = false;
           keyflag = true;
           break;
         case "Space":
@@ -360,10 +389,9 @@ export class PongGame {
           JSON.stringify({
             type: "input",
             payload: {
-              leftup: this.leftInput.up,
-              leftdown: this.leftInput.down,
-              rightup: this.rightInput.up,
-              rightdown: this.rightInput.down,
+              up: this.clientInput.up,
+              down: this.clientInput.down,
+              leftorRight: this.clientPosition,
             },
           }),
         );
@@ -387,24 +415,26 @@ export class PongGame {
     this.onKeyDownRef = undefined;
     this.onKeyUpRef = undefined;
 
-    this.leftInput.up = this.leftInput.down = false;
-    this.rightInput.up = this.rightInput.down = false;
+    // this.leftInput.up = this.leftInput.down = false;
+    // this.rightInput.up = this.rightInput.down = false;
+    this.clientInput.up = this.clientInput.down = false;
   };
 
   private handleSpace = (): void => {
+    if (!this.canStart) return;
     if (this.isFinish) {
       navigateTo(`/tournaments/${this.tournamentId}/matches`);
     }
-    if (this.ws && this.ws.readyState === this.ws.OPEN) {
+    if (!this.isRunning) {
       this.ws.send(
         JSON.stringify({
-          type: "pause",
+          type: "start",
+          payload: {
+            position: this.clientPosition,
+          },
         }),
       );
-    } else {
-      console.warn("WS not open. drop:");
     }
-    //spaceは状況の変更は特にせずに送る。
   };
 
   private lerp(a: number, b: number, t: number) {
