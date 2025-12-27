@@ -24,7 +24,10 @@ export class InternalApiClient {
 
   constructor() {
     // this.baseUrl = "http://localhost:3000";
-		this.baseUrl = process.env.NODE_ENV === "production" ? "http://backend:3000" : "http://localhost:3000"
+    this.baseUrl =
+      process.env.NODE_ENV === "production"
+        ? "http://backend:3000"
+        : "http://localhost:3000";
     this.apiSecret = process.env.INTERNAL_API_SECRET || "";
 
     if (!this.apiSecret) {
