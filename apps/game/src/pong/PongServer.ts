@@ -113,6 +113,7 @@ export class PongServer {
       },
     });
   };
+
   //ここがwsのソケットの入り口。ここでどんなリクエストなのかを判断して処理を選ぶ。
   public onUpdate = (data: WsMessage) => {
     switch (data.type) {
@@ -135,7 +136,6 @@ export class PongServer {
       case "start":
         if (data.payload.position === "left") this.isLeftReady = true;
         else if (data.payload.position === "right") this.isRightReady = true;
-
         this.broadcastReadyState();
 
         if (this.isLeftReady && this.isRightReady && !this.isRunning) {

@@ -216,7 +216,6 @@ export class PongGame {
           matchId: this.matchId,
           leftPlayer: this.leftPlayer,
           rightPlayer: this.rightPlayer,
-          // clientUserId: this.clientUserId,
         } as MatchData,
       }),
     );
