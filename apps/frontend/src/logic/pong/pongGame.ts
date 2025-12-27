@@ -110,7 +110,7 @@ export class PongGame {
     // this.rightInput = { up: false, down: false };
     this.clientInput = { up: false, down: false };
     this.clientPosition = null;
-    this.winScore = opt?.winScore ?? 1;
+    this.winScore = opt?.winScore ?? 2;
     this.isFinish = false;
     this.canvas = canvas;
     this.isRunning = false;
@@ -238,6 +238,10 @@ export class PongGame {
     this.ws.onerror = (e) => console.error("WS error", e);
     //3Dの初期化
     this.init3D();
+    window.addEventListener("resize", () => {
+      this.resizeCanvasToDisplaySize();
+      this.engine?.resize();
+    });
   };
 
   // private getMatchInfo = async (): Promise<Match | null> => {
@@ -277,6 +281,14 @@ export class PongGame {
         // this.clientPosition = data.payload.position;
         this.registerKeyEvent();
         this.canStart = true;
+        break;
+      case "ready":
+        const readyInfo = data.payload as {
+          leftReady: boolean;
+          rightReady: boolean;
+        };
+        this.isLeftReady = readyInfo.leftReady;
+        this.isRightReady = readyInfo.rightReady;
         break;
       case "snapshot":
         this.updateState(data.payload as MatchState);
@@ -521,7 +533,8 @@ export class PongGame {
     this.camera.upperRadiusLimit = Math.max(this.width, this.height) * 1.8;
     this.camera.wheelDeltaPercentage = 0.01;
     this.camera.panningSensibility = 2000;
-    this.camera.attachControl(canvas, true);
+    // this.camera.attachControl(canvas, true);
+    // this.camera.inputs.clear();
 
     // ========= Lights =========
     // 柔らかい環境光
@@ -641,13 +654,13 @@ export class PongGame {
     scoreGrid.height = "100%";
     scoreGrid.addRowDefinition(0.62);
     scoreGrid.addRowDefinition(0.38);
-    scoreGrid.addColumnDefinition(1, true);
+    scoreGrid.addColumnDefinition(1);
     scoreBar.addControl(scoreGrid);
 
     // ===== 1段目: スコア行 (左右コンテナ) =====
     const scoreRow = new GUI.Grid("scoreRow");
-    scoreRow.addColumnDefinition(0.5, true);
-    scoreRow.addColumnDefinition(0.5, true);
+    scoreRow.addColumnDefinition(0.5);
+    scoreRow.addColumnDefinition(0.5);
     scoreGrid.addControl(scoreRow, 0, 0);
 
     const leftScoreContainer = new GUI.Rectangle("leftScoreContainer");
@@ -668,8 +681,8 @@ export class PongGame {
     const readyRow = new GUI.Grid("readyRow");
     readyRow.width = "100%";
     readyRow.height = "100%";
-    readyRow.addColumnDefinition(0.5, true);
-    readyRow.addColumnDefinition(0.5, true);
+    readyRow.addColumnDefinition(0.5);
+    readyRow.addColumnDefinition(0.5);
     scoreGrid.addControl(readyRow, 1, 0);
 
     const leftReadyText = new GUI.TextBlock("leftReadyText", "");
@@ -864,6 +877,21 @@ export class PongGame {
 
     // ボール中心
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
+  };
+
+  private resizeCanvasToDisplaySize = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect();
+    const w = Math.floor(rect.width * dpr);
+    const h = Math.floor(rect.height * dpr);
+
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+      // ゲームの論理サイズも合わせるならここで this.width/height も更新
+      this.width = w / dpr;
+      this.height = h / dpr;
+    }
   };
 
   // public getPlayerName = (): {
