@@ -45,7 +45,6 @@ export class PongServer {
   private winScore = 5;
   private isFinish = false;
   private isRunning = false;
-  private isPaused = false;
   private lastScored: "left" | "right" | null = null;
   private scoreLogs: Array<{
     left: number;
@@ -104,6 +103,16 @@ export class PongServer {
       } catch (_e) {}
     }
   };
+
+  private broadcastReadyState = (): void => {
+    this.broadcast({
+      type: "ready",
+      payload: {
+        leftReady: this.isLeftReady,
+        rightReady: this.isRightReady,
+      },
+    });
+  };
   //ここがwsのソケットの入り口。ここでどんなリクエストなのかを判断して処理を選ぶ。
   public onUpdate = (data: WsMessage) => {
     switch (data.type) {
@@ -111,19 +120,14 @@ export class PongServer {
         if (!this.initialize) {
           const firstClient = this.clients.values().next().value;
           if (!firstClient) return;
-          firstClient.send(
-            JSON.stringify({ type: "ready", payload: { position: "left" } }),
-          );
+          firstClient.send(JSON.stringify({ type: "connection" }));
           this.initialize = true;
-          console.log("sent left ready");
+          console.log("sent left connection");
         } else {
           const secondClient = Array.from(this.clients)[1];
           if (!secondClient) return;
-          this.init(data.payload);
-          secondClient.send(
-            JSON.stringify({ type: "ready", payload: { position: "right" } }),
-          );
-          console.log("sent right ready");
+          secondClient.send(JSON.stringify({ type: "connection" }));
+          console.log("sent right connection");
           this.init(data.payload);
           console.log("sent start to both");
         }
@@ -131,9 +135,16 @@ export class PongServer {
       case "start":
         if (data.payload.position === "left") this.isLeftReady = true;
         else if (data.payload.position === "right") this.isRightReady = true;
-        if (this.isLeftReady && this.isRightReady) {
+
+        this.broadcastReadyState();
+
+        if (this.isLeftReady && this.isRightReady && !this.isRunning) {
           setTimeout(() => {
-            this.handleSpace();
+            // 3秒後時点でまだ両者がいる＆Readyのままなら開始
+            if (this.isLeftReady && this.isRightReady && !this.isRunning) {
+              this.handleSpace();
+              // 開始したら、以後UIは isRunning=true で隠れるのでOK
+            }
           }, 3000);
         }
         break;
@@ -197,7 +208,7 @@ export class PongServer {
 
     //60Hzでデータ更新
     this.tickTimer = setInterval(() => {
-      if (this.isPaused || this.isFinish) return;
+      if (this.isFinish) return;
       this.statusUpdate();
     }, 1000 / 60);
 
@@ -337,6 +348,14 @@ export class PongServer {
     this.ballVelX = 0;
     this.ballVelY = 0;
     this.isRunning = false;
+
+    this.isLeftReady = false;
+    this.isRightReady = false;
+    this.broadcastReadyState();
+
+    this.broadcast({
+      type: "pause",
+    });
   };
 
   //勝者判定
@@ -431,7 +450,6 @@ export class PongServer {
           winScore: this.winScore,
           isFinish: this.isFinish,
           isRunning: this.isRunning,
-          isPaused: this.isPaused,
           lastScored: this.lastScored,
         } as MatchState,
       });
@@ -440,7 +458,6 @@ export class PongServer {
 
   private handleSpace = (): void => {
     if (this.isRunning) {
-      this.isPaused = !this.isPaused;
       return;
     }
 
@@ -462,7 +479,6 @@ export class PongServer {
       this.matchStartTime = Date.now();
     }
 
-    this.isPaused = false;
     this.isRunning = true;
   };
 
@@ -497,7 +513,6 @@ export class PongServer {
       leftInput: JSON.stringify(this.leftInput),
       rightInput: JSON.stringify(this.rightInput),
       isRunning: this.isRunning,
-      isPaused: this.isPaused,
       isFinish: this.isFinish,
       lastScored: this.lastScored,
     });
