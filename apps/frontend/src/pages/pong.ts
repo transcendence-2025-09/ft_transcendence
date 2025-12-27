@@ -25,7 +25,12 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
   const getMatchInfo = async (): Promise<Match | null> => {
     const tournamentId = ctx?.params.tournamentId;
     const matchId = ctx?.params.matchId;
-    if (!tournamentId || !matchId) return null;
+    console.log(`tournamentId: ${tournamentId}`);
+    console.log(`matchId: ${matchId}`);
+    if (!tournamentId || !matchId) {
+      console.log("not get match id or tournament Id");
+      return null;
+    }
     const res = await fetch(
       `/api/tournaments/${tournamentId}/matches/${matchId}`,
       {
@@ -62,7 +67,7 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
         await gameInstance.init().then(() => {
           gameInstance?.start();
         });
-      });
+      })();
     },
     unmount() {
       if (gameInstance) {

@@ -62,12 +62,14 @@ export function createTournamentRepository(db: Database) {
               : match.rightPlayer.userId;
 
           await db.run(
-            `INSERT INTO matches (id, tournament_id, round, player1_id, player2_id, player1_score, player2_score, winner_id, played_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+            `INSERT INTO matches (id, tournament_id, round, player1_id, player2_id, player1_score, player2_score, winner_id, ball_speed, ball_radius, played_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
              ON CONFLICT(id) DO UPDATE SET
                player1_score = ?,
                player2_score = ?,
-               winner_id = ?`,
+               winner_id = ?,
+               ball_speed = ?,
+               ball_radius = ?`,
             [
               match.id,
               tournament.id,
@@ -77,10 +79,14 @@ export function createTournamentRepository(db: Database) {
               match.score.leftPlayer,
               match.score.rightPlayer,
               matchWinnerId,
+              match.gameOptions.ballSpeed,
+              match.gameOptions.ballRadius,
               // UPDATE用のパラメータ
               match.score.leftPlayer,
               match.score.rightPlayer,
               matchWinnerId,
+              match.gameOptions.ballSpeed,
+              match.gameOptions.ballRadius,
             ],
           );
         }

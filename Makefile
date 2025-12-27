@@ -1,5 +1,6 @@
 build:
 	docker-compose build --no-cache --pull
+	# docker-compose build --pull
 
 up:
 	docker-compose up -d
