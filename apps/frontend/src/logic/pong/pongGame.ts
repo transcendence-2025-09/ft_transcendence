@@ -639,8 +639,8 @@ export class PongGame {
     const scoreGrid = new GUI.Grid("scoreGrid");
     scoreGrid.width = "100%";
     scoreGrid.height = "100%";
-    scoreGrid.addRowDefinition(0.62, true);
-    scoreGrid.addRowDefinition(0.38, true);
+    scoreGrid.addRowDefinition(0.62);
+    scoreGrid.addRowDefinition(0.38);
     scoreGrid.addColumnDefinition(1, true);
     scoreBar.addControl(scoreGrid);
 
@@ -780,7 +780,7 @@ export class PongGame {
       rightScoreText.text = String(this.rightScore);
 
       // isRunning=false かつ isFinish=false のときだけ表示
-      if (!this.isFinish) {
+      if (!this.isFinish && !this.isRunning) {
         if (this.isLeftReady) {
           leftReadyText.text = "READY";
           leftReadyText.color = "#4ade80";
