@@ -8,6 +8,7 @@ import { pageFactory } from "../factory/pageFactory";
 import type { RenderOption } from "../logic/pong/pongGame";
 import { PongGame } from "../logic/pong/pongGame";
 import type { RouteCtx } from "../routing/routeList";
+import type { Match } from "./tournaments/types";
 
 const pongPageComp = (ctx?: RouteCtx): ElComponent => {
   const bg = pongBackGroundFactory();
@@ -21,6 +22,24 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
 
   const opt: RenderOption | null = null;
 
+  const getMatchInfo = async (): Promise<Match | null> => {
+    const tournamentId = ctx?.params.tournamentId;
+    const matchId = ctx?.params.matchId;
+    if (!tournamentId || !matchId) return null;
+    const res = await fetch(
+      `/api/tournaments/${tournamentId}/matches/${matchId}`,
+      {
+        method: "GET",
+      },
+    );
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      throw new Error("Failed to get tournament info");
+    }
+    const data = await res.json();
+    return data.match;
+  };
+
   return {
     el: bg.el,
     mount(target, anchor = null) {
@@ -29,17 +48,21 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
       playerLow.mount(content);
       pong.mount(content);
 
-      const canvas = pong.el as HTMLCanvasElement;
-      gameInstance = new PongGame(canvas, opt, ctx);
-
-      void gameInstance.init().then(() => {
-        if (!gameInstance) return;
-        const { leftPlayerName, rightPlayerName } =
-          gameInstance.getPlayerName();
+      void (async () => {
+        const match = await getMatchInfo();
+        if (!match) return;
+        const leftPlayerName: string = match.leftPlayer.alias ?? "Left Player";
+        const rightPlayerName: string =
+          match.rightPlayer.alias ?? "Right Player";
         playerLow.setNames(leftPlayerName, rightPlayerName);
-      });
 
-      gameInstance.start();
+        const canvas = pong.el as HTMLCanvasElement;
+        gameInstance = new PongGame(canvas, opt, ctx, match);
+
+        await gameInstance.init().then(() => {
+          gameInstance?.start();
+        });
+      });
     },
     unmount() {
       if (gameInstance) {

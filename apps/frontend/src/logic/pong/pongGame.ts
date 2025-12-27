@@ -51,8 +51,10 @@ export class PongGame {
   //制御データ
   private canvas: HTMLCanvasElement;
   private isRunning: boolean;
-  private isPaused: boolean;
+  // private isReady: boolean;
   private animationId: number | null;
+  private isLeftReady: boolean;
+  private isRightReady: boolean;
   //key管理関係
   private onKeyDownRef?: (e: KeyboardEvent) => void;
   private onKeyUpRef?: (e: KeyboardEvent) => void;
@@ -63,7 +65,7 @@ export class PongGame {
   //APIから取得するデータ
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
-  private clientUserId: string | number | null = null;
+  // private clientUserId: string | number | null = null;
   // private status: MatchStatus | null;
   private ws: WebSocket;
   private finishTime: number | null;
@@ -88,6 +90,7 @@ export class PongGame {
     canvas: HTMLCanvasElement,
     opt?: RenderOption | null,
     ctx?: RouteCtx | null,
+    match?: Match | null,
   ) {
     this.width = canvas.width;
     this.height = canvas.height;
@@ -111,16 +114,23 @@ export class PongGame {
     this.isFinish = false;
     this.canvas = canvas;
     this.isRunning = false;
-    this.isPaused = false;
+    // this.isReady = false;
+    this.isLeftReady = false;
+    this.isRightReady = false;
     this.animationId = null;
     this.spaceDown = false;
     this.tournamentId = ctx?.params.tournamentId ?? null;
     this.matchId = ctx?.params.matchId ?? null;
-    this.leftPlayer = null;
-    this.rightPlayer = null;
-    this.clientUserId = null;
+    this.leftPlayer = match?.leftPlayer ?? null;
+    this.rightPlayer = match?.rightPlayer ?? null;
+    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
+    this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
+    // this.clientUserId = null;
     const scheme = location.protocol === "https:" ? "wss" : "ws";
     if (this.tournamentId !== null && this.matchId !== null) {
+      console.log(
+        `Connecting to WS with tournamentId=${this.tournamentId} & matchId=${this.matchId}`,
+      );
       const paramStr = new URLSearchParams({
         tournamentId: this.tournamentId,
         matchId: this.matchId,
@@ -131,6 +141,7 @@ export class PongGame {
     } else {
       this.ws = null as unknown as WebSocket;
     }
+    // this.ws = new WebSocket(`ws://localhost:3001/ws`);
     this.winnerId = null;
     //試合終了の時間
     this.finishTime = null;
@@ -167,14 +178,25 @@ export class PongGame {
     });
     if (!res.ok) throw new Error("Unauthorized");
     const data = await res.json();
-    this.clientUserId = data.user.id;
-
+    //自分がどちらのプレイヤーかを確認しておく
+    if (this.leftPlayer?.userId === data.user.id) {
+      console.log(
+        `leftplayer id: ${this.leftPlayer?.userId}, current data id: ${data.user.id}`,
+      );
+      this.clientPosition = "left";
+    } else if (this.rightPlayer?.userId === data.user.id) {
+      console.log(
+        `rightplayer id: ${this.rightPlayer?.userId}, current data id: ${data.user.id}`,
+      );
+      this.clientPosition = "right";
+    }
     //試合情報を取得しておく
-    const match = await this.getMatchInfo();
-    this.leftPlayer = match?.leftPlayer ?? null;
-    this.rightPlayer = match?.rightPlayer ?? null;
-    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
-    this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
+    //
+    // const match = await this.getMatchInfo();
+    // this.leftPlayer = match?.leftPlayer ?? null;
+    // this.rightPlayer = match?.rightPlayer ?? null;
+    // this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
+    // this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
     console.log("Client Connection Success!!");
     //初期情報をgame serverに対して送信しておく
     this.ws.send(
@@ -194,11 +216,10 @@ export class PongGame {
           matchId: this.matchId,
           leftPlayer: this.leftPlayer,
           rightPlayer: this.rightPlayer,
-          clientUserId: this.clientUserId,
         } as MatchData,
       }),
     );
-    // this.registerKeyEvent();
+    this.registerKeyEvent();
     this.ws.onmessage = (event) => {
       try {
         const data =
@@ -219,26 +240,24 @@ export class PongGame {
     this.init3D();
   };
 
-  private getMatchInfo = async (): Promise<Match | null> => {
-    if (!this.tournamentId || !this.matchId) return null;
-    const res = await fetch(
-      `/api/tournaments/${this.tournamentId}/matches/${this.matchId}`,
-      {
-        method: "GET",
-      },
-    );
-    if (!res.ok) {
-      if (res.status === 404) return null;
-      throw new Error("Failed to get tournament info");
-    }
-    const data = await res.json();
-    return data.match;
-  };
+  // private getMatchInfo = async (): Promise<Match | null> => {
+  //   if (!this.tournamentId || !this.matchId) return null;
+  //   const res = await fetch(
+  //     `/api/tournaments/${this.tournamentId}/matches/${this.matchId}`,
+  //     {
+  //       method: "GET",
+  //     },
+  //   );
+  //   if (!res.ok) {
+  //     if (res.status === 404) return null;
+  //     throw new Error("Failed to get tournament info");
+  //   }
+  //   const data = await res.json();
+  //   return data.match;
+  // };
 
   public start = (): void => {
     if (this.isRunning) return;
-    this.isRunning = true;
-    this.isPaused = false;
     this.loop();
   };
 
@@ -253,9 +272,9 @@ export class PongGame {
 
   private onReceive = (data: WsMessage): void => {
     switch (data.type) {
-      case "ready":
+      case "connection":
         console.log("Connection Start.");
-        this.clientPosition = data.payload.position;
+        // this.clientPosition = data.payload.position;
         this.registerKeyEvent();
         this.canStart = true;
         break;
@@ -303,8 +322,10 @@ export class PongGame {
     this.rightScore = data.rightScore;
     this.isFinish = data.isFinish;
     this.isRunning = data.isRunning;
-    this.isPaused = data.isPaused;
     // this.lastScored = data.lastScored;
+    // if (!data.isFinish && !this.isRunning) {
+    //   this.isReady = false;
+    // }
   };
 
   private loop = (): void => {
@@ -425,7 +446,7 @@ export class PongGame {
     if (this.isFinish) {
       navigateTo(`/tournaments/${this.tournamentId}/matches`);
     }
-    if (!this.isRunning) {
+    if (!this.isRunning && !(this.isLeftReady && this.isRightReady)) {
       this.ws.send(
         JSON.stringify({
           type: "start",
@@ -615,21 +636,57 @@ export class PongGame {
     scoreBar.top = "16px";
     gui.addControl(scoreBar);
 
+    const scoreGrid = new GUI.Grid("scoreGrid");
+    scoreGrid.width = "100%";
+    scoreGrid.height = "100%";
+    scoreGrid.addRowDefinition(0.62, true);
+    scoreGrid.addRowDefinition(0.38, true);
+    scoreGrid.addColumnDefinition(1, true);
+    scoreBar.addControl(scoreGrid);
+
+    // ===== 1段目: スコア行 (左右コンテナ) =====
+    const scoreRow = new GUI.Grid("scoreRow");
+    scoreRow.addColumnDefinition(0.5, true);
+    scoreRow.addColumnDefinition(0.5, true);
+    scoreGrid.addControl(scoreRow, 0, 0);
+
     const leftScoreContainer = new GUI.Rectangle("leftScoreContainer");
-    leftScoreContainer.width = "50%";
     leftScoreContainer.thickness = 0;
     leftScoreContainer.background = "transparent";
     leftScoreContainer.horizontalAlignment =
       GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    scoreBar.addControl(leftScoreContainer);
+    scoreRow.addControl(leftScoreContainer, 0, 0);
 
     const rightScoreContainer = new GUI.Rectangle("rightScoreContainer");
-    rightScoreContainer.width = "50%";
     rightScoreContainer.thickness = 0;
     rightScoreContainer.background = "transparent";
     rightScoreContainer.horizontalAlignment =
       GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    scoreBar.addControl(rightScoreContainer);
+    scoreRow.addControl(rightScoreContainer, 0, 1);
+
+    // ===== 2段目: 左右それぞれのREADY表示 =====
+    const readyRow = new GUI.Grid("readyRow");
+    readyRow.width = "100%";
+    readyRow.height = "100%";
+    readyRow.addColumnDefinition(0.5, true);
+    readyRow.addColumnDefinition(0.5, true);
+    scoreGrid.addControl(readyRow, 1, 0);
+
+    const leftReadyText = new GUI.TextBlock("leftReadyText", "");
+    leftReadyText.fontSize = 18;
+    leftReadyText.fontWeight = "700";
+    leftReadyText.textHorizontalAlignment =
+      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    leftReadyText.paddingLeft = "24px";
+    readyRow.addControl(leftReadyText, 0, 0);
+
+    const rightReadyText = new GUI.TextBlock("rightReadyText", "");
+    rightReadyText.fontSize = 18;
+    rightReadyText.fontWeight = "700";
+    rightReadyText.textHorizontalAlignment =
+      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    rightReadyText.paddingRight = "24px";
+    readyRow.addControl(rightReadyText, 0, 1);
 
     const leftScoreText = new GUI.TextBlock("leftScore");
     leftScoreText.text = "0";
@@ -651,21 +708,21 @@ export class PongGame {
     rightScoreText.paddingRight = "24px";
     rightScoreContainer.addControl(rightScoreText);
 
-    const pauseOverlay = new GUI.Rectangle("pauseOverlay");
-    pauseOverlay.width = "100%";
-    pauseOverlay.height = "100%";
-    pauseOverlay.thickness = 0;
-    pauseOverlay.background = "rgba(15,23,42,0.70)";
-    pauseOverlay.isVisible = false;
-    gui.addControl(pauseOverlay);
-
-    const pauseText = new GUI.TextBlock("pauseText", "PAUSED");
-    pauseText.color = "#e5e7eb"; // gray-200
-    pauseText.fontSize = 52;
-    pauseText.fontWeight = "700";
-    pauseText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    pauseText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    pauseOverlay.addControl(pauseText);
+    // const pauseOverlay = new GUI.Rectangle("pauseOverlay");
+    // pauseOverlay.width = "100%";
+    // pauseOverlay.height = "100%";
+    // pauseOverlay.thickness = 0;
+    // pauseOverlay.background = "rgba(15,23,42,0.70)";
+    // pauseOverlay.isVisible = false;
+    // gui.addControl(pauseOverlay);
+    //
+    // const pauseText = new GUI.TextBlock("pauseText", "PAUSED");
+    // pauseText.color = "#e5e7eb"; // gray-200
+    // pauseText.fontSize = 52;
+    // pauseText.fontWeight = "700";
+    // pauseText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    // pauseText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    // pauseOverlay.addControl(pauseText);
 
     const winnerOverlay = new GUI.Rectangle("winnerOverlay");
     winnerOverlay.width = "100%";
@@ -722,7 +779,28 @@ export class PongGame {
       leftScoreText.text = String(this.leftScore);
       rightScoreText.text = String(this.rightScore);
 
-      pauseOverlay.isVisible = this.isPaused && !this.isFinish;
+      // isRunning=false かつ isFinish=false のときだけ表示
+      if (!this.isFinish && !this.isRunning) {
+        if (this.isLeftReady) {
+          leftReadyText.text = "READY";
+          leftReadyText.color = "#4ade80";
+        } else {
+          leftReadyText.text = "Press SPACE";
+          leftReadyText.color = "#f87171";
+        }
+
+        if (this.isRightReady) {
+          rightReadyText.text = "READY";
+          rightReadyText.color = "#4ade80";
+        } else {
+          rightReadyText.text = "Press SPACE";
+          rightReadyText.color = "#f87171";
+        }
+      } else {
+        leftReadyText.text = "";
+        rightReadyText.text = "";
+      }
+
       winnerOverlay.isVisible = this.isFinish;
       if (this.isFinish) {
         winnerName.text = String(
@@ -788,13 +866,13 @@ export class PongGame {
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
   };
 
-  public getPlayerName = (): {
-    leftPlayerName: string;
-    rightPlayerName: string;
-  } => {
-    return {
-      leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "Waiting...",
-      rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "Waiting...",
-    };
-  };
+  // public getPlayerName = (): {
+  //   leftPlayerName: string;
+  //   rightPlayerName: string;
+  // } => {
+  //   return {
+  //     leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "Waiting...",
+  //     rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "Waiting...",
+  //   };
+  // };
 }

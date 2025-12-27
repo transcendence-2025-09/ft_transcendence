@@ -34,9 +34,15 @@ export type readyPayload = {
   position: "left" | "right";
 };
 
+export type readyState = {
+  leftReady: boolean;
+  rightReady: boolean;
+};
+
 export type WsMessage =
   | { type: "init"; payload: MatchData }
-  | { type: "ready"; payload: readyPayload }
+  | { type: "connection" }
+  | { type: "ready"; payload: readyState }
   | { type: "start"; payload: readyPayload }
   | { type: "input"; payload: PlayerInput }
   | { type: "snapshot"; payload: MatchState }
@@ -59,7 +65,6 @@ export type MatchState = {
   winScore: number;
   isFinish: boolean;
   isRunning: boolean;
-  isPaused: boolean;
   lastScored: "left" | "right" | null;
 };
 
