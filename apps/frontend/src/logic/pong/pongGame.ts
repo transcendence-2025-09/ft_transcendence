@@ -123,7 +123,7 @@ export class PongGame {
     this.matchId = ctx?.params.matchId ?? null;
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
-    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
+    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 6;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
     // this.clientUserId = null;
     const scheme = location.protocol === "https:" ? "wss" : "ws";
