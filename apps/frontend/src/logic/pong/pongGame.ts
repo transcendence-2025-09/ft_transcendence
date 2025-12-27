@@ -179,14 +179,14 @@ export class PongGame {
     if (!res.ok) throw new Error("Unauthorized");
     const data = await res.json();
     //自分がどちらのプレイヤーかを確認しておく
-    if (this.leftPlayer?.userId === data.user.id) {
+    if (this.leftPlayer?.userId === data.id) {
       console.log(
-        `leftplayer id: ${this.leftPlayer?.userId}, current data id: ${data.user.id}`,
+        `leftplayer id: ${this.leftPlayer?.userId}, current data id: ${data.id}`,
       );
       this.clientPosition = "left";
-    } else if (this.rightPlayer?.userId === data.user.id) {
+    } else if (this.rightPlayer?.userId === data.id) {
       console.log(
-        `rightplayer id: ${this.rightPlayer?.userId}, current data id: ${data.user.id}`,
+        `rightplayer id: ${this.rightPlayer?.userId}, current data id: ${data.id}`,
       );
       this.clientPosition = "right";
     }
@@ -780,7 +780,7 @@ export class PongGame {
       rightScoreText.text = String(this.rightScore);
 
       // isRunning=false かつ isFinish=false のときだけ表示
-      if (!this.isFinish && !this.isRunning) {
+      if (!this.isFinish) {
         if (this.isLeftReady) {
           leftReadyText.text = "READY";
           leftReadyText.color = "#4ade80";
