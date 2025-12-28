@@ -8,7 +8,6 @@ export const pongGame = (): ElComponent => {
     // 属性の width/height は外す or 最小にして、JSで後から決める
     className:
       "mx-auto block w-full max-w-[1000px] aspect-[15/11] bg-black rounded-lg shadow-lg outline-none",
-    tabIndex: "0", // ←後述(フォーカス固定)に必須
   });
   return componentFactory(canvas);
 };
