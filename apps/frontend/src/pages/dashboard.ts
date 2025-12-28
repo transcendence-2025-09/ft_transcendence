@@ -476,8 +476,8 @@ export const Dashboard = async (): Promise<ElComponent> => {
                 (log) => log.current_player2_score,
               );
 
-              const player1Name = `Player: ${match.player1_name}`
-              const player2Name = `Player: ${match.player2_name}`
+              const player1Name = `Player: ${match.player1_name}`;
+              const player2Name = `Player: ${match.player2_name}`;
               new Chart(canvasElement, {
                 type: "line",
                 data: {
