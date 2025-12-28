@@ -17,6 +17,8 @@ export class PongGame {
   //基本定数(固定値)
   private width: number;
   private height: number;
+  private worldWidth: number;
+  private worldHeight: number;
   private paddleWidth: number;
   private paddleHeight: number;
   private paddleMargin: number;
@@ -75,8 +77,10 @@ export class PongGame {
     ctx?: RouteCtx | null,
     match?: Match | null,
   ) {
-    this.width = canvas.width;
-    this.height = canvas.height;
+    this.worldWidth = 1500;
+    this.worldHeight = 1100;
+    this.width = this.worldWidth;
+    this.height = this.worldHeight;
     this.paddleWidth = 12;
     this.paddleHeight = 110;
     this.paddleMargin = 24;
@@ -441,6 +445,9 @@ export class PongGame {
   }
 
   private init3D = (): void => {
+    //先にcanvasのサイズを調整しておく
+    this.resizeCanvasToDisplaySize();
+
     const canvas = this.canvas;
 
     this.engine = new BABYLON.Engine(canvas, true, {
@@ -827,19 +834,15 @@ export class PongGame {
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
   };
 
-  //canvasの表示サイズに合わせて解像度を調整する
+  // canvasの表示サイズに合わせて解像度を調整する;
   private resizeCanvasToDisplaySize = () => {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
     const w = Math.floor(rect.width * dpr);
     const h = Math.floor(rect.height * dpr);
-
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w;
       this.canvas.height = h;
-      // ゲームの論理サイズも合わせるならここで this.width/height も更新
-      this.width = w / dpr;
-      this.height = h / dpr;
     }
   };
 }
