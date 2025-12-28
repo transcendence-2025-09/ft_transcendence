@@ -112,7 +112,9 @@ export function TournamentMatches(ctx: RouteCtx) {
       if (newCard) {
         existingCard.replaceWith(newCard);
         // イベントリスナーを再設定
-        const btn = el.querySelector(`#startMatch-${match.id}`) as HTMLButtonElement;
+        const btn = el.querySelector(
+          `#startMatch-${match.id}`,
+        ) as HTMLButtonElement;
         if (btn) {
           btn.addEventListener("click", () => handleMatchStart(match));
         }
