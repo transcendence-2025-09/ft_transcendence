@@ -232,7 +232,7 @@ export class PongGame {
     switch (data.type) {
       case "connection":
         console.log("Connection Start.");
-        this.eanStart = true;
+        this.canStart = true;
         break;
       case "ready": {
         const readyInfo = data.payload as {
