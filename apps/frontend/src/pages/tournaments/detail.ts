@@ -84,9 +84,20 @@ export function TournamentDetail(ctx: RouteCtx) {
       updatePlayersList(tournament.players ?? [], tournament.hostId);
 
       // 参加者数の表示も更新
-      const playerCountElement = detailContainer.querySelector('dd:nth-of-type(3)');
+      const playerCountElement = detailContainer.querySelector('#currentPlayerCount');
       if (playerCountElement) {
         playerCountElement.textContent = `${tournament.players?.length ?? 0}人`;
+      }
+
+      // 開始ボタンの状態も更新（ホストの場合のみ）
+      const startBtn = detailContainer.querySelector("#startBtn") as HTMLButtonElement | null;
+      if (startBtn) {
+        const currentPlayers = tournament.players?.length ?? 0;
+        const canStart = currentPlayers >= tournament.maxPlayers;
+
+        startBtn.disabled = !canStart;
+        startBtn.className = `${canStart ? "bg-blue-500 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"} text-white font-bold py-2 px-6 rounded`;
+        startBtn.textContent = canStart ? "開始する" : `開始する (${currentPlayers}/${tournament.maxPlayers}人)`;
       }
     } catch (error) {
       console.error("参加者一覧の更新に失敗しました:", error);
@@ -134,7 +145,7 @@ export function TournamentDetail(ctx: RouteCtx) {
             </div>
             <div class="flex">
               <dt class="font-semibold w-32">現在の参加者:</dt>
-              <dd>${tournament.players?.length ?? 0}人</dd>
+              <dd id="currentPlayerCount">${tournament.players?.length ?? 0}人</dd>
             </div>
             <div class="flex">
               <dt class="font-semibold w-32">作成日時:</dt>
