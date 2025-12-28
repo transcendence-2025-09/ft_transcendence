@@ -38,7 +38,7 @@ export function TournamentMatches(ctx: RouteCtx) {
         <div class="mb-6">
           <h1 id="tournamentName" class="text-3xl font-bold text-center mb-2">Remote Tournament</h1>
           <div class="text-center">
-            <a href="/tournaments" class="text-blue-500 hover:underline">← Back to Home</a>
+            <button id="backBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded">&larr; 一覧に戻る</button>
           </div>
         </div>
 
@@ -72,6 +72,10 @@ export function TournamentMatches(ctx: RouteCtx) {
   const tabRound1 = el.querySelector("#tabRound1") as HTMLButtonElement;
   const tabFinals = el.querySelector("#tabFinals") as HTMLButtonElement;
   const tabResults = el.querySelector("#tabResults") as HTMLButtonElement;
+  const backBtn = el.querySelector("#backBtn") as HTMLButtonElement;
+
+  // 戻るボタンのイベントリスナー
+  backBtn.addEventListener("click", () => navigateTo("/tournaments"));
 
   // タブマネージャーの初期化
   const tabManager = new TabManager(
