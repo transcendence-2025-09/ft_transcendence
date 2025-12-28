@@ -99,7 +99,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               FROM score_logs sl
               LEFT JOIN users u ON sl.scored_player_id = u.id
               WHERE sl.match_id = ?
-              ORDER BY rowid ASC
+              ORDER BY sl.elapsed_seconds ASC
               `,
                 [match.id],
               );
