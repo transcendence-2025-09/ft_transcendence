@@ -12,7 +12,7 @@ function createCompletedMatchCard(match: Match): string {
   const winnerName = score1 > score2 ? player1Name : player2Name;
 
   return `
-    <div class="bg-white shadow-lg rounded-lg p-6">
+    <div class="bg-white shadow-lg rounded-lg p-6" data-match-id="${match.id}">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4 flex-1">
           <span class="text-lg font-semibold">${player1Name}</span>
@@ -55,7 +55,7 @@ function createPendingMatchCard(match: Match, currentUserId?: number): string {
   const buttonDisabled = !isStartable || !isParticipant ? "disabled" : "";
 
   return `
-    <div class="bg-white shadow-lg rounded-lg p-6">
+    <div class="bg-white shadow-lg rounded-lg p-6" data-match-id="${match.id}">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4 flex-1">
           <span class="text-lg font-semibold">${player1Name}</span>
