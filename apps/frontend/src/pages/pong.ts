@@ -5,7 +5,6 @@ import type { PongPlayerRowComponent } from "../components/pong/pongPlayerRow";
 import { pongPlayerRow } from "../components/pong/pongPlayerRow";
 import type { ElComponent } from "../factory/componentFactory";
 import { pageFactory } from "../factory/pageFactory";
-import type { RenderOption } from "../logic/pong/pongGame";
 import { PongGame } from "../logic/pong/pongGame";
 import type { RouteCtx } from "../routing/routeList";
 import type { Match } from "./tournaments/types";
@@ -20,8 +19,7 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
 
   let gameInstance: PongGame | null = null;
 
-  const opt: RenderOption | null = null;
-
+  //すでにできているマッチ情報を取得して、PongGameの初期化に使う
   const getMatchInfo = async (): Promise<Match | null> => {
     const tournamentId = ctx?.params.tournamentId;
     const matchId = ctx?.params.matchId;
@@ -48,11 +46,13 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
   return {
     el: bg.el,
     mount(target, anchor = null) {
+      //canvasの作成と、header, playerLow, pongのマウント
       bg.mount(target, anchor);
       header.mount(content);
       playerLow.mount(content);
       pong.mount(content);
 
+      //非同期でマッチ情報を取得し、ゲームを初期化して開始
       void (async () => {
         const match = await getMatchInfo();
         if (!match) return;
@@ -62,7 +62,7 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
         playerLow.setNames(leftPlayerName, rightPlayerName);
 
         const canvas = pong.el as HTMLCanvasElement;
-        gameInstance = new PongGame(canvas, opt, ctx, match);
+        gameInstance = new PongGame(canvas, ctx, match);
 
         await gameInstance.init().then(() => {
           gameInstance?.start();
@@ -70,9 +70,9 @@ const pongPageComp = (ctx?: RouteCtx): ElComponent => {
       })();
     },
     unmount() {
+      //ゲームの停止とキーイベントの登録解除、各コンポーネントのアンマウント
       if (gameInstance) {
         gameInstance.stop();
-        gameInstance.unregisterKeyEvent();
       }
       gameInstance = null;
       pong.unmount();
