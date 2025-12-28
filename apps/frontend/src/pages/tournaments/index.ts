@@ -193,12 +193,70 @@ function createTournamentsPage() {
     });
   });
 
+  // 一覧だけを部分更新（イベントリスナーを再設定）
+  async function refreshTournamentsList() {
+    try {
+      const tournaments = await fetchAllTournaments();
+
+      if (tournaments.length === 0) {
+        showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
+        return;
+      }
+
+      tournamentsList.innerHTML = tournaments
+        .map((t: Tournament) => {
+          const name = escapeHtml(t.name);
+          const status = escapeHtml(getStatusLabel(t.status));
+          const date = formatDate(t.createdAt);
+
+          return `
+            <div class="border border-gray-300 rounded p-4 hover:shadow-lg transition-shadow cursor-pointer" data-id="${t.id}">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-xl font-semibold">${name}</h3>
+                  <p class="text-sm text-gray-600">プレイヤー: ${t.currentPlayers}/${t.maxPlayers}</p>
+                  <p class="text-sm text-gray-600">ステータス: ${status}</p>
+                </div>
+                <span class="text-xs text-gray-500">${date}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      // トーナメントカードのクリックイベントを追加
+      tournamentsList.querySelectorAll("[data-id]").forEach((card) => {
+        card.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = card.getAttribute("data-id");
+          if (id) navigateTo(`/tournaments/${id}`);
+        });
+      });
+    } catch (error) {
+      console.error("トーナメント一覧の更新に失敗しました:", error);
+    }
+  }
+
+  // 5秒ごとに一覧を自動更新
+  const autoRefreshInterval = window.setInterval(() => {
+    refreshTournamentsList();
+  }, 5000);
+
   // 初期読み込み
   loadTournaments();
 
-  return el;
+  // コンポーネントを作成してアンマウント時に自動更新を停止
+  const component = componentFactory(el);
+  const originalUnmount = component.unmount;
+  component.unmount = () => {
+    clearInterval(autoRefreshInterval);
+    originalUnmount();
+  };
+
+  return component;
 }
 
-const TournamentsComponent = componentFactory(createTournamentsPage());
-
-export const Tournaments = pageFactory([TournamentsComponent]);
+export function Tournaments() {
+  const component = createTournamentsPage();
+  return pageFactory([component]);
+}

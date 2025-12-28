@@ -71,7 +71,7 @@ export const routeList: Route[] = [
   {
     meta: { title: "tournament" },
     path: "/tournaments",
-    viewFactory: () => Tournaments,
+    viewFactory: () => Tournaments(),
   },
   {
     meta: { title: "tournamentDetail" },
