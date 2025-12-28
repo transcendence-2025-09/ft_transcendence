@@ -38,7 +38,7 @@ export function TournamentMatches(ctx: RouteCtx) {
         <div class="mb-6">
           <h1 id="tournamentName" class="text-3xl font-bold text-center mb-2">Remote Tournament</h1>
           <div class="text-center">
-            <a href="/tournaments" class="text-blue-500 hover:underline">← Back to Home</a>
+            <button id="backBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded">&larr; 一覧に戻る</button>
           </div>
         </div>
 
@@ -72,6 +72,10 @@ export function TournamentMatches(ctx: RouteCtx) {
   const tabRound1 = el.querySelector("#tabRound1") as HTMLButtonElement;
   const tabFinals = el.querySelector("#tabFinals") as HTMLButtonElement;
   const tabResults = el.querySelector("#tabResults") as HTMLButtonElement;
+  const backBtn = el.querySelector("#backBtn") as HTMLButtonElement;
+
+  // 戻るボタンのイベントリスナー
+  backBtn.addEventListener("click", () => navigateTo("/tournaments"));
 
   // タブマネージャーの初期化
   const tabManager = new TabManager(
@@ -93,6 +97,29 @@ export function TournamentMatches(ctx: RouteCtx) {
         btn.addEventListener("click", () => handleMatchStart(match));
       }
     });
+  }
+
+  /**
+   * 個々のマッチカードを部分更新
+   */
+  function updateMatchCard(match: Match) {
+    const existingCard = el.querySelector(`[data-match-id="${match.id}"]`);
+    if (existingCard) {
+      const newCardHtml = createMatchCard(match, currentUserId);
+      const temp = document.createElement("div");
+      temp.innerHTML = newCardHtml;
+      const newCard = temp.firstElementChild;
+      if (newCard) {
+        existingCard.replaceWith(newCard);
+        // イベントリスナーを再設定
+        const btn = el.querySelector(
+          `#startMatch-${match.id}`,
+        ) as HTMLButtonElement;
+        if (btn) {
+          btn.addEventListener("click", () => handleMatchStart(match));
+        }
+      }
+    }
   }
 
   /**
@@ -328,19 +355,28 @@ export function TournamentMatches(ctx: RouteCtx) {
     loadResults();
   });
 
-  // ポーリング: マッチの状態を定期的にチェックして画面を更新
+  // ポーリング: マッチの状態を定期的にチェックして画面を部分更新
   async function refreshCurrentTab() {
     try {
+      const matches = await fetchMatches(tournamentId);
       const currentTab = tabManager.getCurrentTab();
-
       if (currentTab === "round1") {
-        await loadSemifinals();
+        // セミファイナルのマッチカードを部分更新
+        const semifinalMatches = matches.filter(
+          (m) => m.round === MATCH_ROUND.SEMIFINALS,
+        );
+        for (const match of semifinalMatches) {
+          updateMatchCard(match);
+        }
       } else if (currentTab === "finals") {
-        await loadFinals();
-      } else if (currentTab === "results") {
-        await loadResults();
+        // 決勝・3位決定戦のマッチカードを部分更新
+        const finalsMatch = matches.find((m) => m.round === MATCH_ROUND.FINALS);
+        const thirdPlaceMatch = matches.find(
+          (m) => m.round === MATCH_ROUND.THIRD_PLACE,
+        );
+        if (finalsMatch) updateMatchCard(finalsMatch);
+        if (thirdPlaceMatch) updateMatchCard(thirdPlaceMatch);
       }
-
       await updateTabStates();
     } catch (error) {
       console.error("Failed to refresh current tab:", error);

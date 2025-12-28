@@ -25,7 +25,7 @@ export class PongServer {
   private paddleWidth = 12;
   private paddleHeight = 110;
   private paddleMargin = 24;
-  private paddleSpeed = 3;
+  private paddleSpeed = 6;
   private ballRadius = 12;
   private ballSpeed = 3;
   private ballAccel = 1.03;
@@ -142,6 +142,9 @@ export class PongServer {
           setTimeout(() => {
             // 3秒後時点でまだ両者がいる＆Readyのままなら開始
             if (this.isLeftReady && this.isRightReady && !this.isRunning) {
+              if (this.matchStartTime === null) {
+                this.matchStartTime = Date.now();
+              }
               this.handleSpace();
               // 開始したら、以後UIは isRunning=true で隠れるのでOK
             }
@@ -475,9 +478,9 @@ export class PongServer {
     this.ballVelY = dirY * this.ballSpeed;
 
     // 試合開始時刻を記録（初回のみ）
-    if (this.matchStartTime === null) {
-      this.matchStartTime = Date.now();
-    }
+    // if (this.matchStartTime === null) {
+    //   this.matchStartTime = Date.now();
+    // }
 
     this.isRunning = true;
   };

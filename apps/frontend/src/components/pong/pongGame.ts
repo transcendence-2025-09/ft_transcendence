@@ -4,12 +4,22 @@ import { eh } from "../../factory/elementFactory";
 
 export const pongGame = (): ElComponent => {
   const canvas = eh("canvas", {
-    width: "1500",
-    height: "1100",
     id: "game",
-    className: "mx-auto block bg-black rounded-lg shadow-lg",
+    // 属性の width/height は外す or 最小にして、JSで後から決める
+    className:
+      "mx-auto block w-full max-w-[1000px] aspect-[15/11] bg-black rounded-lg shadow-lg outline-none",
+    tabIndex: "0", // ←後述(フォーカス固定)に必須
   });
-
-  const base = componentFactory(canvas);
-  return base;
+  return componentFactory(canvas);
 };
+
+// export const pongGame = (): ElComponent => {
+//   const canvas = eh("canvas", {
+//     width: "1500",
+//     height: "1100",
+//     id: "game",
+//     className: "mx-auto block bg-black rounded-lg shadow-lg",
+//   });
+//   const base = componentFactory(canvas);
+//   return base;
+// };
