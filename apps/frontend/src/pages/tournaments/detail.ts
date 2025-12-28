@@ -37,6 +37,79 @@ export function TournamentDetail(ctx: RouteCtx) {
     "#tournamentDetail",
   ) as HTMLDivElement;
 
+  // 参加者一覧のHTMLを生成
+  function renderPlayersList(players: Player[], hostId: number): string {
+    if (!players || players.length === 0) {
+      return `<p class="text-gray-500">${ERROR_MESSAGES.NO_PLAYERS}</p>`;
+    }
+    return `
+      <ul class="space-y-2">
+        ${players
+          .map(
+            (p: Player) => `
+          <li class="flex items-center justify-between p-2 border rounded">
+            <span>${escapeHtml(p.alias)}</span>
+            ${p.userId === hostId ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">ホスト</span>' : ""}
+          </li>
+        `,
+          )
+          .join("")}
+      </ul>
+    `;
+  }
+
+  // 参加者一覧を更新
+  function updatePlayersList(players: Player[], hostId: number) {
+    const playersListContainer = detailContainer.querySelector("#playersList");
+    if (playersListContainer) {
+      playersListContainer.innerHTML = renderPlayersList(players, hostId);
+    }
+  }
+
+  // 参加者一覧だけを部分更新
+  async function refreshPlayersList() {
+    try {
+      const tournament = await fetchTournament(tournamentId);
+
+      // トーナメントが開始されていれば遷移
+      if (tournament.status === "in_progress") {
+        navigateTo(`/tournaments/${tournamentId}/matches`);
+        return;
+      }
+      if (tournament.status === "completed") {
+        navigateTo(`/tournaments/${tournamentId}/matches?tab=results`);
+        return;
+      }
+
+      updatePlayersList(tournament.players ?? [], tournament.hostId);
+
+      // 参加者数の表示も更新
+      const playerCountElement = detailContainer.querySelector(
+        "#currentPlayerCount",
+      );
+      if (playerCountElement) {
+        playerCountElement.textContent = `${tournament.players?.length ?? 0}人`;
+      }
+
+      // 開始ボタンの状態も更新（ホストの場合のみ）
+      const startBtn = detailContainer.querySelector(
+        "#startBtn",
+      ) as HTMLButtonElement | null;
+      if (startBtn) {
+        const currentPlayers = tournament.players?.length ?? 0;
+        const canStart = currentPlayers >= tournament.maxPlayers;
+
+        startBtn.disabled = !canStart;
+        startBtn.className = `${canStart ? "bg-blue-500 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"} text-white font-bold py-2 px-6 rounded`;
+        startBtn.textContent = canStart
+          ? "開始する"
+          : `開始する (${currentPlayers}/${tournament.maxPlayers}人)`;
+      }
+    } catch (error) {
+      console.error("参加者一覧の更新に失敗しました:", error);
+    }
+  }
+
   // トーナメント詳細を読み込む
   async function loadTournamentDetail() {
     try {
@@ -60,7 +133,7 @@ export function TournamentDetail(ctx: RouteCtx) {
 
       detailContainer.innerHTML = `
         <div class="mb-6">
-          <a href="/tournaments" class="text-blue-500 hover:underline">&larr; 一覧に戻る</a>
+          <button id="backBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded">&larr; 一覧に戻る</button>
         </div>
 
         <h1 class="text-3xl font-bold mb-6">${escapeHtml(tournament.name)}</h1>
@@ -78,7 +151,7 @@ export function TournamentDetail(ctx: RouteCtx) {
             </div>
             <div class="flex">
               <dt class="font-semibold w-32">現在の参加者:</dt>
-              <dd>${tournament.players?.length ?? 0}人</dd>
+              <dd id="currentPlayerCount">${tournament.players?.length ?? 0}人</dd>
             </div>
             <div class="flex">
               <dt class="font-semibold w-32">作成日時:</dt>
@@ -101,29 +174,21 @@ export function TournamentDetail(ctx: RouteCtx) {
 
         <div class="bg-white shadow rounded-lg p-6 mb-6">
           <h2 class="text-xl font-semibold mb-4">参加者一覧</h2>
-          ${
-            !tournament.players || tournament.players.length === 0
-              ? `<p class="text-gray-500">${ERROR_MESSAGES.NO_PLAYERS}</p>`
-              : `
-              <ul class="space-y-2">
-                ${tournament.players
-                  .map(
-                    (p: Player) => `
-                  <li class="flex items-center justify-between p-2 border rounded">
-                    <span>${escapeHtml(p.alias)}</span>
-                    ${p.userId === tournament.hostId ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">ホスト</span>' : ""}
-                  </li>
-                `,
-                  )
-                  .join("")}
-              </ul>
-            `
-          }
+          <div id="playersList"></div>
         </div>
 
         <div class="space-x-4" id="actionButtons">
         </div>
       `;
+
+      // 参加者一覧を更新
+      updatePlayersList(tournament.players ?? [], tournament.hostId);
+
+      // 戻るボタンのイベントリスナーを設定
+      const backBtn = detailContainer.querySelector("#backBtn");
+      if (backBtn) {
+        backBtn.addEventListener("click", () => navigateTo("/tournaments"));
+      }
 
       // ユーザーの状態に応じて処理を分岐
       const isHost = currentUser.id === tournament.hostId;
@@ -239,30 +304,17 @@ export function TournamentDetail(ctx: RouteCtx) {
     }
   }
 
-  // ポーリング: トーナメントの状態を定期的にチェック
-  let pollingInterval: number | null = null;
-
-  // 定期的にトーナメントの状態を確認するポーリングを設定
-  if (pollingInterval !== null) {
-    clearInterval(pollingInterval);
-  }
-
-  pollingInterval = window.setInterval(async () => {
-    try {
-      await loadTournamentDetail();
-    } catch (error) {
-      console.error("ポーリング中にエラーが発生しました: ", error);
-    }
-  }, 5000); // 5秒ごとに実行
-
-  // コンポーネントのアンマウント時にポーリングを停止
   const component = componentFactory(el);
+
+  // 5秒ごとに参加者一覧を自動更新
+  const autoRefreshInterval = window.setInterval(() => {
+    refreshPlayersList();
+  }, 5000);
+
+  // コンポーネントのアンマウント時に自動更新を停止
   const originalUnmount = component.unmount;
   component.unmount = () => {
-    if (pollingInterval !== null) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
+    clearInterval(autoRefreshInterval);
     originalUnmount();
   };
 
