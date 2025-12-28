@@ -10,7 +10,7 @@ interface MatchResultPayload {
   };
   ballSpeed?: number;
   ballRadius?: number;
-  scoreLogs?: Array<{ left: number; right: number }>;
+  scoreLogs?: Array<{ left: number; right: number; elapsedSeconds: number }>;
 }
 
 interface MatchResultResponse {
