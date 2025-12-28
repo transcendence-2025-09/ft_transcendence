@@ -25,9 +25,9 @@ export class PongServer {
   private paddleWidth = 12;
   private paddleHeight = 110;
   private paddleMargin = 24;
-  private paddleSpeed = 3;
+  private paddleSpeed = 6;
   private ballRadius = 12;
-  private ballSpeed = 8;
+  private ballSpeed = 3;
   private ballAccel = 1.03;
   private ballMaxSpeed = 8;
 

@@ -98,7 +98,7 @@ export class PongGame {
     this.paddleHeight = opt?.paddleHeight ?? 110;
     this.paddleMargin = opt?.paddleMargin ?? 24;
     this.ballRadius = opt?.ballRadius ?? 12;
-    this.ballSpeed = opt?.ballSpeed ?? 8;
+    this.ballSpeed = opt?.ballSpeed ?? 3;
     this.ballAccel = opt?.ballAccel ?? 1.03;
     this.ballX = this.width / 2;
     this.ballY = this.height / 2;
@@ -123,7 +123,7 @@ export class PongGame {
     this.matchId = ctx?.params.matchId ?? null;
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
-    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 6;
+    this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
     // this.clientUserId = null;
     const scheme = location.protocol === "https:" ? "wss" : "ws";
