@@ -72,15 +72,28 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     async (_request: FastifyRequest, reply) => {
       const tournaments = tournamentsManager.getAllTournaments();
-      const response = tournaments.map((t) => ({
-        id: t.id,
-        name: t.name,
-        hostId: t.hostId,
-        maxPlayers: t.maxPlayers,
-        currentPlayers: t.players.length,
-        status: t.status,
-        createdAt: t.createdAt.toISOString(),
-      }));
+
+      // 完了したトーナメントを除外し、待機中→対戦中の順でソート
+      const response = tournaments
+        .filter((t) => t.status !== "completed")
+        .sort((a, b) => {
+          // 待機中(waiting/ready)を先に、対戦中(in_progress)を後に
+          const aIsWaiting = a.status === "waiting" || a.status === "ready";
+          const bIsWaiting = b.status === "waiting" || b.status === "ready";
+          if (aIsWaiting && !bIsWaiting) return -1;
+          if (!aIsWaiting && bIsWaiting) return 1;
+          // 同じステータスの場合は作成日時順（新しい順）
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        })
+        .map((t) => ({
+          id: t.id,
+          name: t.name,
+          hostId: t.hostId,
+          maxPlayers: t.maxPlayers,
+          currentPlayers: t.players.length,
+          status: t.status,
+          createdAt: t.createdAt.toISOString(),
+        }));
 
       return reply.status(200).send(response);
     },

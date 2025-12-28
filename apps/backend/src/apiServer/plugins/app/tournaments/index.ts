@@ -123,6 +123,18 @@ export function createTournamentsManager(fastify: FastifyInstance) {
         // DB保存
         repository
           .saveTournamentWithMatches(tournament, championId)
+          .then(() => {
+            // DB保存成功後、5分後にメモリから削除
+            setTimeout(
+              () => {
+                tournaments.delete(tournamentId);
+                console.log(
+                  `🗑️ Tournament ${tournamentId} removed from memory after 5 minutes`,
+                );
+              },
+              5 * 60 * 1000,
+            ); // 5分 = 300,000ms
+          })
           .catch((error) => {
             console.error(
               `❌ Failed to save tournament ${tournamentId} to database:`,
