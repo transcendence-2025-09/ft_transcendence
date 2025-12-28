@@ -60,7 +60,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           score: { leftPlayer: number; rightPlayer: number };
           ballSpeed?: number;
           ballRadius?: number;
-          scoreLogs?: Array<{ left: number; right: number, elapsedSeconds: number }>;
+          scoreLogs?: Array<{
+            left: number;
+            right: number;
+            elapsedSeconds: number;
+          }>;
         };
 
       fastify.log.info(
@@ -136,7 +140,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             await fastify.db.run(
               `INSERT INTO score_logs (id, match_id, scored_player_id, current_player1_score, current_player2_score, elapsed_seconds)
                VALUES (?, ?, ?, ?, ?, ?)`,
-              [uuidv7(), matchId, scoredPlayerId, log.left, log.right, log.elapsedSeconds],
+              [
+                uuidv7(),
+                matchId,
+                scoredPlayerId,
+                log.left,
+                log.right,
+                log.elapsedSeconds,
+              ],
             );
           }
           fastify.log.info(
