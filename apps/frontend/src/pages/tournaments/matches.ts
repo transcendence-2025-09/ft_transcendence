@@ -96,6 +96,27 @@ export function TournamentMatches(ctx: RouteCtx) {
   }
 
   /**
+   * 個々のマッチカードを部分更新
+   */
+  function updateMatchCard(match: Match) {
+    const existingCard = el.querySelector(`[data-match-id="${match.id}"]`);
+    if (existingCard) {
+      const newCardHtml = createMatchCard(match, currentUserId);
+      const temp = document.createElement("div");
+      temp.innerHTML = newCardHtml;
+      const newCard = temp.firstElementChild;
+      if (newCard) {
+        existingCard.replaceWith(newCard);
+        // イベントリスナーを再設定
+        const btn = el.querySelector(`#startMatch-${match.id}`) as HTMLButtonElement;
+        if (btn) {
+          btn.addEventListener("click", () => handleMatchStart(match));
+        }
+      }
+    }
+  }
+
+  /**
    * タブの状態を更新
    */
   async function updateTabStates() {
@@ -328,19 +349,28 @@ export function TournamentMatches(ctx: RouteCtx) {
     loadResults();
   });
 
-  // ポーリング: マッチの状態を定期的にチェックして画面を更新
+  // ポーリング: マッチの状態を定期的にチェックして画面を部分更新
   async function refreshCurrentTab() {
     try {
+      const matches = await fetchMatches(tournamentId);
       const currentTab = tabManager.getCurrentTab();
-
       if (currentTab === "round1") {
-        await loadSemifinals();
+        // セミファイナルのマッチカードを部分更新
+        const semifinalMatches = matches.filter(
+          (m) => m.round === MATCH_ROUND.SEMIFINALS,
+        );
+        for (const match of semifinalMatches) {
+          updateMatchCard(match);
+        }
       } else if (currentTab === "finals") {
-        await loadFinals();
-      } else if (currentTab === "results") {
-        await loadResults();
+        // 決勝・3位決定戦のマッチカードを部分更新
+        const finalsMatch = matches.find((m) => m.round === MATCH_ROUND.FINALS);
+        const thirdPlaceMatch = matches.find(
+          (m) => m.round === MATCH_ROUND.THIRD_PLACE,
+        );
+        if (finalsMatch) updateMatchCard(finalsMatch);
+        if (thirdPlaceMatch) updateMatchCard(thirdPlaceMatch);
       }
-
       await updateTabStates();
     } catch (error) {
       console.error("Failed to refresh current tab:", error);
