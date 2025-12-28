@@ -18,6 +18,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                 round: Type.Number(),
                 player1_id: Type.Number(),
                 player2_id: Type.Number(),
+                player1_name: Type.String(),
+                player2_name: Type.String(),
                 player1_score: Type.Number(),
                 player2_score: Type.Number(),
                 winner_id: Type.Number(),
@@ -28,6 +30,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   Type.Array(
                     Type.Object({
                       scored_player_id: Type.Number(),
+                      scored_player_name: Type.String(),
                       current_player1_score: Type.Number(),
                       current_player2_score: Type.Number(),
                       elapsed_seconds: Type.Optional(Type.Number()),
@@ -58,20 +61,24 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         const matches = await fastify.db.all(
           `
           SELECT 
-            id,
-            tournament_id,
-            round,
-            player1_id,
-            player2_id,
-            player1_score,
-            player2_score,
-            winner_id,
-            played_at,
-            ball_speed,
-            ball_radius
-          FROM matches
-          WHERE player1_id = ? OR player2_id = ?
-          ORDER BY played_at DESC
+            m.id,
+            m.tournament_id,
+            m.round,
+            m.player1_id,
+            m.player2_id,
+            u1.name as player1_name,
+            u2.name as player2_name,
+            m.player1_score,
+            m.player2_score,
+            m.winner_id,
+            m.played_at,
+            m.ball_speed,
+            m.ball_radius
+          FROM matches m
+          LEFT JOIN users u1 ON m.player1_id = u1.id
+          LEFT JOIN users u2 ON m.player2_id = u2.id
+          WHERE m.player1_id = ? OR m.player2_id = ?
+          ORDER BY m.played_at DESC
           LIMIT 10
           `,
           [userId, userId],
@@ -84,12 +91,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               const logs = await fastify.db.all(
                 `
               SELECT 
-                scored_player_id,
-                current_player1_score,
-                current_player2_score,
-                elapsed_seconds
-              FROM score_logs
-              WHERE match_id = ?
+                sl.scored_player_id,
+                u.name as scored_player_name,
+                sl.current_player1_score,
+                sl.current_player2_score,
+                sl.elapsed_seconds
+              FROM score_logs sl
+              LEFT JOIN users u ON sl.scored_player_id = u.id
+              WHERE sl.match_id = ?
               ORDER BY rowid ASC
               `,
                 [match.id],
@@ -108,6 +117,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             round: number;
             player1_id: number;
             player2_id: number;
+            player1_name: string;
+            player2_name: string;
             player1_score: number;
             player2_score: number;
             winner_id: number;
@@ -116,6 +127,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             ball_radius?: number;
             score_logs?: Array<{
               scored_player_id: number;
+              scored_player_name: string;
               current_player1_score: number;
               current_player2_score: number;
               elapsed_seconds?: number;

@@ -159,6 +159,13 @@ export const Dashboard = async (): Promise<ElComponent> => {
     if (!matchesContainer) return;
 
     try {
+      const res = await fetch("/api/user/me", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Unauthorized");
+      const { id } = await res.json();
+
       const response = await fetch("/api/user/matches", {
         method: "GET",
         credentials: "include",
@@ -178,53 +185,62 @@ export const Dashboard = async (): Promise<ElComponent> => {
       //     id: "match1",
       //     tournament_id: "tourn1",
       //     round: 1,
-      //     player1_id: data.id,
-      //     player2_id: 2,
+      //     player1_id: 2,
+      //     player2_id: id,
+      //     player1_name: "2nd",
+      //     player2_name: name,
       //     player1_score: 2,
       //     player2_score: 5,
-      //     winner_id: data.id,
+      //     winner_id: id,
       //     played_at: new Date().toISOString(),
       //     ball_speed: 3,
       //     ball_radius: 3,
       //     score_logs: [
       //       {
-      //         scored_player_id: data.id,
+      //         scored_player_id: 2,
+      //         scored_player_name: "2nd",
       //         current_player1_score: 1,
       //         current_player2_score: 0,
       //         elapsed_seconds: 5,
       //       },
       //       {
-      //         scored_player_id: 2,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 1,
       //         current_player2_score: 1,
       //         elapsed_seconds: 12,
       //       },
       //       {
-      //         scored_player_id: 2,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 1,
       //         current_player2_score: 2,
       //         elapsed_seconds: 18,
       //       },
       //       {
-      //         scored_player_id: data.id,
+      //         scored_player_id: 2,
+      //         scored_player_name: "2nd",
       //         current_player1_score: 2,
       //         current_player2_score: 2,
       //         elapsed_seconds: 25,
       //       },
       //       {
-      //         scored_player_id: 2,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 2,
       //         current_player2_score: 3,
       //         elapsed_seconds: 32,
       //       },
       //       {
-      //         scored_player_id: 2,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 2,
       //         current_player2_score: 4,
       //         elapsed_seconds: 40,
       //       },
       //       {
-      //         scored_player_id: 2,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 2,
       //         current_player2_score: 5,
       //         elapsed_seconds: 48,
@@ -236,7 +252,9 @@ export const Dashboard = async (): Promise<ElComponent> => {
       //     tournament_id: "tourn1",
       //     round: 2,
       //     player1_id: 3,
-      //     player2_id: data.id,
+      //     player2_id: id,
+      //     player1_name: "3rd",
+      //     player2_name: name,
       //     player1_score: 5,
       //     player2_score: 2,
       //     winner_id: 3,
@@ -246,42 +264,49 @@ export const Dashboard = async (): Promise<ElComponent> => {
       //     score_logs: [
       //       {
       //         scored_player_id: 3,
+      //         scored_player_name: "3rd",
       //         current_player1_score: 1,
       //         current_player2_score: 0,
       //         elapsed_seconds: 4,
       //       },
       //       {
-      //         scored_player_id: data.id,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 1,
       //         current_player2_score: 1,
       //         elapsed_seconds: 11,
       //       },
       //       {
       //         scored_player_id: 3,
+      //         scored_player_name: "3rd",
       //         current_player1_score: 2,
       //         current_player2_score: 1,
       //         elapsed_seconds: 17,
       //       },
       //       {
       //         scored_player_id: 3,
+      //         scored_player_name: "3rd",
       //         current_player1_score: 3,
       //         current_player2_score: 1,
       //         elapsed_seconds: 24,
       //       },
       //       {
-      //         scored_player_id: data.id,
+      //         scored_player_id: id,
+      //         scored_player_name: name,
       //         current_player1_score: 3,
       //         current_player2_score: 2,
       //         elapsed_seconds: 30,
       //       },
       //       {
       //         scored_player_id: 3,
+      //         scored_player_name: "3rd",
       //         current_player1_score: 4,
       //         current_player2_score: 2,
       //         elapsed_seconds: 38,
       //       },
       //       {
       //         scored_player_id: 3,
+      //         scored_player_name: "3rd",
       //         current_player1_score: 5,
       //         current_player2_score: 2,
       //         elapsed_seconds: 45,
@@ -305,6 +330,8 @@ export const Dashboard = async (): Promise<ElComponent> => {
             round: number;
             player1_id: number;
             player2_id: number;
+            player1_name: string;
+            player2_name: string;
             player1_score: number;
             player2_score: number;
             winner_id: number;
@@ -313,17 +340,18 @@ export const Dashboard = async (): Promise<ElComponent> => {
             ball_radius?: number;
             score_logs?: Array<{
               scored_player_id: number;
+              scored_player_name: string;
               current_player1_score: number;
               current_player2_score: number;
             }>;
           }) => {
-            const isWin = match.winner_id === data.id;
+            const isWin = match.winner_id === id;
             const opponent =
-              match.player1_id === data.id
-                ? `Player ${match.player2_id}`
-                : `Player ${match.player1_id}`;
+              match.player1_id === id
+                ? `Player: ${match.player2_name}`
+                : `Player: ${match.player1_name}`;
             const score =
-              match.player1_id === data.id
+              match.player1_id === id
                 ? `${match.player1_score} - ${match.player2_score}`
                 : `${match.player2_score} - ${match.player1_score}`;
             const resultClass = isWin
@@ -335,7 +363,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
             // 得点推移をHTMLで生成
             const scoreLogsHtml = (match.score_logs || [])
               .map((log) => {
-                const isCurrentUserScored = log.scored_player_id === data.id;
+                const isCurrentUserScored = log.scored_player_id === id;
                 return `
                   <div class="text-xs py-1 px-2 ${
                     isCurrentUserScored
@@ -404,6 +432,8 @@ export const Dashboard = async (): Promise<ElComponent> => {
               round: number;
               player1_id: number;
               player2_id: number;
+              player1_name: string;
+              player2_name: string;
               player1_score: number;
               player2_score: number;
               winner_id: number;
@@ -412,6 +442,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
               ball_radius?: number;
               score_logs?: Array<{
                 scored_player_id: number;
+                scored_player_name: string;
                 current_player1_score: number;
                 current_player2_score: number;
                 elapsed_seconds?: number;
@@ -445,15 +476,8 @@ export const Dashboard = async (): Promise<ElComponent> => {
                 (log) => log.current_player2_score,
               );
 
-              const player1Name =
-                match.player1_id === data.id
-                  ? "You"
-                  : `Player ${match.player1_id}`;
-              const player2Name =
-                match.player2_id === data.id
-                  ? "You"
-                  : `Player ${match.player2_id}`;
-
+              const player1Name = `Player: ${match.player1_name}`;
+              const player2Name = `Player: ${match.player2_name}`;
               new Chart(canvasElement, {
                 type: "line",
                 data: {
