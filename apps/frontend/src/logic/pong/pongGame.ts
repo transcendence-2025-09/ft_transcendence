@@ -282,7 +282,7 @@ export class PongGame {
         this.registerKeyEvent();
         this.canStart = true;
         break;
-      case "ready":
+      case "ready": {
         const readyInfo = data.payload as {
           leftReady: boolean;
           rightReady: boolean;
@@ -290,6 +290,7 @@ export class PongGame {
         this.isLeftReady = readyInfo.leftReady;
         this.isRightReady = readyInfo.rightReady;
         break;
+      }
       case "snapshot":
         this.updateState(data.payload as MatchState);
         break;
