@@ -13,17 +13,6 @@ type Snap = {
   paddleRightY: number;
 };
 
-export type RenderOption = {
-  paddleWidth: number;
-  paddleHeight: number;
-  paddleMargin: number;
-  paddleSpeed: number;
-  ballRadius: number;
-  ballSpeed: number;
-  ballAccel: number;
-  winScore: number;
-};
-
 export class PongGame {
   //基本定数(固定値)
   private width: number;
@@ -41,17 +30,15 @@ export class PongGame {
   private paddleRightY: number;
   private leftScore: number;
   private rightScore: number;
-  // private leftInput: { up: boolean; down: boolean };
-  // private rightInput: { up: boolean; down: boolean };
   private clientInput: { up: boolean; down: boolean };
   private clientPosition: "left" | "right" | null;
   private winScore: number;
   private winnerId: number | null;
   private isFinish: boolean;
+  private canStart: boolean;
   //制御データ
   private canvas: HTMLCanvasElement;
   private isRunning: boolean;
-  // private isReady: boolean;
   private animationId: number | null;
   private isLeftReady: boolean;
   private isRightReady: boolean;
@@ -65,8 +52,6 @@ export class PongGame {
   //APIから取得するデータ
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
-  // private clientUserId: string | number | null = null;
-  // private status: MatchStatus | null;
   private ws: WebSocket;
   private finishTime: number | null;
   private redirectDelay: number;
@@ -84,37 +69,32 @@ export class PongGame {
     ball: BABYLON.Mesh;
   } | null;
 
-  private canStart: boolean;
-
+  //canvasはPongGameの描画用、ctxはルーティング情報、matchは試合情報
   constructor(
     canvas: HTMLCanvasElement,
-    opt?: RenderOption | null,
     ctx?: RouteCtx | null,
     match?: Match | null,
   ) {
     this.width = canvas.width;
     this.height = canvas.height;
-    this.paddleWidth = opt?.paddleWidth ?? 12;
-    this.paddleHeight = opt?.paddleHeight ?? 110;
-    this.paddleMargin = opt?.paddleMargin ?? 24;
-    this.ballRadius = opt?.ballRadius ?? 12;
-    this.ballSpeed = opt?.ballSpeed ?? 3;
-    this.ballAccel = opt?.ballAccel ?? 1.03;
+    this.paddleWidth = 12;
+    this.paddleHeight = 110;
+    this.paddleMargin = 24;
+    this.ballRadius = 12;
+    this.ballSpeed = 3;
+    this.ballAccel = 1.03;
     this.ballX = this.width / 2;
     this.ballY = this.height / 2;
     this.paddleLeftY = (this.height - this.paddleHeight) / 2;
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
     this.leftScore = 0;
     this.rightScore = 0;
-    // this.leftInput = { up: false, down: false };
-    // this.rightInput = { up: false, down: false };
     this.clientInput = { up: false, down: false };
     this.clientPosition = null;
-    this.winScore = opt?.winScore ?? 2;
+    this.winScore = 2;
     this.isFinish = false;
     this.canvas = canvas;
     this.isRunning = false;
-    // this.isReady = false;
     this.isLeftReady = false;
     this.isRightReady = false;
     this.animationId = null;
@@ -125,27 +105,8 @@ export class PongGame {
     this.rightPlayer = match?.rightPlayer ?? null;
     this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
-    // this.clientUserId = null;
-    const scheme = location.protocol === "https:" ? "wss" : "ws";
-    if (this.tournamentId !== null && this.matchId !== null) {
-      console.log(
-        `Connecting to WS with tournamentId=${this.tournamentId} & matchId=${this.matchId}`,
-      );
-      const paramStr = new URLSearchParams({
-        tournamentId: this.tournamentId,
-        matchId: this.matchId,
-      });
-      this.ws = new WebSocket(
-        `${scheme}://${location.host}/ws?${paramStr.toString()}`,
-      );
-    } else {
-      this.ws = null as unknown as WebSocket;
-    }
-    // this.ws = new WebSocket(`ws://localhost:3001/ws`);
     this.winnerId = null;
-    //試合終了の時間
     this.finishTime = null;
-    //試合終了後の画面遷移時間
     this.redirectDelay = 5000;
     this.prevSnap = null;
     this.lastSnap = null;
@@ -155,8 +116,29 @@ export class PongGame {
     this.camera = null;
     this.meshes = null;
     this.canStart = false;
+
+    // WebSocketの接続を確立.
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    // tournamentIdとmatchIdが存在する場合にのみ接続を試みる
+    if (this.tournamentId !== null && this.matchId !== null) {
+      console.log(
+        `Connecting to WS with tournamentId=${this.tournamentId} & matchId=${this.matchId}`,
+      );
+      // URLSearchParamsを使ってクエリパラメータを生成
+      const paramStr = new URLSearchParams({
+        tournamentId: this.tournamentId,
+        matchId: this.matchId,
+      });
+      //クエリパラメータを付与してWebSocket接続を作成
+      this.ws = new WebSocket(
+        `${scheme}://${location.host}/ws?${paramStr.toString()}`,
+      );
+    } else {
+      this.ws = null as unknown as WebSocket;
+    }
   }
 
+  //WebSocketの接続が確立されるまで待機する
   private async waitForOpen(ws: WebSocket): Promise<void> {
     if (ws.readyState === WebSocket.OPEN) return;
     await new Promise<void>((resolve) => {
@@ -168,6 +150,7 @@ export class PongGame {
     });
   }
 
+  //Gameサーバーへの初期データを送信し、WebScocketのメッセージ受信処理を登録する
   public init = async () => {
     //最初にソケットの通信が確立されることをまつ
     await this.waitForOpen(this.ws);
@@ -178,27 +161,13 @@ export class PongGame {
     });
     if (!res.ok) throw new Error("Unauthorized");
     const data = await res.json();
-    //自分がどちらのプレイヤーかを確認しておく
-    if (this.leftPlayer?.userId === data.id) {
-      console.log(
-        `leftplayer id: ${this.leftPlayer?.userId}, current data id: ${data.id}`,
-      );
-      this.clientPosition = "left";
-    } else if (this.rightPlayer?.userId === data.id) {
-      console.log(
-        `rightplayer id: ${this.rightPlayer?.userId}, current data id: ${data.id}`,
-      );
+    //自分がleftかrightか、どちらのプレイヤーかを確認
+    if (this.leftPlayer?.userId === data.id) this.clientPosition = "left";
+    else if (this.rightPlayer?.userId === data.id)
       this.clientPosition = "right";
-    }
-    //試合情報を取得しておく
-    //
-    // const match = await this.getMatchInfo();
-    // this.leftPlayer = match?.leftPlayer ?? null;
-    // this.rightPlayer = match?.rightPlayer ?? null;
-    // this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
-    // this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
     console.log("Client Connection Success!!");
-    //初期情報をgame serverに対して送信しておく
+
+    //初期データを送信
     this.ws.send(
       JSON.stringify({
         type: "init",
@@ -219,7 +188,9 @@ export class PongGame {
         } as MatchData,
       }),
     );
+    //キーイベントの登録
     this.registerKeyEvent();
+    //メッセージ受信の処理
     this.ws.onmessage = (event) => {
       try {
         const data =
@@ -238,33 +209,15 @@ export class PongGame {
     this.ws.onerror = (e) => console.error("WS error", e);
     //3Dの初期化
     this.init3D();
-    window.addEventListener("resize", () => {
-      this.resizeCanvasToDisplaySize();
-      this.engine?.resize();
-    });
   };
 
-  // private getMatchInfo = async (): Promise<Match | null> => {
-  //   if (!this.tournamentId || !this.matchId) return null;
-  //   const res = await fetch(
-  //     `/api/tournaments/${this.tournamentId}/matches/${this.matchId}`,
-  //     {
-  //       method: "GET",
-  //     },
-  //   );
-  //   if (!res.ok) {
-  //     if (res.status === 404) return null;
-  //     throw new Error("Failed to get tournament info");
-  //   }
-  //   const data = await res.json();
-  //   return data.match;
-  // };
-
+  //ゲームループ開始
   public start = (): void => {
     if (this.isRunning) return;
     this.loop();
   };
 
+  //ゲームループ停止
   public stop = async (): Promise<void> => {
     if (!this.isRunning) return;
     this.isRunning = false;
@@ -272,15 +225,14 @@ export class PongGame {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+    this.unregisterKeyEvent();
   };
 
   private onReceive = (data: WsMessage): void => {
     switch (data.type) {
       case "connection":
         console.log("Connection Start.");
-        // this.clientPosition = data.payload.position;
-        this.registerKeyEvent();
-        this.canStart = true;
+        this.eanStart = true;
         break;
       case "ready": {
         const readyInfo = data.payload as {
@@ -301,10 +253,10 @@ export class PongGame {
   };
 
   private finishGame = (data: MatchResult): void => {
+    //Gameサーバーから送られてきた試合結果情報を元に状態を更新
     this.leftScore = data.leftScore;
     this.rightScore = data.rightScore;
     this.winnerId = Number(data.winnerId);
-    //isFinishフラグを上げる。
     this.isFinish = data.isFinish;
     //終了時間を記録
     this.finishTime = performance.now();
@@ -314,6 +266,7 @@ export class PongGame {
     }, this.redirectDelay);
   };
 
+  //サーバーから送られてきた最新の試合状態でローカルの状態を更新
   private updateState = (data: MatchState): void => {
     const now = performance.now();
     this.prevSnap = this.lastSnap;
@@ -327,41 +280,25 @@ export class PongGame {
 
     this.ballX = data.ballX;
     this.ballY = data.ballY;
-    // this.ballVelX = data.ballVelX;
-    // this.ballVelY = data.ballVelY;
     this.paddleLeftY = data.paddleLeftY;
     this.paddleRightY = data.paddleRightY;
     this.leftScore = data.leftScore;
     this.rightScore = data.rightScore;
     this.isFinish = data.isFinish;
     this.isRunning = data.isRunning;
-    // this.lastScored = data.lastScored;
-    // if (!data.isFinish && !this.isRunning) {
-    //   this.isReady = false;
-    // }
   };
 
+  //ゲームループ本体
   private loop = (): void => {
-    // this.render();
     this.animationId = requestAnimationFrame(this.loop);
   };
 
-  public registerKeyEvent = (): void => {
+  private registerKeyEvent = (): void => {
     if (this.onKeyUpRef || this.onKeyDownRef) return;
     let keyflag = false;
 
     this.onKeyDownRef = (e: KeyboardEvent) => {
       switch (e.code) {
-        // case "KeyW":
-        //   e.preventDefault();
-        //   this.leftInput.up = true;
-        //   keyflag = true;
-        //   break;
-        // case "KeyS":
-        //   e.preventDefault();
-        //   this.leftInput.down = true;
-        //   keyflag = true;
-        //   break;
         case "ArrowUp":
           e.preventDefault();
           this.clientInput.up = true;
@@ -397,14 +334,6 @@ export class PongGame {
     this.onKeyUpRef = (e: KeyboardEvent) => {
       let keyflag = false;
       switch (e.code) {
-        // case "KeyW":
-        //   this.leftInput.up = false;
-        //   keyflag = true;
-        //   break;
-        // case "KeyS":
-        //   this.leftInput.down = false;
-        //   keyflag = true;
-        //   break;
         case "ArrowUp":
           this.clientInput.up = false;
           keyflag = true;
@@ -442,23 +371,26 @@ export class PongGame {
     console.log("Register key event success");
   };
 
-  public unregisterKeyEvent = (): void => {
+  //キーイベントの登録解除
+  private unregisterKeyEvent = (): void => {
     if (this.onKeyDownRef)
       window.removeEventListener("keydown", this.onKeyDownRef);
     if (this.onKeyUpRef) window.removeEventListener("keyup", this.onKeyUpRef);
     this.onKeyDownRef = undefined;
     this.onKeyUpRef = undefined;
-
-    // this.leftInput.up = this.leftInput.down = false;
-    // this.rightInput.up = this.rightInput.down = false;
     this.clientInput.up = this.clientInput.down = false;
   };
 
+  //スペースキー押下時の処理
   private handleSpace = (): void => {
+    //まだ開始できない場合は無視
     if (!this.canStart) return;
+    //試合終了後ならマッチ一覧へ遷移
     if (this.isFinish) {
       navigateTo(`/tournaments/${this.tournamentId}/matches`);
     }
+
+    //試合中なら無視、まだ開始していないなら開始要求をサーバーに送信
     if (!this.isRunning && !(this.isLeftReady && this.isRightReady)) {
       this.ws.send(
         JSON.stringify({
@@ -511,7 +443,6 @@ export class PongGame {
   private init3D = (): void => {
     const canvas = this.canvas;
 
-    // ========= Engine & Scene =========
     this.engine = new BABYLON.Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
@@ -521,23 +452,24 @@ export class PongGame {
     // ちょい暗めなネイビー系背景
     this.scene.clearColor = new BABYLON.Color4(0.02, 0.04, 0.1, 1.0);
 
-    // ========= Camera =========
+    //カメラの設定
     this.camera = new BABYLON.ArcRotateCamera(
       "camera",
-      -Math.PI / 2, // ← 元の alpha（横方向の角度）
-      Math.PI / 10, // ← 元の beta（縦方向の角度）
-      Math.max(this.width, this.height) * 1.2, // ← 元の距離
-      new BABYLON.Vector3(0, 1, 0), // ← 注視点（コート中央）
+      //元の alpha（横方向の角度）
+      -Math.PI / 2,
+      //元の beta（縦方向の角度）
+      Math.PI / 10,
+      //元の半径（距離）
+      Math.max(this.width, this.height) * 1.2,
+      // 注視点 (シーンの中心)
+      new BABYLON.Vector3(0, 1, 0),
       this.scene,
     );
     this.camera.lowerRadiusLimit = Math.max(this.width, this.height) * 1.1;
     this.camera.upperRadiusLimit = Math.max(this.width, this.height) * 1.8;
     this.camera.wheelDeltaPercentage = 0.01;
     this.camera.panningSensibility = 2000;
-    // this.camera.attachControl(canvas, true);
-    // this.camera.inputs.clear();
 
-    // ========= Lights =========
     // 柔らかい環境光
     const hemi = new BABYLON.HemisphericLight(
       "hemi",
@@ -555,21 +487,25 @@ export class PongGame {
     dirLight.position = new BABYLON.Vector3(0, 20, 0);
     dirLight.intensity = 0.45;
 
+    // ほんのり光るエフェクト
     const glow = new BABYLON.GlowLayer("glow", this.scene);
     glow.intensity = 0.7;
 
+    // 地面の作成
     const ground = BABYLON.MeshBuilder.CreateGround(
       "ground",
       { width: this.width, height: this.height },
       this.scene,
     );
 
+    // 地面のマテリアル設定
     const groundMat = new BABYLON.StandardMaterial("groundMat", this.scene);
     groundMat.diffuseColor = new BABYLON.Color3(0.05, 0.08, 0.14);
     groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
     groundMat.emissiveColor = new BABYLON.Color3(0.02, 0.04, 0.08);
     ground.material = groundMat;
 
+    // 中央の破線の作成
     const dashedLine = BABYLON.MeshBuilder.CreateDashedLines(
       "dashedLine",
       {
@@ -585,7 +521,9 @@ export class PongGame {
     );
     dashedLine.color = new BABYLON.Color3(0.5, 0.5, 0.8);
 
+    // パドルとボールの作成
     const yThickness = 1.0;
+    // パドル（左）
     const left = BABYLON.MeshBuilder.CreateBox(
       "left",
       {
@@ -595,8 +533,10 @@ export class PongGame {
       },
       this.scene,
     );
+    // パドル（右）
     const right = left.clone("right") as BABYLON.Mesh;
 
+    // パドルのマテリアル設定
     const paddleMat = new BABYLON.StandardMaterial("paddleMat", this.scene);
     paddleMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.25);
     paddleMat.emissiveColor = new BABYLON.Color3(0.2, 0.9, 0.6);
@@ -604,6 +544,7 @@ export class PongGame {
     left.material = paddleMat;
     right.material = paddleMat;
 
+    // ボールの作成
     const ball = BABYLON.MeshBuilder.CreateSphere(
       "ball",
       {
@@ -613,12 +554,14 @@ export class PongGame {
       this.scene,
     );
 
+    // ボールのマテリアル設定
     const ballMat = new BABYLON.StandardMaterial("ballMat", this.scene);
     ballMat.diffuseColor = new BABYLON.Color3(0.95, 0.95, 1.0);
     ballMat.emissiveColor = new BABYLON.Color3(1.0, 0.8, 0.3); // ちょいオレンジ系
     ballMat.specularPower = 96;
     ball.material = ballMat;
 
+    // ボールの影の作成
     const ballShadow = BABYLON.MeshBuilder.CreateDisc(
       "ballShadow",
       { radius: this.ballRadius * 0.9, tessellation: 24 },
@@ -633,12 +576,14 @@ export class PongGame {
 
     this.meshes = { left, right, ball };
 
+    // GUIの設定
     const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
       "UI",
       true,
       this.scene,
     );
 
+    // スコアバーの作成
     const scoreBar = new GUI.Rectangle("scoreBar");
     scoreBar.width = "60%";
     scoreBar.height = "64px";
@@ -650,6 +595,7 @@ export class PongGame {
     scoreBar.top = "16px";
     gui.addControl(scoreBar);
 
+    // スコアグリッドの作成
     const scoreGrid = new GUI.Grid("scoreGrid");
     scoreGrid.width = "100%";
     scoreGrid.height = "100%";
@@ -658,12 +604,13 @@ export class PongGame {
     scoreGrid.addColumnDefinition(1);
     scoreBar.addControl(scoreGrid);
 
-    // ===== 1段目: スコア行 (左右コンテナ) =====
+    // 1段目: スコア行 (左右コンテナ)
     const scoreRow = new GUI.Grid("scoreRow");
     scoreRow.addColumnDefinition(0.5);
     scoreRow.addColumnDefinition(0.5);
     scoreGrid.addControl(scoreRow, 0, 0);
 
+    // 左スコアコンテナ
     const leftScoreContainer = new GUI.Rectangle("leftScoreContainer");
     leftScoreContainer.thickness = 0;
     leftScoreContainer.background = "transparent";
@@ -671,6 +618,7 @@ export class PongGame {
       GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     scoreRow.addControl(leftScoreContainer, 0, 0);
 
+    // 右スコアコンテナ
     const rightScoreContainer = new GUI.Rectangle("rightScoreContainer");
     rightScoreContainer.thickness = 0;
     rightScoreContainer.background = "transparent";
@@ -678,7 +626,7 @@ export class PongGame {
       GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     scoreRow.addControl(rightScoreContainer, 0, 1);
 
-    // ===== 2段目: 左右それぞれのREADY表示 =====
+    // 2段目: READY行
     const readyRow = new GUI.Grid("readyRow");
     readyRow.width = "100%";
     readyRow.height = "100%";
@@ -686,6 +634,7 @@ export class PongGame {
     readyRow.addColumnDefinition(0.5);
     scoreGrid.addControl(readyRow, 1, 0);
 
+    // 左READYテキスト
     const leftReadyText = new GUI.TextBlock("leftReadyText", "");
     leftReadyText.fontSize = 18;
     leftReadyText.fontWeight = "700";
@@ -694,6 +643,7 @@ export class PongGame {
     leftReadyText.paddingLeft = "24px";
     readyRow.addControl(leftReadyText, 0, 0);
 
+    // 右READYテキスト
     const rightReadyText = new GUI.TextBlock("rightReadyText", "");
     rightReadyText.fontSize = 18;
     rightReadyText.fontWeight = "700";
@@ -702,6 +652,7 @@ export class PongGame {
     rightReadyText.paddingRight = "24px";
     readyRow.addControl(rightReadyText, 0, 1);
 
+    // 左スコアテキスト
     const leftScoreText = new GUI.TextBlock("leftScore");
     leftScoreText.text = "0";
     leftScoreText.color = "#4ade80";
@@ -712,6 +663,7 @@ export class PongGame {
     leftScoreText.paddingLeft = "24px";
     leftScoreContainer.addControl(leftScoreText);
 
+    // 右スコアテキスト
     const rightScoreText = new GUI.TextBlock("rightScore");
     rightScoreText.text = "0";
     rightScoreText.color = "#22d3ee"; // cyan系
@@ -722,22 +674,7 @@ export class PongGame {
     rightScoreText.paddingRight = "24px";
     rightScoreContainer.addControl(rightScoreText);
 
-    // const pauseOverlay = new GUI.Rectangle("pauseOverlay");
-    // pauseOverlay.width = "100%";
-    // pauseOverlay.height = "100%";
-    // pauseOverlay.thickness = 0;
-    // pauseOverlay.background = "rgba(15,23,42,0.70)";
-    // pauseOverlay.isVisible = false;
-    // gui.addControl(pauseOverlay);
-    //
-    // const pauseText = new GUI.TextBlock("pauseText", "PAUSED");
-    // pauseText.color = "#e5e7eb"; // gray-200
-    // pauseText.fontSize = 52;
-    // pauseText.fontWeight = "700";
-    // pauseText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    // pauseText.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    // pauseOverlay.addControl(pauseText);
-
+    // 勝者表示オーバーレイ
     const winnerOverlay = new GUI.Rectangle("winnerOverlay");
     winnerOverlay.width = "100%";
     winnerOverlay.height = "100%";
@@ -746,6 +683,7 @@ export class PongGame {
     winnerOverlay.isVisible = false;
     gui.addControl(winnerOverlay);
 
+    // 勝者タイトル
     const winnerTitle = new GUI.TextBlock("winnerTitle", "Winner");
     winnerTitle.color = "#e5e7eb";
     winnerTitle.fontSize = 40;
@@ -756,6 +694,7 @@ export class PongGame {
     winnerTitle.top = "-32px";
     winnerOverlay.addControl(winnerTitle);
 
+    // 勝者名テキスト
     const winnerName = new GUI.TextBlock("winnerName", "");
     winnerName.color = "#f97316"; // orange-500
     winnerName.fontSize = 32;
@@ -766,6 +705,7 @@ export class PongGame {
     winnerName.top = "10px";
     winnerOverlay.addControl(winnerName);
 
+    // カウントダウンテキスト
     const winnerCountdown = new GUI.TextBlock("winnerCountdown", "");
     winnerCountdown.color = "#9ca3af"; // gray-400
     winnerCountdown.fontSize = 22;
@@ -776,6 +716,7 @@ export class PongGame {
     winnerCountdown.top = "52px";
     winnerOverlay.addControl(winnerCountdown);
 
+    //レンダーループの設定
     this.scene.onBeforeRenderObservable.add(() => {
       const targettime = performance.now() - this.interpDelay;
       const shot = this.samplePosition(targettime);
@@ -815,6 +756,7 @@ export class PongGame {
         rightReadyText.text = "";
       }
 
+      // 勝者オーバーレイの表示更新
       winnerOverlay.isVisible = this.isFinish;
       if (this.isFinish) {
         winnerName.text = String(
@@ -836,12 +778,18 @@ export class PongGame {
       }
     });
 
+    // エンジンのレンダーループ開始
     this.engine.runRenderLoop(() => {
       this.scene?.render();
     });
 
-    window.addEventListener("resize", () => this.engine?.resize());
+    // リサイズイベントの登録
+    window.addEventListener("resize", () => {
+      this.resizeCanvasToDisplaySize();
+      this.engine?.resize();
+    });
   };
+
   //canvasとBabylonjsで座標原点が異なるから中身を揃える処理を加える
   private twoDtothreeD = (
     x2d: number,
@@ -855,6 +803,7 @@ export class PongGame {
     );
   };
 
+  //サーバーから送られてきた状態に基づいて3Dメッシュの位置を更新する
   private syncMeshes = (
     shot: {
       ballX: number;
@@ -875,11 +824,10 @@ export class PongGame {
     const rightX2d = this.width - this.paddleMargin - this.paddleWidth / 2;
     const rightZ2d = paddleRightY + this.paddleHeight / 2;
     this.meshes.right.position = this.twoDtothreeD(rightX2d, rightZ2d);
-
-    // ボール中心
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
   };
 
+  //canvasの表示サイズに合わせて解像度を調整する
   private resizeCanvasToDisplaySize = () => {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
@@ -894,14 +842,4 @@ export class PongGame {
       this.height = h / dpr;
     }
   };
-
-  // public getPlayerName = (): {
-  //   leftPlayerName: string;
-  //   rightPlayerName: string;
-  // } => {
-  //   return {
-  //     leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "Waiting...",
-  //     rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "Waiting...",
-  //   };
-  // };
 }
