@@ -14,8 +14,10 @@ import { internalApiClient } from "../utils/internalApiClient.js";
 export class PongServer {
   // 通信
   private clients = new Set<WebSocket>();
+  private leftClient: WebSocket | null = null;
+  private rightClient: WebSocket | null = null;
+  private wsToSide = new Map<"left" | "right", WebSocket>();
   private initialize = false;
-  // private isReady = false;
   private isLeftReady = false;
   private isRightReady = false;
 
@@ -52,8 +54,6 @@ export class PongServer {
     elapsedSeconds: number;
   }> = [];
   private matchStartTime: number | null = null;
-
-  // メタ
   private tournamentId: string | null = null;
   private matchId: string | null = null;
   private leftPlayer: Player | null = null;
@@ -79,11 +79,38 @@ export class PongServer {
 
   public join = (ws: WebSocket): void => {
     console.log(`client joined room: ${this.id}`);
-    this.clients.add(ws);
-    if (this.initialize) {
-      // this.isReady = true;
-      console.log(`room is ready: ${this.id}`);
+
+    if (this.clients.size >= 2) {
+      ws.close(1008, "room full");
+      return;
     }
+    this.clients.add(ws);
+    //left rightの順番でクライアントを割り当てる
+    let side: "left" | "right";
+    if (!this.leftClient) {
+      this.leftClient = ws;
+      side = "left";
+    } else if (!this.rightClient) {
+      this.rightClient = ws;
+      side = "right";
+    } else {
+      ws.close(1008, "room full");
+      return;
+    }
+    this.wsToSide.set(side, ws);
+    console.log(`assigned side=${side}`);
+
+    //closeとerrorイベントのハンドリング
+    ws.on("close", (code, reason) => {
+      console.log(
+        `ws closed side=${side} code=${code} reason=${reason.toString()}`,
+      );
+      this.onClientDisconnect(ws);
+    });
+    ws.on("error", (err) => {
+      console.log(`ws error side=${side}`, err);
+      this.onClientDisconnect(ws);
+    });
   };
 
   public leave = (ws: WebSocket): void => {
@@ -119,25 +146,26 @@ export class PongServer {
     switch (data.type) {
       case "init":
         if (!this.initialize) {
-          const firstClient = this.clients.values().next().value;
+          const firstClient = this.wsToSide.get("left");
           if (!firstClient) return;
           firstClient.send(JSON.stringify({ type: "connection" }));
           this.initialize = true;
           console.log("sent left connection");
         } else {
-          const secondClient = Array.from(this.clients)[1];
+          const secondClient = this.wsToSide.get("right");
           if (!secondClient) return;
           secondClient.send(JSON.stringify({ type: "connection" }));
-          console.log("sent right connection");
           this.init(data.payload);
-          console.log("sent start to both");
+          console.log("sent right connection");
         }
         break;
       case "start":
+        //どっちのプレイヤーがReadyしたかを記録
         if (data.payload.position === "left") this.isLeftReady = true;
         else if (data.payload.position === "right") this.isRightReady = true;
+        //両者のReady状態を全員に通知
         this.broadcastReadyState();
-
+        //両者がReadyなら3秒後に試合開始
         if (this.isLeftReady && this.isRightReady && !this.isRunning) {
           setTimeout(() => {
             // 3秒後時点でまだ両者がいる＆Readyのままなら開始
@@ -146,7 +174,6 @@ export class PongServer {
                 this.matchStartTime = Date.now();
               }
               this.handleSpace();
-              // 開始したら、以後UIは isRunning=true で隠れるのでOK
             }
           }, 3000);
         }
@@ -163,15 +190,11 @@ export class PongServer {
           client.close(1000, "client request closed");
         }
         break;
-      case "ping":
-        this.printMatchState();
-        break;
     }
   };
 
   //ここでclientからの試合状況を受け取って入れておく
   public init = (arg: MatchData) => {
-    // ここでバリデーション（最低限のチェック）
     if (
       !arg ||
       typeof arg.width !== "number" ||
@@ -194,21 +217,18 @@ export class PongServer {
     this.leftPlayer = arg.leftPlayer;
     this.rightPlayer = arg.rightPlayer;
 
-    // 位置の初期化
     this.ballX = this.width / 2;
     this.ballY = this.height / 2;
     this.paddleLeftY = (this.height - this.paddleHeight) / 2;
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
 
     this.start();
-    // 必要ならクライアントへ
     console.log("server send init");
   };
 
   //処理のスタート
   private start = (): void => {
     if (this.tickTimer) return;
-
     //60Hzでデータ更新
     this.tickTimer = setInterval(() => {
       if (this.isFinish) return;
@@ -233,6 +253,7 @@ export class PongServer {
     }
   };
 
+  //毎フレームの状態更新
   public statusUpdate = (): void => {
     if (this.leftInput.up) this.paddleLeftY -= this.paddleSpeed;
     if (this.leftInput.down) this.paddleLeftY += this.paddleSpeed;
@@ -292,9 +313,11 @@ export class PongServer {
     }
 
     //得点処理
+    //ボールの右側の座標が画面左端よりも小さくなったら右の得点
     if (this.ballX + this.ballRadius < 0) {
       this.rightScore += 1;
       this.lastScored = "right";
+      //経過時間を計算してログに追加
       const elapsedSeconds = this.matchStartTime
         ? Math.floor((Date.now() - this.matchStartTime) / 1000)
         : 0;
@@ -309,6 +332,7 @@ export class PongServer {
       } else {
         this.serveFrom();
       }
+      //ボールの左側の座標が画面右端よりも大きくなったら左の得点
     } else if (this.ballX - this.ballRadius > this.width) {
       this.leftScore += 1;
       this.lastScored = "left";
@@ -333,8 +357,10 @@ export class PongServer {
   private boostBallSpeed = (): void => {
     const vx = this.ballVelX;
     const vy = this.ballVelY;
+    // 現在の速度を計算
     const speed = Math.hypot(vx, vy);
     if (speed === 0) return;
+    // 加速後の速度を計算
     const newSpeed = Math.min(this.ballMaxSpeed, speed * this.ballAccel);
 
     const nx = vx / speed;
@@ -354,6 +380,7 @@ export class PongServer {
 
     this.isLeftReady = false;
     this.isRightReady = false;
+    //得点後は両者のReady状態をリセットしてから通知
     this.broadcastReadyState();
 
     this.broadcast({
@@ -367,14 +394,36 @@ export class PongServer {
     else if (this.lastScored === "right") return this.rightPlayer?.userId;
   };
 
+  private onClientDisconnect = (ws: WebSocket): void => {
+    // すでに試合終了済みなら二重処理しない
+    if (this.isFinish) return;
+
+    let side: "left" | "right" | null = null;
+    if (this.wsToSide.get("left") === ws) {
+      side = "left";
+    } else if (this.wsToSide.get("right") === ws) {
+      side = "right";
+    }
+    if (!side) return;
+
+    // 管理から外す
+    this.clients.delete(ws);
+    this.wsToSide.delete(side);
+
+    if (side === "left") this.leftClient = null;
+    if (side === "right") this.rightClient = null;
+
+    // 切断した側の相手を勝者として試合終了処理へ
+    const winnerSide = side === "left" ? "right" : "left";
+    this.finishGameByDisconnect(winnerSide);
+  };
+
   //試合終了処理。先にbackendに試合の記録を送って、送った後にフロントに対してそれを通知
   private finishGame = async (): Promise<void> => {
     const winId = this.getWinnerId();
-
     //先にゲームを止めておく
     this.isFinish = true;
-
-    // 先にbackendサーバーに内部APIでpostしてデータを保存しておく
+    //game serverからbackendに試合結果を送る
     if (this.tournamentId && this.matchId && winId) {
       try {
         await internalApiClient.submitMatchResult({
@@ -392,7 +441,6 @@ export class PongServer {
         console.log("Match result successfully submitted to backend");
       } catch (error) {
         console.error("Failed to submit match result to backend:", error);
-        // エラーでも試合は続行（フロントには結果を返す）
       }
     } else {
       console.warn(
@@ -415,24 +463,66 @@ export class PongServer {
     }
   };
 
+  // 切断による試合終了処理
+  private finishGameByDisconnect = async (winnerSide: "left" | "right") => {
+    // 先に止める（二重を防ぐ）
+    this.isFinish = true;
+    this.isRunning = false;
+    this.stop();
+
+    const winnerId =
+      winnerSide === "left"
+        ? this.leftPlayer?.userId
+        : this.rightPlayer?.userId;
+
+    if (!winnerId) {
+      console.warn("winnerId missing on disconnect");
+    }
+
+    // backend に保存（理由も渡せるなら渡すと良い）
+    if (this.tournamentId && this.matchId && winnerId) {
+      try {
+        await internalApiClient.submitMatchResult({
+          tournamentId: this.tournamentId,
+          matchId: this.matchId,
+          winnerId,
+          score: { leftPlayer: this.leftScore, rightPlayer: this.rightScore },
+          ballSpeed: this.ballSpeed,
+          ballRadius: this.ballRadius,
+          scoreLogs: this.scoreLogs,
+        });
+      } catch (e) {
+        console.error("Failed to submit disconnect result:", e);
+      }
+    }
+
+    // フロントに結果通知（今の WsMessage 仕様に合わせる）
+    this.broadcast({
+      type: "result",
+      payload: {
+        leftScore: this.leftScore,
+        rightScore: this.rightScore,
+        winnerId,
+        isFinish: true,
+      } as MatchResult,
+    });
+
+    // 残ってるクライアントも閉じる（画面遷移させたいので）
+    for (const client of this.clients) {
+      try {
+        client.close(1000, "opponent disconnected");
+      } catch {}
+    }
+  };
+
   private updateInput = (palyload: PlayerInput): void => {
     if (palyload.leftorRight === "left") {
       this.leftInput.up = palyload.up;
       this.leftInput.down = palyload.down;
-      console.log(
-        `Left Input Updated: up=${palyload.up}, down=${palyload.down}`,
-      );
     } else if (palyload.leftorRight === "right") {
       this.rightInput.up = palyload.up;
       this.rightInput.down = palyload.down;
-      console.log(
-        `Right Input Updated: up=${palyload.up}, down=${palyload.down}`,
-      );
     }
-    // this.leftInput.up = palyload.leftup;
-    // this.leftInput.down = palyload.leftdown;
-    // this.rightInput.up = palyload.rightup;
-    // this.rightInput.down = palyload.rightdown;
   };
 
   public sendData = (): void => {
@@ -476,68 +566,6 @@ export class PongServer {
     const dirY = Math.random() < 0.5 ? 1 : -1;
     this.ballVelX = dirX * this.ballSpeed;
     this.ballVelY = dirY * this.ballSpeed;
-
-    // 試合開始時刻を記録（初回のみ）
-    // if (this.matchStartTime === null) {
-    //   this.matchStartTime = Date.now();
-    // }
-
     this.isRunning = true;
   };
-
-  private printMatchState = (): void => {
-    console.log("=== Pong Match State ===");
-    console.log(`Session ID: ${this.id}`);
-    console.log("--- 定数 ---");
-    console.table({
-      width: this.width,
-      height: this.height,
-      paddleWidth: this.paddleWidth,
-      paddleHeight: this.paddleHeight,
-      paddleMargin: this.paddleMargin,
-      paddleSpeed: this.paddleSpeed,
-      ballRadius: this.ballRadius,
-      ballSpeed: this.ballSpeed,
-      ballAccel: this.ballAccel,
-      ballMaxSpeed: this.ballMaxSpeed,
-      winScore: this.winScore,
-    });
-
-    console.log("--- State ---");
-    console.table({
-      ballX: this.ballX,
-      ballY: this.ballY,
-      ballVelX: this.ballVelX,
-      ballVelY: this.ballVelY,
-      paddleLeftY: this.paddleLeftY,
-      paddleRightY: this.paddleRightY,
-      leftScore: this.leftScore,
-      rightScore: this.rightScore,
-      leftInput: JSON.stringify(this.leftInput),
-      rightInput: JSON.stringify(this.rightInput),
-      isRunning: this.isRunning,
-      isFinish: this.isFinish,
-      lastScored: this.lastScored,
-    });
-
-    console.log("--- Meta data ---");
-    console.table({
-      tournamentId: this.tournamentId,
-      matchId: this.matchId,
-      leftPlayer: this.leftPlayer
-        ? `${this.leftPlayer.alias} (#${this.leftPlayer.userId})`
-        : null,
-      rightPlayer: this.rightPlayer
-        ? `${this.rightPlayer.alias} (#${this.rightPlayer.userId})`
-        : null,
-    });
-    console.log("========================\n");
-  };
-
-  // public getPlaterNames(): { leftPlayerName: string; rightPlayerName: string } {
-  //   return {
-  //     leftPlayerName: this.leftPlayer ? this.leftPlayer.alias : "TBD",
-  //     rightPlayerName: this.rightPlayer ? this.rightPlayer.alias : "TBD",
-  //   };
-  // }
 }
