@@ -445,13 +445,13 @@ export class PongGame {
     this.engine = makeEngine(canvas);
     this.scene = makeScene(this.engine);
     this.camera = makeCamera(this.scene, this.width, this.height);
-    const _hemiLight = makeHemiSphereLight(this.scene);
-    const _dirLight = makeDirLight(this.scene);
-    const _glow = makeGlowLight(this.scene);
+    makeHemiSphereLight(this.scene);
+    makeDirLight(this.scene);
+    makeGlowLight(this.scene);
+    makeDashLine(this.scene, this.height);
     const _ground = makeGround(this.scene, this.width, this.height);
     const _groundMat = makeGroundMaterial(this.scene);
     _ground.material = _groundMat;
-    const _centerDashLine = makeDashLine(this.scene, this.height);
     const leftPaddle = makePaddle(
       this.scene,
       this.paddleWidth,

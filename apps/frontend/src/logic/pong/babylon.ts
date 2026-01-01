@@ -46,7 +46,6 @@ export const makeHemiSphereLight = (scene: BABYLON.Scene) => {
     scene,
   );
   hemiLight.intensity = 0.6;
-  return hemiLight;
 };
 
 export const makeDirLight = (scene: BABYLON.Scene) => {
@@ -57,13 +56,11 @@ export const makeDirLight = (scene: BABYLON.Scene) => {
   );
   dirLight.position = new BABYLON.Vector3(0, 20, 0);
   dirLight.intensity = 0.45;
-  return dirLight;
 };
 
 export const makeGlowLight = (scene: BABYLON.Scene) => {
   const glow = new BABYLON.GlowLayer("glow", scene);
   glow.intensity = 0.7;
-  return glow;
 };
 
 export const makeGround = (
@@ -102,7 +99,6 @@ export const makeDashLine = (scene: BABYLON.Scene, height: number) => {
     scene,
   );
   dashedLine.color = new BABYLON.Color3(0.5, 0.5, 0.8);
-  return dashedLine;
 };
 
 export const makePaddle = (
