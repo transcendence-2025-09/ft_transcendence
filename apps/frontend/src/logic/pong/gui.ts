@@ -1,5 +1,5 @@
+import type * as BABYLON from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
-import * as BABYLON from "@babylonjs/core";
 
 export const makeGUI = (scene: BABYLON.Scene) => {
   const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
