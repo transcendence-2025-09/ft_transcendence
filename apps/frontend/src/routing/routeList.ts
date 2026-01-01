@@ -106,7 +106,7 @@ export const routeList: Route[] = [
   {
     meta: { title: "validate2FA", layout: "none", protected: false },
     path: "/auth/2fa/validate",
-    viewFactory: () => Validate2FA,
+    viewFactory: () => Validate2FA(),
   },
   {
     meta: { title: "not found", protected: false },

@@ -3,6 +3,7 @@ import { componentFactory } from "../factory/componentFactory";
 import { eh } from "../factory/elementFactory";
 import { pageFactory } from "../factory/pageFactory";
 import type { RouteCtx } from "../routing/routeList";
+import { ensureAuth } from "../routing/router";
 
 class TwoFactorRequiredError extends Error {
   constructor() {
@@ -213,7 +214,15 @@ async function mockLogin(): Promise<void> {
   });
 }
 
-export const Home = (ctx: RouteCtx): ElComponent => {
+export const Home = async (ctx: RouteCtx): Promise<ElComponent> => {
+  // 既にログイン済みの場合はダッシュボードへリダイレクト
+  const isLoggedIn = await ensureAuth();
+  if (isLoggedIn) {
+    window.location.href = "/dashboard";
+    // リダイレクト中は空のコンポーネントを返す
+    return pageFactory([componentFactory(eh("div"))]);
+  }
+
   const nextUrl = ctx.query.get("next");
 
   // 大きなタイトル

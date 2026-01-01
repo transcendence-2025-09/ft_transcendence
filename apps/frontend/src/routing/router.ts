@@ -10,7 +10,7 @@ export type RouteProps = {
   rootEl: HTMLElement;
 };
 
-const ensureAuth = async (): Promise<boolean> => {
+export const ensureAuth = async (): Promise<boolean> => {
   try {
     const res = await fetch("/api/user/me", {
       method: "GET",
