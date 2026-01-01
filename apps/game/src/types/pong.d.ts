@@ -1,5 +1,4 @@
 export type MatchData = {
-  //基本定数(固定値)
   width: number;
   height: number;
   paddleWidth: number;
@@ -10,10 +9,8 @@ export type MatchData = {
   ballSpeed: number;
   ballAccel: number;
   winScore: number;
-  //試合に関する情報
   tournamentId: string | null;
   matchId: string | null;
-  //APIから取得するデータ(バックエンドにくる時はすでにフロントで取得済み)
   leftPlayer: Player | null;
   rightPlayer: Player | null;
   clientUserId: number | null;
