@@ -1,75 +1,102 @@
 import * as BABYLON from "@babylonjs/core";
-import * as GUI from "@babylonjs/gui";
 import type { Match, Player } from "../../pages/tournaments/types";
 import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
-import type { MatchData, MatchResult, MatchState, WsMessage } from "./types";
-
-type Snap = {
-  time: number;
-  ballX: number;
-  ballY: number;
-  paddleLeftY: number;
-  paddleRightY: number;
-};
+import {
+  makeCamera,
+  makeEngine,
+  makeHemiSphereLight,
+  makeScene,
+  makeDirLight,
+  makeGlowLight,
+  makeGround,
+  makeGroundMaterial,
+  makeDashLine,
+  makePaddle,
+  makePaddleMaterial,
+  makeBall,
+  makeBallMaterial,
+  makeBallShadow,
+  makeBallShadowMaterial,
+} from "./babylon";
+import {
+  makeGUI,
+  makeScorebarGUI,
+  makeScoreGridGUI,
+  makeScoreRowGUI,
+  makeLeftScoreContanerGUI,
+  makeRightScoreContanerGUI,
+  makeReadyRowGUI,
+  makeLeftReadyTextGUI,
+  makeRightReadyTextGUI,
+  makeLeftScoreTextGUI,
+  makeRightScoreTextGUI,
+  makeWinnerOverlayGUI,
+  makeWinnerTitleGUI,
+  makeWinnerNameGUI,
+  makeWinnerCountdownGUI,
+} from "./gui";
+import { clamp, lerp } from "./calculate";
+import type {
+  MatchData,
+  MatchResult,
+  MatchState,
+  Snap,
+  WsMessage,
+} from "./types";
 
 export class PongGame {
-  //基本定数(固定値)
   private width: number;
   private height: number;
-  private worldWidth: number;
-  private worldHeight: number;
-  private paddleWidth: number;
-  private paddleHeight: number;
-  private paddleMargin: number;
-  private ballRadius: number;
-  private ballSpeed: number;
-  private ballAccel: number;
-  //状態データ
+  private worldWidth: number = 1500;
+  private worldHeight: number = 1100;
+  private paddleWidth: number = 12;
+  private paddleHeight: number = 110;
+  private paddleMargin: number = 24;
+  private ballRadius: number = 12;
+  private ballSpeed: number = 3;
+  private ballAccel: number = 1.03;
   private ballX: number;
   private ballY: number;
   private paddleLeftY: number;
   private paddleRightY: number;
-  private leftScore: number;
-  private rightScore: number;
-  private clientInput: { up: boolean; down: boolean };
-  private clientPosition: "left" | "right" | null;
-  private winScore: number;
-  private winnerId: number | null;
-  private isFinish: boolean;
-  private canStart: boolean;
-  //制御データ
+  private leftScore: number = 0;
+  private rightScore: number = 0;
+  private clientInput: { up: boolean; down: boolean } = {
+    up: false,
+    down: false,
+  };
+  private clientPosition: "left" | "right" | null = null;
+  private winScore: number = 3;
+  private winnerId: number | null = null;
+  private isFinish: boolean = false;
+  private canStart: boolean = false;
   private canvas: HTMLCanvasElement;
-  private isRunning: boolean;
-  private animationId: number | null;
-  private isLeftReady: boolean;
-  private isRightReady: boolean;
-  //key管理関係
+  private isRunning: boolean = false;
+  private animationId: number | null = null;
+  private isLeftReady: boolean = false;
+  private isRightReady: boolean = false;
   private onKeyDownRef?: (e: KeyboardEvent) => void;
   private onKeyUpRef?: (e: KeyboardEvent) => void;
-  private spaceDown: boolean;
-  //試合に関する情報
+  private spaceDown: boolean = false;
   private tournamentId: string | null;
   private matchId: string | null;
-  //APIから取得するデータ
   private leftPlayer: Player | null;
   private rightPlayer: Player | null;
   private ws: WebSocket;
-  private finishTime: number | null;
-  private redirectDelay: number;
-  //snapをとって描画の線形補完をする
-  private prevSnap: Snap | null;
-  private lastSnap: Snap | null;
-  private interpDelay: number;
-  //3Dレンダリングの必要要素
-  private engine: BABYLON.Engine | null;
-  private scene: BABYLON.Scene | null;
-  private camera: BABYLON.ArcRotateCamera | null;
+  private finishTime: number | null = null;
+  private redirectDelay: number = 5000;
+  private prevSnap: Snap | null = null;
+  private lastSnap: Snap | null = null;
+  private interpDelay: number = 120;
+  private engine: BABYLON.Engine | null = null;
+  private scene: BABYLON.Scene | null = null;
+  private camera: BABYLON.ArcRotateCamera | null = null;
   private meshes: {
-    left: BABYLON.Mesh;
-    right: BABYLON.Mesh;
+    leftPaddle: BABYLON.Mesh;
+    rightPaddle: BABYLON.Mesh;
     ball: BABYLON.Mesh;
-  } | null;
+  } | null = null;
 
   //canvasはPongGameの描画用、ctxはルーティング情報、matchは試合情報
   constructor(
@@ -77,51 +104,23 @@ export class PongGame {
     ctx?: RouteCtx | null,
     match?: Match | null,
   ) {
-    this.worldWidth = 1500;
-    this.worldHeight = 1100;
     this.width = this.worldWidth;
     this.height = this.worldHeight;
-    this.paddleWidth = 12;
-    this.paddleHeight = 110;
-    this.paddleMargin = 24;
-    this.ballRadius = 12;
-    this.ballSpeed = 3;
-    this.ballAccel = 1.03;
     this.ballX = this.width / 2;
     this.ballY = this.height / 2;
     this.paddleLeftY = (this.height - this.paddleHeight) / 2;
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
-    this.leftScore = 0;
-    this.rightScore = 0;
-    this.clientInput = { up: false, down: false };
-    this.clientPosition = null;
-    this.winScore = 2;
-    this.isFinish = false;
     this.canvas = canvas;
-    this.isRunning = false;
-    this.isLeftReady = false;
-    this.isRightReady = false;
-    this.animationId = null;
-    this.spaceDown = false;
     this.tournamentId = ctx?.params.tournamentId ?? null;
     this.matchId = ctx?.params.matchId ?? null;
     this.leftPlayer = match?.leftPlayer ?? null;
     this.rightPlayer = match?.rightPlayer ?? null;
     this.ballSpeed = match?.gameOptions?.ballSpeed ?? 3;
     this.ballRadius = match?.gameOptions?.ballRadius ?? 12;
-    this.winnerId = null;
-    this.finishTime = null;
-    this.redirectDelay = 5000;
-    this.prevSnap = null;
-    this.lastSnap = null;
-    this.interpDelay = 120;
-    this.engine = null;
-    this.scene = null;
-    this.camera = null;
-    this.meshes = null;
-    this.canStart = false;
+    this.ws = this.createWebSocket();
+  }
 
-    // WebSocketの接続を確立.
+  private createWebSocket = (): WebSocket => {
     const scheme = location.protocol === "https:" ? "wss" : "ws";
     // tournamentIdとmatchIdが存在する場合にのみ接続を試みる
     if (this.tournamentId !== null && this.matchId !== null) {
@@ -134,15 +133,14 @@ export class PongGame {
         matchId: this.matchId,
       });
       //クエリパラメータを付与してWebSocket接続を作成
-      this.ws = new WebSocket(
+      return new WebSocket(
         `${scheme}://${location.host}/ws?${paramStr.toString()}`,
       );
     } else {
-      this.ws = null as unknown as WebSocket;
+      return null as unknown as WebSocket;
     }
-  }
+  };
 
-  //WebSocketの接続が確立されるまで待機する
   private async waitForOpen(ws: WebSocket): Promise<void> {
     if (ws.readyState === WebSocket.OPEN) return;
     await new Promise<void>((resolve) => {
@@ -230,8 +228,10 @@ export class PongGame {
       this.animationId = null;
     }
     this.unregisterKeyEvent();
+    this.dispose3D();
   };
 
+  //サーバーからのメッセージ受信時の処理
   private onReceive = (data: WsMessage): void => {
     switch (data.type) {
       case "connection":
@@ -256,6 +256,7 @@ export class PongGame {
     }
   };
 
+  //ゲーム終了時の処理
   private finishGame = (data: MatchResult): void => {
     //Gameサーバーから送られてきた試合結果情報を元に状態を更新
     this.leftScore = data.leftScore;
@@ -297,6 +298,7 @@ export class PongGame {
     this.animationId = requestAnimationFrame(this.loop);
   };
 
+  //キーイベントの登録
   private registerKeyEvent = (): void => {
     if (this.onKeyUpRef || this.onKeyDownRef) return;
     let keyflag = false;
@@ -407,14 +409,7 @@ export class PongGame {
     }
   };
 
-  private lerp(a: number, b: number, t: number) {
-    return a + (b - a) * t;
-  }
-
-  private clamp(x: number) {
-    return Math.max(0, Math.min(1, x));
-  }
-
+  //ターゲット時間における位置をスナップショットから補間して取得
   private samplePosition(targettime: number): {
     ballX: number;
     ballY: number;
@@ -435,292 +430,74 @@ export class PongGame {
         paddleRightY: B.paddleRightY,
       };
     }
-    const t = this.clamp((targettime - A.time) / dt);
+    const t = clamp((targettime - A.time) / dt);
     return {
-      ballX: this.lerp(A.ballX, B.ballX, t),
-      ballY: this.lerp(A.ballY, B.ballY, t),
-      paddleLeftY: this.lerp(A.paddleLeftY, B.paddleLeftY, t),
-      paddleRightY: this.lerp(A.paddleRightY, B.paddleRightY, t),
+      ballX: lerp(A.ballX, B.ballX, t),
+      ballY: lerp(A.ballY, B.ballY, t),
+      paddleLeftY: lerp(A.paddleLeftY, B.paddleLeftY, t),
+      paddleRightY: lerp(A.paddleRightY, B.paddleRightY, t),
     };
   }
 
   private init3D = (): void => {
-    //先にcanvasのサイズを調整しておく
     this.resizeCanvasToDisplaySize();
-
     const canvas = this.canvas;
-
-    this.engine = new BABYLON.Engine(canvas, true, {
-      preserveDrawingBuffer: true,
-      stencil: true,
-    });
-
-    this.scene = new BABYLON.Scene(this.engine);
-    // ちょい暗めなネイビー系背景
-    this.scene.clearColor = new BABYLON.Color4(0.02, 0.04, 0.1, 1.0);
-
-    //カメラの設定
-    this.camera = new BABYLON.ArcRotateCamera(
-      "camera",
-      //元の alpha（横方向の角度）
-      -Math.PI / 2,
-      //元の beta（縦方向の角度）
-      Math.PI / 10,
-      //元の半径（距離）
-      Math.max(this.width, this.height) * 1.2,
-      // 注視点 (シーンの中心)
-      new BABYLON.Vector3(0, 1, 0),
+    this.engine = makeEngine(canvas);
+    this.scene = makeScene(this.engine);
+    this.camera = makeCamera(this.scene, this.width, this.height);
+    const _hemiLight = makeHemiSphereLight(this.scene);
+    const _dirLight = makeDirLight(this.scene);
+    const _glow = makeGlowLight(this.scene);
+    const _ground = makeGround(this.scene, this.width, this.height);
+    const _groundMat = makeGroundMaterial(this.scene);
+    _ground.material = _groundMat;
+    const _centerDashLine = makeDashLine(this.scene, this.height);
+    const leftPaddle = makePaddle(
       this.scene,
-    );
-    this.camera.lowerRadiusLimit = Math.max(this.width, this.height) * 1.1;
-    this.camera.upperRadiusLimit = Math.max(this.width, this.height) * 1.8;
-    this.camera.wheelDeltaPercentage = 0.01;
-    this.camera.panningSensibility = 2000;
-
-    // 柔らかい環境光
-    const hemi = new BABYLON.HemisphericLight(
-      "hemi",
-      new BABYLON.Vector3(0, 1, 0),
-      this.scene,
-    );
-    hemi.intensity = 0.6;
-
-    // ちょっとだけ方向性のあるライト
-    const dirLight = new BABYLON.DirectionalLight(
-      "dir",
-      new BABYLON.Vector3(-0.5, -1, -0.2),
-      this.scene,
-    );
-    dirLight.position = new BABYLON.Vector3(0, 20, 0);
-    dirLight.intensity = 0.45;
-
-    // ほんのり光るエフェクト
-    const glow = new BABYLON.GlowLayer("glow", this.scene);
-    glow.intensity = 0.7;
-
-    // 地面の作成
-    const ground = BABYLON.MeshBuilder.CreateGround(
-      "ground",
-      { width: this.width, height: this.height },
-      this.scene,
-    );
-
-    // 地面のマテリアル設定
-    const groundMat = new BABYLON.StandardMaterial("groundMat", this.scene);
-    groundMat.diffuseColor = new BABYLON.Color3(0.05, 0.08, 0.14);
-    groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-    groundMat.emissiveColor = new BABYLON.Color3(0.02, 0.04, 0.08);
-    ground.material = groundMat;
-
-    // 中央の破線の作成
-    const dashedLine = BABYLON.MeshBuilder.CreateDashedLines(
-      "dashedLine",
-      {
-        points: [
-          new BABYLON.Vector3(0, 1.01, -this.height / 2),
-          new BABYLON.Vector3(0, 1.01, this.height / 2),
-        ],
-        dashSize: this.height / 28,
-        gapSize: this.height / 60,
-        dashNb: 28,
-      },
-      this.scene,
-    );
-    dashedLine.color = new BABYLON.Color3(0.5, 0.5, 0.8);
-
-    // パドルとボールの作成
-    const yThickness = 1.0;
-    // パドル（左）
-    const left = BABYLON.MeshBuilder.CreateBox(
+      this.paddleWidth,
+      this.paddleHeight,
       "left",
-      {
-        width: this.paddleWidth,
-        height: yThickness,
-        depth: this.paddleHeight,
-      },
-      this.scene,
     );
-    // パドル（右）
-    const right = left.clone("right") as BABYLON.Mesh;
-
-    // パドルのマテリアル設定
-    const paddleMat = new BABYLON.StandardMaterial("paddleMat", this.scene);
-    paddleMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.25);
-    paddleMat.emissiveColor = new BABYLON.Color3(0.2, 0.9, 0.6);
-    paddleMat.specularPower = 64;
-    left.material = paddleMat;
-    right.material = paddleMat;
-
-    // ボールの作成
-    const ball = BABYLON.MeshBuilder.CreateSphere(
-      "ball",
-      {
-        diameter: this.ballRadius * 2,
-        segments: 24,
-      },
-      this.scene,
-    );
-
-    // ボールのマテリアル設定
-    const ballMat = new BABYLON.StandardMaterial("ballMat", this.scene);
-    ballMat.diffuseColor = new BABYLON.Color3(0.95, 0.95, 1.0);
-    ballMat.emissiveColor = new BABYLON.Color3(1.0, 0.8, 0.3); // ちょいオレンジ系
-    ballMat.specularPower = 96;
+    const rightPaddle = leftPaddle.clone("right") as BABYLON.Mesh;
+    const paddleMat = makePaddleMaterial(this.scene);
+    leftPaddle.material = paddleMat;
+    rightPaddle.material = paddleMat;
+    const ball = makeBall(this.scene, this.ballRadius);
+    const ballMat = makeBallMaterial(this.scene);
     ball.material = ballMat;
-
-    // ボールの影の作成
-    const ballShadow = BABYLON.MeshBuilder.CreateDisc(
-      "ballShadow",
-      { radius: this.ballRadius * 0.9, tessellation: 24 },
-      this.scene,
-    );
-    ballShadow.rotation.x = Math.PI / 2;
-    ballShadow.position.y = 0.01;
-    const shadowMat = new BABYLON.StandardMaterial("shadowMat", this.scene);
-    shadowMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
-    shadowMat.alpha = 0.35;
+    const ballShadow = makeBallShadow(this.scene, this.ballRadius);
+    const shadowMat = makeBallShadowMaterial(this.scene);
     ballShadow.material = shadowMat;
-
-    this.meshes = { left, right, ball };
-
-    // GUIの設定
-    const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
-      "UI",
-      true,
-      this.scene,
-    );
-
-    // スコアバーの作成
-    const scoreBar = new GUI.Rectangle("scoreBar");
-    scoreBar.width = "60%";
-    scoreBar.height = "64px";
-    scoreBar.cornerRadius = 18;
-    scoreBar.thickness = 0;
-    scoreBar.background = "rgba(15,23,42,0.85)"; // #0f172a 相当
-    scoreBar.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    scoreBar.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    scoreBar.top = "16px";
+    this.meshes = { leftPaddle, rightPaddle, ball };
+    //こっからGUIの作成
+    const gui = makeGUI(this.scene);
+    const scoreBar = makeScorebarGUI();
     gui.addControl(scoreBar);
-
-    // スコアグリッドの作成
-    const scoreGrid = new GUI.Grid("scoreGrid");
-    scoreGrid.width = "100%";
-    scoreGrid.height = "100%";
-    scoreGrid.addRowDefinition(0.62);
-    scoreGrid.addRowDefinition(0.38);
-    scoreGrid.addColumnDefinition(1);
+    const scoreGrid = makeScoreGridGUI();
     scoreBar.addControl(scoreGrid);
-
-    // 1段目: スコア行 (左右コンテナ)
-    const scoreRow = new GUI.Grid("scoreRow");
-    scoreRow.addColumnDefinition(0.5);
-    scoreRow.addColumnDefinition(0.5);
+    const scoreRow = makeScoreRowGUI();
     scoreGrid.addControl(scoreRow, 0, 0);
-
-    // 左スコアコンテナ
-    const leftScoreContainer = new GUI.Rectangle("leftScoreContainer");
-    leftScoreContainer.thickness = 0;
-    leftScoreContainer.background = "transparent";
-    leftScoreContainer.horizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    const leftScoreContainer = makeLeftScoreContanerGUI();
+    const rightScoreContainer = makeRightScoreContanerGUI();
     scoreRow.addControl(leftScoreContainer, 0, 0);
-
-    // 右スコアコンテナ
-    const rightScoreContainer = new GUI.Rectangle("rightScoreContainer");
-    rightScoreContainer.thickness = 0;
-    rightScoreContainer.background = "transparent";
-    rightScoreContainer.horizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     scoreRow.addControl(rightScoreContainer, 0, 1);
-
-    // 2段目: READY行
-    const readyRow = new GUI.Grid("readyRow");
-    readyRow.width = "100%";
-    readyRow.height = "100%";
-    readyRow.addColumnDefinition(0.5);
-    readyRow.addColumnDefinition(0.5);
+    const readyRow = makeReadyRowGUI();
     scoreGrid.addControl(readyRow, 1, 0);
-
-    // 左READYテキスト
-    const leftReadyText = new GUI.TextBlock("leftReadyText", "");
-    leftReadyText.fontSize = 18;
-    leftReadyText.fontWeight = "700";
-    leftReadyText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    leftReadyText.paddingLeft = "24px";
+    const leftReadyText = makeLeftReadyTextGUI();
+    const rightReadyText = makeRightReadyTextGUI();
     readyRow.addControl(leftReadyText, 0, 0);
-
-    // 右READYテキスト
-    const rightReadyText = new GUI.TextBlock("rightReadyText", "");
-    rightReadyText.fontSize = 18;
-    rightReadyText.fontWeight = "700";
-    rightReadyText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    rightReadyText.paddingRight = "24px";
     readyRow.addControl(rightReadyText, 0, 1);
-
-    // 左スコアテキスト
-    const leftScoreText = new GUI.TextBlock("leftScore");
-    leftScoreText.text = "0";
-    leftScoreText.color = "#4ade80";
-    leftScoreText.fontSize = 32;
-    leftScoreText.fontWeight = "700";
-    leftScoreText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    leftScoreText.paddingLeft = "24px";
+    const leftScoreText = makeLeftScoreTextGUI();
+    const rightScoreText = makeRightScoreTextGUI();
     leftScoreContainer.addControl(leftScoreText);
-
-    // 右スコアテキスト
-    const rightScoreText = new GUI.TextBlock("rightScore");
-    rightScoreText.text = "0";
-    rightScoreText.color = "#22d3ee"; // cyan系
-    rightScoreText.fontSize = 32;
-    rightScoreText.fontWeight = "700";
-    rightScoreText.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    rightScoreText.paddingRight = "24px";
     rightScoreContainer.addControl(rightScoreText);
-
-    // 勝者表示オーバーレイ
-    const winnerOverlay = new GUI.Rectangle("winnerOverlay");
-    winnerOverlay.width = "100%";
-    winnerOverlay.height = "100%";
-    winnerOverlay.thickness = 0;
-    winnerOverlay.background = "rgba(15,23,42,0.90)";
-    winnerOverlay.isVisible = false;
+    const winnerOverlay = makeWinnerOverlayGUI();
     gui.addControl(winnerOverlay);
-
-    // 勝者タイトル
-    const winnerTitle = new GUI.TextBlock("winnerTitle", "Winner");
-    winnerTitle.color = "#e5e7eb";
-    winnerTitle.fontSize = 40;
-    winnerTitle.fontWeight = "700";
-    winnerTitle.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    winnerTitle.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    winnerTitle.top = "-32px";
+    const winnerTitle = makeWinnerTitleGUI();
+    const winnerName = makeWinnerNameGUI();
+    const winnerCountdown = makeWinnerCountdownGUI();
     winnerOverlay.addControl(winnerTitle);
-
-    // 勝者名テキスト
-    const winnerName = new GUI.TextBlock("winnerName", "");
-    winnerName.color = "#f97316"; // orange-500
-    winnerName.fontSize = 32;
-    winnerName.fontWeight = "700";
-    winnerName.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    winnerName.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    winnerName.top = "10px";
     winnerOverlay.addControl(winnerName);
-
-    // カウントダウンテキスト
-    const winnerCountdown = new GUI.TextBlock("winnerCountdown", "");
-    winnerCountdown.color = "#9ca3af"; // gray-400
-    winnerCountdown.fontSize = 22;
-    winnerCountdown.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    winnerCountdown.textVerticalAlignment =
-      GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    winnerCountdown.top = "52px";
     winnerOverlay.addControl(winnerCountdown);
 
     //レンダーループの設定
@@ -797,6 +574,16 @@ export class PongGame {
     });
   };
 
+  private dispose3D = (): void => {
+    this.camera?.dispose();
+    this.scene?.dispose();
+    this.engine?.dispose();
+    this.scene = null;
+    this.engine = null;
+    this.camera = null;
+    this.meshes = null;
+  };
+
   //canvasとBabylonjsで座標原点が異なるから中身を揃える処理を加える
   private twoDtothreeD = (
     x2d: number,
@@ -827,10 +614,10 @@ export class PongGame {
 
     const leftX2d = this.paddleMargin + this.paddleWidth / 2;
     const leftZ2d = paddleLeftY + this.paddleHeight / 2;
-    this.meshes.left.position = this.twoDtothreeD(leftX2d, leftZ2d);
+    this.meshes.leftPaddle.position = this.twoDtothreeD(leftX2d, leftZ2d);
     const rightX2d = this.width - this.paddleMargin - this.paddleWidth / 2;
     const rightZ2d = paddleRightY + this.paddleHeight / 2;
-    this.meshes.right.position = this.twoDtothreeD(rightX2d, rightZ2d);
+    this.meshes.rightPaddle.position = this.twoDtothreeD(rightX2d, rightZ2d);
     this.meshes.ball.position = this.twoDtothreeD(ballX, ballY, 1.0);
   };
 

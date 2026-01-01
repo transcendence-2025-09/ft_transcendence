@@ -74,3 +74,11 @@ export type MatchResult = {
   winnerId: string;
   isFinish: boolean;
 };
+
+export type Snap = {
+  time: number;
+  ballX: number;
+  ballY: number;
+  paddleLeftY: number;
+  paddleRightY: number;
+};

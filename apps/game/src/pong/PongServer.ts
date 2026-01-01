@@ -6,6 +6,7 @@ import type {
   MatchState,
   Player,
   PlayerInput,
+  readyPayload,
   WsMessage,
 } from "src/types/pong";
 import type { WebSocket } from "ws";
@@ -14,9 +15,9 @@ import { internalApiClient } from "../utils/internalApiClient.js";
 export class PongServer {
   // 通信
   private clients = new Set<WebSocket>();
+  private wsToSide = new Map<"left" | "right", WebSocket>();
   private leftClient: WebSocket | null = null;
   private rightClient: WebSocket | null = null;
-  private wsToSide = new Map<"left" | "right", WebSocket>();
   private initialize = false;
   private isLeftReady = false;
   private isRightReady = false;
@@ -58,14 +59,9 @@ export class PongServer {
   private matchId: string | null = null;
   private leftPlayer: Player | null = null;
   private rightPlayer: Player | null = null;
-
-  //ループ処理
   private tickTimer: NodeJS.Timeout | null = null;
   private snapShotTimer: NodeJS.Timeout | null = null;
-
   readonly id = randomUUID();
-
-  //とりあえず初期化。この時はクライアントからの情報はまだ受け取っていない
   constructor() {
     console.log(`room created: ${this.id}`);
   }
@@ -145,38 +141,10 @@ export class PongServer {
   public onUpdate = (data: WsMessage) => {
     switch (data.type) {
       case "init":
-        if (!this.initialize) {
-          const firstClient = this.wsToSide.get("left");
-          if (!firstClient) return;
-          firstClient.send(JSON.stringify({ type: "connection" }));
-          this.initialize = true;
-          console.log("sent left connection");
-        } else {
-          const secondClient = this.wsToSide.get("right");
-          if (!secondClient) return;
-          secondClient.send(JSON.stringify({ type: "connection" }));
-          this.init(data.payload);
-          console.log("sent right connection");
-        }
+        this.init(data.payload);
         break;
       case "start":
-        //どっちのプレイヤーがReadyしたかを記録
-        if (data.payload.position === "left") this.isLeftReady = true;
-        else if (data.payload.position === "right") this.isRightReady = true;
-        //両者のReady状態を全員に通知
-        this.broadcastReadyState();
-        //両者がReadyなら3秒後に試合開始
-        if (this.isLeftReady && this.isRightReady && !this.isRunning) {
-          setTimeout(() => {
-            // 3秒後時点でまだ両者がいる＆Readyのままなら開始
-            if (this.isLeftReady && this.isRightReady && !this.isRunning) {
-              if (this.matchStartTime === null) {
-                this.matchStartTime = Date.now();
-              }
-              this.handleSpace();
-            }
-          }, 3000);
-        }
+        this.start(data.payload);
         break;
       case "input":
         this.updateInput(data.payload as PlayerInput);
@@ -194,13 +162,31 @@ export class PongServer {
   };
 
   //ここでclientからの試合状況を受け取って入れておく
-  public init = (arg: MatchData) => {
+  private init = (arg: MatchData) => {
     if (
       !arg ||
       typeof arg.width !== "number" ||
       typeof arg.height !== "number"
     ) {
       throw new Error("Invalid MatchData");
+    }
+
+    // 初回接続時にleftクライアントへ、2回目にrightクライアントへ接続通知を送る
+    if (!this.initialize) {
+      const firstClient = this.wsToSide.get("left");
+      if (!firstClient) return;
+      firstClient.send(JSON.stringify({ type: "connection" }));
+      this.initialize = true;
+      console.log("sent left connection");
+      return;
+    } else {
+      const secondClient = this.wsToSide.get("right");
+      if (!secondClient) return;
+      secondClient.send(JSON.stringify({ type: "connection" }));
+      console.log("sent right connection");
+    }
+
+    if (!this.initialize) {
     }
     this.width = arg.width;
     this.height = arg.height;
@@ -222,12 +208,32 @@ export class PongServer {
     this.paddleLeftY = (this.height - this.paddleHeight) / 2;
     this.paddleRightY = (this.height - this.paddleHeight) / 2;
 
-    this.start();
+    this.setTimer();
     console.log("server send init");
   };
 
+  private start = (data: readyPayload) => {
+    //どっちのプレイヤーがReadyしたかを記録
+    if (data.position === "left") this.isLeftReady = true;
+    else if (data.position === "right") this.isRightReady = true;
+    //両者のReady状態を全員に通知
+    this.broadcastReadyState();
+    //両者がReadyなら3秒後に試合開始
+    if (this.isLeftReady && this.isRightReady && !this.isRunning) {
+      setTimeout(() => {
+        // 3秒後時点でまだ両者がいる＆Readyのままなら開始
+        if (this.isLeftReady && this.isRightReady && !this.isRunning) {
+          if (this.matchStartTime === null) {
+            this.matchStartTime = Date.now();
+          }
+          this.handleSpace();
+        }
+      }, 3000);
+    }
+  };
+
   //処理のスタート
-  private start = (): void => {
+  private setTimer = (): void => {
     if (this.tickTimer) return;
     //60Hzでデータ更新
     this.tickTimer = setInterval(() => {

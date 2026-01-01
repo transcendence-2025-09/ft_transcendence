@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+// マッチ結果送信用のペイロード型定義
 interface MatchResultPayload {
   tournamentId: string;
   matchId: string;
@@ -13,17 +14,18 @@ interface MatchResultPayload {
   scoreLogs?: Array<{ left: number; right: number; elapsedSeconds: number }>;
 }
 
+// マッチ結果送信のレスポンス型定義
 interface MatchResultResponse {
   success: boolean;
   message: string;
 }
 
+//backend serverへの内部APIクライアント
 export class InternalApiClient {
   private baseUrl: string;
   private apiSecret: string;
 
   constructor() {
-    // this.baseUrl = "http://localhost:3000";
     this.baseUrl =
       process.env.NODE_ENV === "production"
         ? "http://backend:3000"
@@ -37,6 +39,7 @@ export class InternalApiClient {
     }
   }
 
+  // マッチ結果をbackend serverに送信するメソッド
   async submitMatchResult(
     payload: MatchResultPayload,
   ): Promise<MatchResultResponse> {
