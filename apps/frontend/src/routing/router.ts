@@ -10,7 +10,7 @@ export type RouteProps = {
   rootEl: HTMLElement;
 };
 
-const ensureAuth = async (): Promise<boolean> => {
+export const ensureAuth = async (): Promise<boolean> => {
   try {
     const res = await fetch("/api/user/me", {
       method: "GET",
@@ -56,10 +56,13 @@ export const createRouter = (props: RouteProps) => {
       const ok = await ensureAuth();
       if (!ok) {
         const next = url.pathname + (url.search || "");
-        //login後に前の画面に戻ってくるための処理をしておくが、あとで調整してもいい
-        return navigate(`/login?next=${encodeURIComponent(next)}`, {
-          replace: true,
-        });
+        //login後に前の画面に戻ってくるための処理
+        return renderForRoot(
+          new URL(`/?next=${encodeURIComponent(next)}`, location.origin),
+          {
+            replace: true,
+          },
+        );
       }
     }
 
