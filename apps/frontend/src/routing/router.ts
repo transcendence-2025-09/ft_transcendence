@@ -57,7 +57,7 @@ export const createRouter = (props: RouteProps) => {
       if (!ok) {
         const next = url.pathname + (url.search || "");
         //login後に前の画面に戻ってくるための処理をしておくが、あとで調整してもいい
-        return navigate(`/login?next=${encodeURIComponent(next)}`, {
+        return navigate(`/?next=${encodeURIComponent(next)}`, {
           replace: true,
         });
       }

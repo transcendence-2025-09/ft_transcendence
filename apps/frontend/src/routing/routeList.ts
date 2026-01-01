@@ -31,7 +31,7 @@ export type RedirectResult = { redirect: string; replace?: boolean };
 export type RouteMeta = {
   title?: string;
   layout?: "none" | "app";
-  protected?: boolean;
+  protected: boolean;
   loading?: ElComponent;
 };
 
@@ -51,40 +51,40 @@ export const routeList: Route[] = [
   {
     meta: { title: "Home", layout: "none", protected: false },
     path: "/",
-    viewFactory: () => Home,
+    viewFactory: (ctx: RouteCtx) => Home(ctx),
   },
   {
-    meta: { title: "about" },
+    meta: { title: "about", protected: false },
     path: "/about",
     viewFactory: () => About,
   },
   {
-    meta: { title: "testpong" },
+    meta: { title: "testpong", protected: false },
     path: "/pong",
     viewFactory: () => pongPage(),
   },
   {
-    meta: { title: "pong" },
+    meta: { title: "pong", protected: true },
     path: "/pong/:tournamentId/:matchId",
     viewFactory: (ctx: RouteCtx) => pongPage(ctx),
   },
   {
-    meta: { title: "tournament" },
+    meta: { title: "tournament", protected: true },
     path: "/tournaments",
     viewFactory: () => Tournaments(),
   },
   {
-    meta: { title: "tournamentDetail" },
+    meta: { title: "tournamentDetail", protected: true },
     path: "/tournaments/:id",
     viewFactory: (ctx: RouteCtx) => TournamentDetail(ctx),
   },
   {
-    meta: { title: "tournamentMatches" },
+    meta: { title: "tournamentMatches", protected: true },
     path: "/tournaments/:id/matches",
     viewFactory: (ctx: RouteCtx) => TournamentMatches(ctx),
   },
   {
-    meta: { title: "user" },
+    meta: { title: "user", protected: true },
     path: "/user/:id",
     viewFactory: (ctx: RouteCtx) => User(ctx),
   },
@@ -94,7 +94,7 @@ export const routeList: Route[] = [
     viewFactory: Dashboard,
   },
   {
-    meta: { title: "Authenticating...", layout: "none" },
+    meta: { title: "Authenticating...", layout: "none", protected: false },
     path: "/auth/callback",
     action: handleAuthCallback,
   },
@@ -104,12 +104,12 @@ export const routeList: Route[] = [
     viewFactory: () => Set2FA,
   },
   {
-    meta: { title: "validate2FA", layout: "none" },
+    meta: { title: "validate2FA", layout: "none", protected: false },
     path: "/auth/2fa/validate",
     viewFactory: () => Validate2FA,
   },
   {
-    meta: { title: "not found" },
+    meta: { title: "not found", protected: false },
     path: "*",
     viewFactory: () => NotFound,
   },
