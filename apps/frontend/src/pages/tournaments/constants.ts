@@ -40,3 +40,17 @@ export const ERROR_MESSAGES = {
   NO_PLAYERS: "まだ参加者がいません",
   LOADING: "読み込み中...",
 } as const;
+
+/** ボール速度のラベル */
+export const BALL_SPEED_LABELS: Record<number, string> = {
+  3: "ゆっくり",
+  6: "普通",
+  15: "速い",
+};
+
+/** ボールサイズのラベル */
+export const BALL_RADIUS_LABELS: Record<number, string> = {
+  3: "小さい",
+  12: "普通",
+  48: "大きい",
+};

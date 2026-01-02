@@ -8,7 +8,11 @@ import {
   getCurrentUser,
   joinTournament,
 } from "./api";
-import { ERROR_MESSAGES } from "./constants";
+import {
+  BALL_RADIUS_LABELS,
+  BALL_SPEED_LABELS,
+  ERROR_MESSAGES,
+} from "./constants";
 import type { Player, Tournament } from "./types";
 import {
   escapeHtml,
@@ -75,30 +79,14 @@ export function TournamentDetail(ctx: RouteCtx) {
 
   /** ボール速度のラベルを取得 */
   function getBallSpeedLabel(speed: number | undefined): string {
-    switch (speed) {
-      case 3:
-        return "ゆっくり";
-      case 6:
-        return "普通";
-      case 15:
-        return "速い";
-      default:
-        return speed?.toString() ?? "未設定";
-    }
+    if (speed === undefined) return "未設定";
+    return BALL_SPEED_LABELS[speed] ?? speed.toString();
   }
 
   /** ボールサイズのラベルを取得 */
   function getBallRadiusLabel(radius: number | undefined): string {
-    switch (radius) {
-      case 3:
-        return "小さい";
-      case 12:
-        return "普通";
-      case 48:
-        return "大きい";
-      default:
-        return radius?.toString() ?? "未設定";
-    }
+    if (radius === undefined) return "未設定";
+    return BALL_RADIUS_LABELS[radius] ?? radius.toString();
   }
 
   // ===================
