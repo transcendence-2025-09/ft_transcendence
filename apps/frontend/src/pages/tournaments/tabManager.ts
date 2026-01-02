@@ -3,6 +3,14 @@ import type { Match } from "./types";
 
 export type TabType = "round1" | "finals" | "results";
 
+/** タブのCSSクラス */
+const TAB_CLASS = {
+  ACTIVE:
+    "px-8 py-3 font-semibold text-green-600 border-b-2 border-green-600 min-w-[140px] text-center",
+  INACTIVE:
+    "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center",
+} as const;
+
 /**
  * タブの状態管理クラス
  */
@@ -44,13 +52,7 @@ export class TabManager {
     ];
 
     tabs.forEach(({ element, name }) => {
-      if (name === tab) {
-        element.className =
-          "px-8 py-3 font-semibold text-green-600 border-b-2 border-green-600 min-w-[140px] text-center";
-      } else {
-        element.className =
-          "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
-      }
+      element.className = name === tab ? TAB_CLASS.ACTIVE : TAB_CLASS.INACTIVE;
     });
   }
 
@@ -76,15 +78,13 @@ export class TabManager {
     // セミファイナル完了 → Finalsタブ有効化
     if (semifinalsCompleted) {
       this.tabFinals.disabled = false;
-      this.tabFinals.className =
-        "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
+      this.tabFinals.className = TAB_CLASS.INACTIVE;
     }
 
     // ファイナル完了 → Resultsタブ有効化
     if (finalsCompleted) {
       this.tabResults.disabled = false;
-      this.tabResults.className =
-        "px-8 py-3 font-semibold text-gray-600 hover:text-green-600 min-w-[140px] text-center";
+      this.tabResults.className = TAB_CLASS.INACTIVE;
     }
 
     // 自動遷移ロジック: 結果タブにいる場合は遷移しない

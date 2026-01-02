@@ -44,6 +44,7 @@ export const MatchSchema = Type.Object({
       rightPlayer: Type.Number(),
     }),
   ),
+  winnerId: Type.Optional(Type.Number()),
   gameOptions: GameOptionsSchema,
 });
 
