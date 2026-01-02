@@ -1,4 +1,5 @@
 import {
+  MatchesResponseSchema,
   MeResponseSchema,
   type UserStatsResponse,
   UserStatsResponseSchema,
@@ -157,28 +158,23 @@ export const Dashboard = async (): Promise<ElComponent> => {
         credentials: "include",
       });
 
-      const response = await fetch("/api/user/matches", {
-        method: "GET",
-        credentials: "include",
-      });
+      const matchesData = await fetchAndParse(
+        "/api/user/matches",
+        MatchesResponseSchema,
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
 
-      if (!response.ok) {
-        matchesContainer.innerHTML =
-          '<p class="text-gray-500 italic p-4">試合履歴の読み込みに失敗しました</p>';
-        return;
-      }
-
-      const data = await response.json();
-      const matches = data.matches || [];
-
-      if (matches.length === 0) {
+      if (matchesData.matches.length === 0) {
         matchesContainer.innerHTML =
           '<p class="text-gray-500 italic p-4">試合履歴がありません</p>';
         return;
       }
 
       // マッチ履歴を表示
-      const matchesHtml = matches
+      const matchesHtml = matchesData.matches
         .map(
           (match: {
             id: string;
@@ -281,7 +277,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
           const ChartModule = await import("chart.js/auto");
           const Chart = ChartModule.default;
 
-          matches.forEach(
+          matchesData.matches.forEach(
             (match: {
               id: string;
               tournament_id: string;
