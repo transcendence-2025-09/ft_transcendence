@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const UserStatsRequestSchema = z.object({
+  id: z.coerce.number(),
+});
+
+export type UserStatsRequest = z.infer<typeof UserStatsRequestSchema>;
+
 export const UserStatsResponseSchema = z.object({
   id: z.string().uuid(),
   user_id: z.number().int().positive(),
