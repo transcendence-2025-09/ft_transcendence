@@ -32,7 +32,7 @@ export function createUsersRepository(fastify: FastifyInstance) {
         return {
           ...user,
           two_factor_enabled: Boolean(user.two_factor_enabled),
-        }
+        };
       } catch (error) {
         console.error(error);
         return null;
@@ -47,7 +47,7 @@ export function createUsersRepository(fastify: FastifyInstance) {
         return {
           ...user,
           two_factor_enabled: Boolean(user.two_factor_enabled),
-        }
+        };
       } catch (error) {
         console.error(error);
         return null;
@@ -68,7 +68,7 @@ export function createUsersRepository(fastify: FastifyInstance) {
         return {
           ...user,
           two_factor_enabled: Boolean(user.two_factor_enabled),
-        }
+        };
       } catch (error) {
         console.error(error);
         return null;
