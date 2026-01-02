@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { pongLogic } from "./pong";
+import { pongLogic } from "./pong/index.js";
 import "dotenv/config";
 
 //Fastify serverの初期化

@@ -1,23 +1,15 @@
 import {
+  ErrorResponseSchema,
+  MatchResultRequestBodySchema,
+  MatchResultRequestParamsSchema,
+  MatchResultResponseSchema,
+} from "@transcendence/shared";
+import {
   type FastifyPluginAsyncZod,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { v7 as uuidv7 } from "uuid";
-import { z } from "zod";
-
-const ScoreSchema = z.object({
-  leftPlayer: z.number(),
-  rightPlayer: z.number(),
-});
-
-const ScoreLogSchema = z.object({
-  left: z.number(),
-  right: z.number(),
-  elapsedSeconds: z.number(),
-});
-
-const ErrorSchema = z.object({ error: z.string() });
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.setValidatorCompiler(validatorCompiler);
@@ -30,24 +22,12 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
     "/",
     {
       schema: {
-        params: z.object({
-          id: z.string(),
-          matchId: z.string(),
-        }),
-        body: z.object({
-          winnerId: z.number(),
-          score: ScoreSchema,
-          ballSpeed: z.number().optional(),
-          ballRadius: z.number().optional(),
-          scoreLogs: z.array(ScoreLogSchema).optional(),
-        }),
+        params: MatchResultRequestParamsSchema,
+        body: MatchResultRequestBodySchema,
         response: {
-          200: z.object({
-            success: z.boolean(),
-            message: z.string(),
-          }),
-          400: ErrorSchema,
-          404: ErrorSchema,
+          200: MatchResultResponseSchema,
+          400: ErrorResponseSchema,
+          404: ErrorResponseSchema,
         },
       },
     },

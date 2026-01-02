@@ -1,24 +1,9 @@
 import "dotenv/config";
-
-// マッチ結果送信用のペイロード型定義
-interface MatchResultPayload {
-  tournamentId: string;
-  matchId: string;
-  winnerId: number;
-  score: {
-    leftPlayer: number;
-    rightPlayer: number;
-  };
-  ballSpeed?: number;
-  ballRadius?: number;
-  scoreLogs?: Array<{ left: number; right: number; elapsedSeconds: number }>;
-}
-
-// マッチ結果送信のレスポンス型定義
-interface MatchResultResponse {
-  success: boolean;
-  message: string;
-}
+import {
+  type MatchResultPayload,
+  type MatchResultResponse,
+  MatchResultResponseSchema,
+} from "@transcendence/shared";
 
 //backend serverへの内部APIクライアント
 export class InternalApiClient {
@@ -68,16 +53,13 @@ export class InternalApiClient {
         },
         body: JSON.stringify(body),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `Failed to submit match result: ${response.status} ${JSON.stringify(errorData)}`,
-        );
+      const responseData = await response.json();
+      const parseResult = MatchResultResponseSchema.safeParse(responseData);
+      if (!parseResult.success) {
+        throw new Error("Invalid response format from backend");
       }
 
-      const data = await response.json();
-      return data as MatchResultResponse;
+      return parseResult.data;
     } catch (error) {
       console.error("Error submitting match result to backend:", error);
       throw error;

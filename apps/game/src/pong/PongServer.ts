@@ -1,5 +1,6 @@
 // PongServer.ts
 import { randomUUID } from "crypto";
+import type { WebSocket } from "ws";
 import type {
   MatchData,
   MatchResult,
@@ -8,8 +9,7 @@ import type {
   PlayerInput,
   readyPayload,
   WsMessage,
-} from "src/types/pong";
-import type { WebSocket } from "ws";
+} from "../types/pong.js";
 import { internalApiClient } from "../utils/internalApiClient.js";
 
 export class PongServer {
