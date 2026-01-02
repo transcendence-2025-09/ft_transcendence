@@ -38,6 +38,7 @@ function createTournamentsPage() {
           type="text"
           id="tournamentName"
           placeholder="トーナメント名"
+          maxlength="20"
           class="w-full border border-gray-300 rounded px-3 py-2 mb-4"
         >
 
@@ -158,6 +159,10 @@ function createTournamentsPage() {
     const name = tournamentNameInput.value.trim();
     if (!name) {
       alert("トーナメント名を入力してください");
+      return;
+    }
+    if (name.length > 20) {
+      alert("トーナメント名は20文字以内で入力してください");
       return;
     }
 

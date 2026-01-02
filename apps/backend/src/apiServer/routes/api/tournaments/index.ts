@@ -24,7 +24,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
     {
       schema: {
         body: z.object({
-          name: z.string(),
+          name: z.string().min(1).max(20),
           gameOptions: GameOptionsSchema,
         }),
         response: {
