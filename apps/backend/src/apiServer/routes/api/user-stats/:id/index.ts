@@ -1,4 +1,8 @@
-import { UserStatsResponseSchema, ErrorResponseSchema, UserStatsRequestSchema } from "@transcendence/shared";
+import {
+  ErrorResponseSchema,
+  UserStatsRequestSchema,
+  UserStatsResponseSchema,
+} from "@transcendence/shared";
 import {
   type FastifyPluginAsyncZod,
   serializerCompiler,

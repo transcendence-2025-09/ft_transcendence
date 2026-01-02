@@ -79,10 +79,14 @@ export const Dashboard = async (): Promise<ElComponent> => {
   if (!res.ok) throw new Error("Unauthorized");
   const data = await res.json();
 
-  const userStatsRes = await fetchAndParse(`/api/user-stats/${data.id}`, UserStatsResponseSchema, {
-    method: "POST",
-    credentials: "include",
-  });
+  const userStatsRes = await fetchAndParse(
+    `/api/user-stats/${data.id}`,
+    UserStatsResponseSchema,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
 
   const el = document.createElement("div");
 
