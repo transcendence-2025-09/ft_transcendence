@@ -4,6 +4,7 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import { ErrorSchema, TournamentSchema } from "../utils/schemas.js";
+import { serializeTournament } from "../utils/serializers.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -31,16 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(404).send({ error: "Tournament not found" });
       }
 
-      return reply.status(200).send({
-        id: tournament.id,
-        name: tournament.name,
-        hostId: tournament.hostId,
-        maxPlayers: tournament.maxPlayers,
-        players: tournament.players,
-        status: tournament.status,
-        createdAt: tournament.createdAt.toISOString(),
-        gameOptions: tournament.gameOptions,
-      });
+      return reply.status(200).send(serializeTournament(tournament));
     },
   );
 };

@@ -4,6 +4,7 @@ import {
 } from "@fastify/type-provider-typebox";
 import type { FastifyRequest } from "fastify";
 import { ErrorSchema, TournamentSchema } from "../../utils/schemas.js";
+import { serializeTournament } from "../../utils/serializers.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -57,16 +58,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       return reply.status(200).send({
         success: true,
-        tournament: {
-          id: updatedTournament.id,
-          name: updatedTournament.name,
-          hostId: updatedTournament.hostId,
-          maxPlayers: updatedTournament.maxPlayers,
-          players: updatedTournament.players,
-          status: updatedTournament.status,
-          createdAt: updatedTournament.createdAt.toISOString(),
-          gameOptions: updatedTournament.gameOptions,
-        },
+        tournament: serializeTournament(updatedTournament),
       });
     },
   );

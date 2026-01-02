@@ -9,6 +9,7 @@ import {
   GameOptionsSchema,
   TournamentStatusSchema,
 } from "./utils/schemas.js";
+import { serializeTournamentListItem } from "./utils/serializers.js";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { tournamentsManager } = fastify;
@@ -85,15 +86,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           // 同じステータスの場合は作成日時順（新しい順）
           return b.createdAt.getTime() - a.createdAt.getTime();
         })
-        .map((t) => ({
-          id: t.id,
-          name: t.name,
-          hostId: t.hostId,
-          maxPlayers: t.maxPlayers,
-          currentPlayers: t.players.length,
-          status: t.status,
-          createdAt: t.createdAt.toISOString(),
-        }));
+        .map(serializeTournamentListItem);
 
       return reply.status(200).send(response);
     },
