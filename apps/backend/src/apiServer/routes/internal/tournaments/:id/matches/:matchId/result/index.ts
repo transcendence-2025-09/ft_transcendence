@@ -1,11 +1,28 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
 import { v7 as uuidv7 } from "uuid";
+import { z } from "zod";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const ScoreSchema = z.object({
+  leftPlayer: z.number(),
+  rightPlayer: z.number(),
+});
+
+const ScoreLogSchema = z.object({
+  left: z.number(),
+  right: z.number(),
+  elapsedSeconds: z.number(),
+});
+
+const ErrorSchema = z.object({ error: z.string() });
+
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // POST /internal/tournaments/:id/matches/:matchId/result - 試合結果を内部から受信
@@ -13,59 +30,31 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
-          matchId: Type.String(),
+        params: z.object({
+          id: z.string(),
+          matchId: z.string(),
         }),
-        body: Type.Object({
-          winnerId: Type.Number(),
-          score: Type.Object({
-            leftPlayer: Type.Number(),
-            rightPlayer: Type.Number(),
-          }),
-          ballSpeed: Type.Optional(Type.Number()),
-          ballRadius: Type.Optional(Type.Number()),
-          scoreLogs: Type.Optional(
-            Type.Array(
-              Type.Object({
-                left: Type.Number(),
-                right: Type.Number(),
-                elapsedSeconds: Type.Number(),
-              }),
-            ),
-          ),
+        body: z.object({
+          winnerId: z.number(),
+          score: ScoreSchema,
+          ballSpeed: z.number().optional(),
+          ballRadius: z.number().optional(),
+          scoreLogs: z.array(ScoreLogSchema).optional(),
         }),
         response: {
-          200: Type.Object({
-            success: Type.Boolean(),
-            message: Type.String(),
+          200: z.object({
+            success: z.boolean(),
+            message: z.string(),
           }),
-          400: Type.Object({
-            error: Type.String(),
-          }),
-          404: Type.Object({
-            error: Type.String(),
-          }),
+          400: ErrorSchema,
+          404: ErrorSchema,
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Params: { id: string; matchId: string } }>,
-      reply,
-    ) => {
+    async (request, reply) => {
       const { id: tournamentId, matchId } = request.params;
       const { winnerId, score, ballSpeed, ballRadius, scoreLogs } =
-        request.body as {
-          winnerId: number;
-          score: { leftPlayer: number; rightPlayer: number };
-          ballSpeed?: number;
-          ballRadius?: number;
-          scoreLogs?: Array<{
-            left: number;
-            right: number;
-            elapsedSeconds: number;
-          }>;
-        };
+        request.body;
 
       fastify.log.info(
         {

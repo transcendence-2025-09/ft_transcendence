@@ -1,11 +1,16 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
 import { ErrorSchema, TournamentSchema } from "../utils/schemas.js";
+import { serializeTournament } from "../utils/serializers.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // GET /api/tournaments/:id - トーナメント詳細
@@ -13,8 +18,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
+        params: z.object({
+          id: z.string(),
         }),
         response: {
           200: TournamentSchema,
@@ -23,7 +28,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const tournament = tournamentsManager.getTournament(id);
 
@@ -31,16 +36,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         return reply.status(404).send({ error: "Tournament not found" });
       }
 
-      return reply.status(200).send({
-        id: tournament.id,
-        name: tournament.name,
-        hostId: tournament.hostId,
-        maxPlayers: tournament.maxPlayers,
-        players: tournament.players,
-        status: tournament.status,
-        createdAt: tournament.createdAt.toISOString(),
-        gameOptions: tournament.gameOptions,
-      });
+      return reply.status(200).send(serializeTournament(tournament));
     },
   );
 };

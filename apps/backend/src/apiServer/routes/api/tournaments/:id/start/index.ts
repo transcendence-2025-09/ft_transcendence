@@ -1,11 +1,15 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
 import { ErrorSchema } from "../../utils/schemas.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // POST /api/tournaments/:id/start - トーナメント開始
@@ -13,13 +17,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
+        params: z.object({
+          id: z.string(),
         }),
         response: {
-          200: Type.Object({
-            success: Type.Boolean(),
-            message: Type.String(),
+          200: z.object({
+            success: z.boolean(),
+            message: z.string(),
           }),
           400: ErrorSchema,
           401: ErrorSchema,
@@ -28,7 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    async (request, reply) => {
       if (!request.user) {
         return reply.status(401).send({ error: "Unauthorized" });
       }

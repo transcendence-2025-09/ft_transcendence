@@ -5,10 +5,7 @@ import type { Tournament } from "./types.js";
  * トーナメント結果をDBに保存するRepository
  */
 export function createTournamentRepository(db: Database) {
-  /**
-   * ラウンド名を数値に変換
-   * semifinals = 1, third_place = 2, finals = 3
-   */
+  /** ラウンド名を数値に変換（semifinals=1, third_place=2, finals=3） */
   function getRoundNumber(
     round: "semifinals" | "finals" | "third_place",
   ): number {
@@ -20,12 +17,12 @@ export function createTournamentRepository(db: Database) {
     return roundMap[round] || 0;
   }
 
+  // ===================
+  // 公開API
+  // ===================
+
   return {
-    /**
-     * トーナメント全体をDBに保存（トランザクション）
-     * @param tournament トーナメント情報
-     * @param winnerId 優勝者のユーザーID
-     */
+    /** トーナメント全体をDBに保存（トランザクション） */
     async saveTournamentWithMatches(
       tournament: Tournament,
       winnerId: number | null,
@@ -55,12 +52,6 @@ export function createTournamentRepository(db: Database) {
 
           const roundNumber = getRoundNumber(match.round);
 
-          // 勝者を判定
-          const matchWinnerId =
-            match.score.leftPlayer > match.score.rightPlayer
-              ? match.leftPlayer.userId
-              : match.rightPlayer.userId;
-
           await db.run(
             `INSERT INTO matches (id, tournament_id, round, player1_id, player2_id, player1_score, player2_score, winner_id, ball_speed, ball_radius, played_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
@@ -78,27 +69,43 @@ export function createTournamentRepository(db: Database) {
               match.rightPlayer.userId,
               match.score.leftPlayer,
               match.score.rightPlayer,
-              matchWinnerId,
+              match.winnerId,
               match.gameOptions.ballSpeed,
               match.gameOptions.ballRadius,
-              // UPDATE用のパラメータ
               match.score.leftPlayer,
               match.score.rightPlayer,
-              matchWinnerId,
+              match.winnerId,
               match.gameOptions.ballSpeed,
               match.gameOptions.ballRadius,
             ],
           );
+
+          console.log("Match saved to database:", {
+            id: match.id,
+            tournament_id: tournament.id,
+            round: match.round,
+            player1_id: match.leftPlayer.userId,
+            player2_id: match.rightPlayer.userId,
+            player1_score: match.score.leftPlayer,
+            player2_score: match.score.rightPlayer,
+            winner_id: match.winnerId,
+            ball_speed: match.gameOptions.ballSpeed,
+            ball_radius: match.gameOptions.ballRadius,
+          });
         }
-
         await db.run("COMMIT");
-
-        console.log(
-          `✅ Tournament ${tournament.id} saved to database. Winner: ${winnerId}`,
-        );
+        console.log("Tournament saved to database:", {
+          id: tournament.id,
+          name: tournament.name,
+          hostId: tournament.hostId,
+          winnerId,
+          matchesCount: tournament.matches.filter(
+            (m) => m.status === "completed",
+          ).length,
+        });
       } catch (error) {
         await db.run("ROLLBACK");
-        console.error(`❌ Failed to save tournament ${tournament.id}:`, error);
+        console.error(`Failed to save tournament ${tournament.id}:`, error);
         throw error;
       }
     },

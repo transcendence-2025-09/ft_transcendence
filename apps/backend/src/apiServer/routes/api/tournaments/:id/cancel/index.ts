@@ -1,11 +1,16 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
 import { ErrorSchema, TournamentSchema } from "../../utils/schemas.js";
+import { serializeTournament } from "../../utils/serializers.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // DELETE /api/tournaments/:id/cancel - トーナメント参加キャンセル
@@ -13,12 +18,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
+        params: z.object({
+          id: z.string(),
         }),
         response: {
-          200: Type.Object({
-            success: Type.Boolean(),
+          200: z.object({
+            success: z.boolean(),
             tournament: TournamentSchema,
           }),
           400: ErrorSchema,
@@ -27,7 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    async (request, reply) => {
       if (!request.user) {
         return reply.status(401).send({ error: "Unauthorized" });
       }
@@ -53,16 +58,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       return reply.status(200).send({
         success: true,
-        tournament: {
-          id: updatedTournament.id,
-          name: updatedTournament.name,
-          hostId: updatedTournament.hostId,
-          maxPlayers: updatedTournament.maxPlayers,
-          players: updatedTournament.players,
-          status: updatedTournament.status,
-          createdAt: updatedTournament.createdAt.toISOString(),
-          gameOptions: updatedTournament.gameOptions,
-        },
+        tournament: serializeTournament(updatedTournament),
       });
     },
   );
