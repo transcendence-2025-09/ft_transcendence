@@ -29,7 +29,10 @@ export function createUsersRepository(fastify: FastifyInstance) {
           "SELECT * FROM users WHERE ft_id = ?",
           [ft_id],
         );
-        return user || null;
+        return {
+          ...user,
+          two_factor_enabled: Boolean(user.two_factor_enabled),
+        }
       } catch (error) {
         console.error(error);
         return null;
@@ -41,7 +44,10 @@ export function createUsersRepository(fastify: FastifyInstance) {
         const user = await fastify.db.get("SELECT * FROM users WHERE id = ?", [
           id,
         ]);
-        return user || null;
+        return {
+          ...user,
+          two_factor_enabled: Boolean(user.two_factor_enabled),
+        }
       } catch (error) {
         console.error(error);
         return null;
@@ -59,7 +65,10 @@ export function createUsersRepository(fastify: FastifyInstance) {
           "SELECT * FROM users WHERE ft_id = ?",
           [ft_id],
         );
-        return user || null;
+        return {
+          ...user,
+          two_factor_enabled: Boolean(user.two_factor_enabled),
+        }
       } catch (error) {
         console.error(error);
         return null;
