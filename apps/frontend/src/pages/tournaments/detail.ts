@@ -14,12 +14,7 @@ import {
   ERROR_MESSAGES,
 } from "./constants";
 import type { Player, Tournament } from "./types";
-import {
-  escapeHtml,
-  navigateTo,
-  showError,
-  showLoading,
-} from "./utils";
+import { escapeHtml, navigateTo, showError, showLoading } from "./utils";
 
 export function TournamentDetail(ctx: RouteCtx) {
   const tournamentId = ctx.params.id;
@@ -136,10 +131,7 @@ export function TournamentDetail(ctx: RouteCtx) {
   // ===================
 
   /** 開始ボタンの状態を更新 */
-  function updateStartButton(
-    currentPlayers: number,
-    maxPlayers: number,
-  ): void {
+  function updateStartButton(currentPlayers: number, maxPlayers: number): void {
     const startBtn = detailContainer.querySelector(
       "#startBtn",
     ) as HTMLButtonElement | null;
@@ -256,10 +248,7 @@ export function TournamentDetail(ctx: RouteCtx) {
 
       updatePlayersList(tournament.players ?? [], tournament.hostId);
 
-      updateStartButton(
-        tournament.players?.length ?? 0,
-        tournament.maxPlayers,
-      );
+      updateStartButton(tournament.players?.length ?? 0, tournament.maxPlayers);
     } catch (error) {
       console.error("参加者一覧の更新に失敗しました:", error);
     }

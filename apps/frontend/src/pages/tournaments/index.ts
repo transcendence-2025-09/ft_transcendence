@@ -85,9 +85,7 @@ function createTournamentsPage() {
     "#tournamentName",
   ) as HTMLInputElement;
   const ballSpeedSelect = el.querySelector("#ballSpeed") as HTMLSelectElement;
-  const ballRadiusSelect = el.querySelector(
-    "#ballRadius",
-  ) as HTMLSelectElement;
+  const ballRadiusSelect = el.querySelector("#ballRadius") as HTMLSelectElement;
 
   // ===================
   // トーナメント操作
