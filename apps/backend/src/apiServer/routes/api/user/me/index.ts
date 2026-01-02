@@ -1,27 +1,21 @@
+import { ErrorResponseSchema, MeResponseSchema } from "@transcendence/shared";
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
   fastify.get(
     "/",
     {
       schema: {
         response: {
-          200: Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            email: Type.String(),
-            ft_id: Type.Number(),
-            two_factor_enabled: Type.Boolean(),
-          }),
-          400: Type.Object({
-            error: Type.String(),
-          }),
-          401: Type.Object({
-            error: Type.String(),
-          }),
+          200: MeResponseSchema,
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
         },
       },
     },

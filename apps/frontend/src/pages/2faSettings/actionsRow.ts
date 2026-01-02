@@ -1,5 +1,6 @@
+import { MeResponseSchema } from "@transcendence/shared";
 import { eh } from "../../factory/elementFactory";
-import { getUserinfo } from "./api";
+import { fetchAndParse } from "../../utils/fetchAndParse";
 import { openDisableModal } from "./disableModal";
 import { openEnableModal } from "./enableModal";
 
@@ -71,8 +72,11 @@ const updateStatusUI = (enabled: boolean) => {
 
 export const loadUserInfo = async () => {
   try {
-    const user = await getUserinfo();
-    updateStatusUI(user.two_factor_enabled);
+    const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
+      method: "GET",
+      credentials: "include",
+    });
+    updateStatusUI(me.two_factor_enabled);
   } catch (_error) {
     statusBadgeEl.textContent = "現在: 状態取得に失敗しました";
   }

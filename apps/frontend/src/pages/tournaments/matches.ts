@@ -1,11 +1,12 @@
+import { MeResponseSchema } from "@transcendence/shared";
 import { componentFactory } from "../../factory/componentFactory";
 import { pageFactory } from "../../factory/pageFactory";
 import type { RouteCtx } from "../../routing/routeList";
+import { fetchAndParse } from "../../utils/fetchAndParse";
 import {
   startMatch as apiStartMatch,
   fetchMatches,
   fetchTournament,
-  getCurrentUser,
 } from "./api";
 import { ERROR_MESSAGES, MATCH_ROUND } from "./constants";
 import {
@@ -306,7 +307,10 @@ export function TournamentMatches(ctx: RouteCtx) {
     try {
       const [tournament, currentUser] = await Promise.all([
         fetchTournament(tournamentId),
-        getCurrentUser(),
+        fetchAndParse("/api/user/me", MeResponseSchema, {
+          method: "GET",
+          credentials: "include",
+        }),
       ]);
       currentUserId = currentUser.id;
       tournamentNameEl.textContent = tournament.name;

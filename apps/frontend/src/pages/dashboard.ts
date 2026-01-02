@@ -1,9 +1,11 @@
 import {
+  MeResponseSchema,
   type UserStatsResponse,
   UserStatsResponseSchema,
 } from "@transcendence/shared";
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
+import { fetchAndParse } from "../utils/fetchAndParse";
 
 const renderOverview = (stats: UserStatsResponse | null) => {
   if (!stats)
@@ -71,28 +73,19 @@ const renderSettings = () => {
 
 export const Dashboard = async (): Promise<ElComponent> => {
   // fetch current user
-  const res = await fetch("/api/user/me", {
+  const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
     method: "GET",
     credentials: "include",
   });
-  if (!res.ok) throw new Error("Unauthorized");
-  const data = await res.json();
 
-  // fetch stats
-  const userStatsRes = await fetch(`/api/user-stats/${data.id}`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  let stats: UserStatsResponse | null = null;
-  if (userStatsRes.ok) {
-    const statsJson = await userStatsRes.json().catch(() => null);
-    if (statsJson) {
-      const parsed = UserStatsResponseSchema.safeParse(statsJson);
-      if (parsed.success) stats = parsed.data;
-      else console.warn("user-stats validation failed", parsed.error);
-    }
-  }
+  const userStatsRes = await fetchAndParse(
+    `/api/user-stats/${me.id}`,
+    UserStatsResponseSchema,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
 
   const el = document.createElement("div");
 
@@ -101,7 +94,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
       <div class="flex justify-between items-center mb-6">
         <div>
           <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
-          <p class="text-xl text-gray-600">Welcome, ${data.name ?? "User"}!</p>
+          <p class="text-xl text-gray-600">Welcome, ${me.name ?? "User"}!</p>
         </div>
         <div>
           <a href="/tournaments" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
@@ -136,10 +129,10 @@ export const Dashboard = async (): Promise<ElComponent> => {
         
         <div class="min-h-[400px]"> <!-- タブコンテンツの最小高さを設定 -->
           <div id="overview" class="tab-content">
-            ${renderOverview(stats)}
+            ${renderOverview(userStatsRes)}
           </div>
           <div id="matches" class="tab-content hidden">
-            ${renderMatches(stats)}
+            ${renderMatches(userStatsRes)}
           </div>
           <div id="settings" class="tab-content hidden">
             ${renderSettings()}
@@ -159,12 +152,10 @@ export const Dashboard = async (): Promise<ElComponent> => {
     if (!matchesContainer) return;
 
     try {
-      const res = await fetch("/api/user/me", {
+      const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
         method: "GET",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Unauthorized");
-      const { id } = await res.json();
 
       const response = await fetch("/api/user/matches", {
         method: "GET",
@@ -179,141 +170,6 @@ export const Dashboard = async (): Promise<ElComponent> => {
 
       const data = await response.json();
       const matches = data.matches || [];
-      // 外観確認用のダミーデータ
-      // const matches = [
-      //   {
-      //     id: "match1",
-      //     tournament_id: "tourn1",
-      //     round: 1,
-      //     player1_id: 2,
-      //     player2_id: id,
-      //     player1_name: "2nd",
-      //     player2_name: name,
-      //     player1_score: 2,
-      //     player2_score: 5,
-      //     winner_id: id,
-      //     played_at: new Date().toISOString(),
-      //     ball_speed: 3,
-      //     ball_radius: 3,
-      //     score_logs: [
-      //       {
-      //         scored_player_id: 2,
-      //         scored_player_name: "2nd",
-      //         current_player1_score: 1,
-      //         current_player2_score: 0,
-      //         elapsed_seconds: 5,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 1,
-      //         current_player2_score: 1,
-      //         elapsed_seconds: 12,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 1,
-      //         current_player2_score: 2,
-      //         elapsed_seconds: 18,
-      //       },
-      //       {
-      //         scored_player_id: 2,
-      //         scored_player_name: "2nd",
-      //         current_player1_score: 2,
-      //         current_player2_score: 2,
-      //         elapsed_seconds: 25,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 2,
-      //         current_player2_score: 3,
-      //         elapsed_seconds: 32,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 2,
-      //         current_player2_score: 4,
-      //         elapsed_seconds: 40,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 2,
-      //         current_player2_score: 5,
-      //         elapsed_seconds: 48,
-      //       },
-      //     ],
-      //   },
-      //   {
-      //     id: "match2",
-      //     tournament_id: "tourn1",
-      //     round: 2,
-      //     player1_id: 3,
-      //     player2_id: id,
-      //     player1_name: "3rd",
-      //     player2_name: name,
-      //     player1_score: 5,
-      //     player2_score: 2,
-      //     winner_id: 3,
-      //     played_at: new Date().toISOString(),
-      //     ball_speed: 4,
-      //     ball_radius: 2,
-      //     score_logs: [
-      //       {
-      //         scored_player_id: 3,
-      //         scored_player_name: "3rd",
-      //         current_player1_score: 1,
-      //         current_player2_score: 0,
-      //         elapsed_seconds: 4,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 1,
-      //         current_player2_score: 1,
-      //         elapsed_seconds: 11,
-      //       },
-      //       {
-      //         scored_player_id: 3,
-      //         scored_player_name: "3rd",
-      //         current_player1_score: 2,
-      //         current_player2_score: 1,
-      //         elapsed_seconds: 17,
-      //       },
-      //       {
-      //         scored_player_id: 3,
-      //         scored_player_name: "3rd",
-      //         current_player1_score: 3,
-      //         current_player2_score: 1,
-      //         elapsed_seconds: 24,
-      //       },
-      //       {
-      //         scored_player_id: id,
-      //         scored_player_name: name,
-      //         current_player1_score: 3,
-      //         current_player2_score: 2,
-      //         elapsed_seconds: 30,
-      //       },
-      //       {
-      //         scored_player_id: 3,
-      //         scored_player_name: "3rd",
-      //         current_player1_score: 4,
-      //         current_player2_score: 2,
-      //         elapsed_seconds: 38,
-      //       },
-      //       {
-      //         scored_player_id: 3,
-      //         scored_player_name: "3rd",
-      //         current_player1_score: 5,
-      //         current_player2_score: 2,
-      //         elapsed_seconds: 45,
-      //       },
-      //     ],
-      //   },
-      // ];
 
       if (matches.length === 0) {
         matchesContainer.innerHTML =
@@ -345,13 +201,13 @@ export const Dashboard = async (): Promise<ElComponent> => {
               current_player2_score: number;
             }>;
           }) => {
-            const isWin = match.winner_id === id;
+            const isWin = match.winner_id === me.id;
             const opponent =
-              match.player1_id === id
+              match.player1_id === me.id
                 ? `Player: ${match.player2_name}`
                 : `Player: ${match.player1_name}`;
             const score =
-              match.player1_id === id
+              match.player1_id === me.id
                 ? `${match.player1_score} - ${match.player2_score}`
                 : `${match.player2_score} - ${match.player1_score}`;
             const resultClass = isWin
@@ -363,7 +219,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
             // 得点推移をHTMLで生成
             const scoreLogsHtml = (match.score_logs || [])
               .map((log) => {
-                const isCurrentUserScored = log.scored_player_id === id;
+                const isCurrentUserScored = log.scored_player_id === me.id;
                 return `
                   <div class="text-xs py-1 px-2 ${
                     isCurrentUserScored

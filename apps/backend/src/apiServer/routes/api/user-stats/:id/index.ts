@@ -1,10 +1,13 @@
-import { UserStatsResponseSchema } from "@transcendence/shared";
+import {
+  ErrorResponseSchema,
+  UserStatsRequestSchema,
+  UserStatsResponseSchema,
+} from "@transcendence/shared";
 import {
   type FastifyPluginAsyncZod,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod";
-import { z } from "zod";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.setValidatorCompiler(validatorCompiler);
@@ -13,17 +16,11 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
     "/",
     {
       schema: {
-        params: z.object({
-          id: z.coerce.number(),
-        }),
+        params: UserStatsRequestSchema,
         response: {
           200: UserStatsResponseSchema,
-          400: z.object({
-            error: z.string(),
-          }),
-          401: z.object({
-            error: z.string(),
-          }),
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
         },
       },
     },
@@ -44,17 +41,11 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
     "/",
     {
       schema: {
-        params: z.object({
-          id: z.coerce.number(),
-        }),
+        params: UserStatsRequestSchema,
         response: {
           200: UserStatsResponseSchema,
-          400: z.object({
-            error: z.string(),
-          }),
-          401: z.object({
-            error: z.string(),
-          }),
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
         },
       },
     },

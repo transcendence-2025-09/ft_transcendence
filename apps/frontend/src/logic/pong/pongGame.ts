@@ -1,7 +1,9 @@
 import * as BABYLON from "@babylonjs/core";
+import { MeResponseSchema } from "@transcendence/shared";
 import type { Match, Player } from "../../pages/tournaments/types";
 import { navigateTo } from "../../pages/tournaments/utils";
 import type { RouteCtx } from "../../routing/routeList";
+import { fetchAndParse } from "../../utils/fetchAndParse";
 import {
   makeBall,
   makeBallMaterial,
@@ -157,16 +159,13 @@ export class PongGame {
     //最初にソケットの通信が確立されることをまつ
     await this.waitForOpen(this.ws);
     //現在のユーザー情報を取得しておく
-    const res = await fetch("/api/user/me", {
+    const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) throw new Error("Unauthorized");
-    const data = await res.json();
     //自分がleftかrightか、どちらのプレイヤーかを確認
-    if (this.leftPlayer?.userId === data.id) this.clientPosition = "left";
-    else if (this.rightPlayer?.userId === data.id)
-      this.clientPosition = "right";
+    if (this.leftPlayer?.userId === me.id) this.clientPosition = "left";
+    else if (this.rightPlayer?.userId === me.id) this.clientPosition = "right";
     console.log("Client Connection Success!!");
 
     //初期データを送信

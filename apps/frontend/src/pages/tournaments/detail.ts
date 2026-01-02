@@ -1,11 +1,12 @@
+import { MeResponseSchema } from "@transcendence/shared";
 import { componentFactory } from "../../factory/componentFactory";
 import { pageFactory } from "../../factory/pageFactory";
 import type { RouteCtx } from "../../routing/routeList";
+import { fetchAndParse } from "../../utils/fetchAndParse";
 import {
   startTournament as apiStartTournament,
   cancelJoinTournament,
   fetchTournament,
-  getCurrentUser,
   joinTournament,
 } from "./api";
 import {
@@ -91,8 +92,11 @@ export function TournamentDetail(ctx: RouteCtx) {
   /** トーナメントに参加 */
   async function handleJoin(): Promise<void> {
     try {
-      const currentUser = await getCurrentUser();
-      await joinTournament(tournamentId, currentUser.name);
+      const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
+        method: "GET",
+        credentials: "include",
+      });
+      await joinTournament(tournamentId, me.name);
       loadTournamentDetail();
     } catch (error) {
       const errorMessage =
@@ -260,7 +264,10 @@ export function TournamentDetail(ctx: RouteCtx) {
       showLoading(detailContainer);
       const [tournament, currentUser] = await Promise.all([
         fetchTournament(tournamentId),
-        getCurrentUser(),
+        fetchAndParse("/api/user/me", MeResponseSchema, {
+          method: "GET",
+          credentials: "include",
+        }),
       ]);
 
       // トーナメントが既に開始されている場合、マッチ画面に遷移
