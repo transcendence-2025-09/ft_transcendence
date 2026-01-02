@@ -1,4 +1,5 @@
 import {
+  MeResponseSchema,
   type UserStatsResponse,
   UserStatsResponseSchema,
 } from "@transcendence/shared";
@@ -72,15 +73,13 @@ const renderSettings = () => {
 
 export const Dashboard = async (): Promise<ElComponent> => {
   // fetch current user
-  const res = await fetch("/api/user/me", {
+  const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
     method: "GET",
     credentials: "include",
   });
-  if (!res.ok) throw new Error("Unauthorized");
-  const data = await res.json();
 
   const userStatsRes = await fetchAndParse(
-    `/api/user-stats/${data.id}`,
+    `/api/user-stats/${me.id}`,
     UserStatsResponseSchema,
     {
       method: "POST",
@@ -95,7 +94,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
       <div class="flex justify-between items-center mb-6">
         <div>
           <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
-          <p class="text-xl text-gray-600">Welcome, ${data.name ?? "User"}!</p>
+          <p class="text-xl text-gray-600">Welcome, ${me.name ?? "User"}!</p>
         </div>
         <div>
           <a href="/tournaments" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
@@ -153,12 +152,10 @@ export const Dashboard = async (): Promise<ElComponent> => {
     if (!matchesContainer) return;
 
     try {
-      const res = await fetch("/api/user/me", {
+      const me = await fetchAndParse("/api/user/me", MeResponseSchema, {
         method: "GET",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Unauthorized");
-      const { id } = await res.json();
 
       const response = await fetch("/api/user/matches", {
         method: "GET",
@@ -204,13 +201,13 @@ export const Dashboard = async (): Promise<ElComponent> => {
               current_player2_score: number;
             }>;
           }) => {
-            const isWin = match.winner_id === id;
+            const isWin = match.winner_id === me.id;
             const opponent =
-              match.player1_id === id
+              match.player1_id === me.id
                 ? `Player: ${match.player2_name}`
                 : `Player: ${match.player1_name}`;
             const score =
-              match.player1_id === id
+              match.player1_id === me.id
                 ? `${match.player1_score} - ${match.player2_score}`
                 : `${match.player2_score} - ${match.player1_score}`;
             const resultClass = isWin
@@ -222,7 +219,7 @@ export const Dashboard = async (): Promise<ElComponent> => {
             // 得点推移をHTMLで生成
             const scoreLogsHtml = (match.score_logs || [])
               .map((log) => {
-                const isCurrentUserScored = log.scored_player_id === id;
+                const isCurrentUserScored = log.scored_player_id === me.id;
                 return `
                   <div class="text-xs py-1 px-2 ${
                     isCurrentUserScored

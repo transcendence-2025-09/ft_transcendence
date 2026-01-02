@@ -1,19 +1,3 @@
-export async function getUserinfo(): Promise<{
-  id: number;
-  name: string;
-  email: string;
-  ft_id: number;
-  two_factor_enabled: boolean;
-}> {
-  const response = await fetch("/api/user/me", {
-    credentials: "include",
-  });
-  if (!response.ok) {
-    throw new Error((await response.json()).error);
-  }
-  return await response.json();
-}
-
 export async function get2faQrCode(): Promise<{
   otpauthUrl: string;
   qrCode: string;

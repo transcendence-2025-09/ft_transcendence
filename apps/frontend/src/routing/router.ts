@@ -1,5 +1,7 @@
+import { MeResponseSchema } from "@transcendence/shared";
 import type { ElComponent } from "../factory/componentFactory";
 import type { Layout } from "../factory/layoutFactory";
+import { fetchAndParse } from "../utils/fetchAndParse";
 import type { Params, Route, RouteCtx } from "./routeList";
 
 export type RouteProps = {
@@ -12,11 +14,12 @@ export type RouteProps = {
 
 export const ensureAuth = async (): Promise<boolean> => {
   try {
-    const res = await fetch("/api/user/me", {
+    const user = await fetchAndParse("/api/user/me", MeResponseSchema, {
       method: "GET",
       credentials: "include",
     });
-    return res.ok;
+    if (!user) return false;
+    return true;
   } catch {
     return false;
   }
