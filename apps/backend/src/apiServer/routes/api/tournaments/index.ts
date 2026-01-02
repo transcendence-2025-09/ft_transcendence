@@ -1,16 +1,21 @@
 import "dotenv/config";
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
 import {
   ErrorSchema,
   GameOptionsSchema,
-  TournamentStatusSchema,
+  TournamentListItemSchema,
 } from "./utils/schemas.js";
+import { serializeTournamentListItem } from "./utils/serializers.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // POST /api/tournaments - トーナメント作成
@@ -18,28 +23,25 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        body: Type.Object({
-          name: Type.String(),
+        body: z.object({
+          name: z.string(),
           gameOptions: GameOptionsSchema,
         }),
         response: {
-          200: Type.Object({
-            tournamentId: Type.String(),
+          200: z.object({
+            tournamentId: z.string(),
           }),
           401: ErrorSchema,
           400: ErrorSchema,
         },
       },
     },
-    async (request: FastifyRequest, reply) => {
+    async (request, reply) => {
       if (!request.user) {
         return reply.status(401).send({ error: "Unauthorized" });
       }
       const user = request.user;
-      const { name, gameOptions } = request.body as {
-        name: string;
-        gameOptions: { ballSpeed: number; ballRadius: number };
-      };
+      const { name, gameOptions } = request.body;
       const tournament = tournamentsManager.createTournament(
         name,
         user.id,
@@ -55,22 +57,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         response: {
-          200: Type.Array(
-            Type.Object({
-              id: Type.String(),
-              name: Type.String(),
-              hostId: Type.Number(),
-              maxPlayers: Type.Number(),
-              currentPlayers: Type.Number(),
-              status: TournamentStatusSchema,
-              createdAt: Type.String(),
-            }),
-          ),
+          200: z.array(TournamentListItemSchema),
           401: ErrorSchema,
         },
       },
     },
-    async (_request: FastifyRequest, reply) => {
+    async (_request, reply) => {
       const tournaments = tournamentsManager.getAllTournaments();
 
       // 完了したトーナメントを除外し、待機中→対戦中の順でソート
@@ -85,15 +77,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           // 同じステータスの場合は作成日時順（新しい順）
           return b.createdAt.getTime() - a.createdAt.getTime();
         })
-        .map((t) => ({
-          id: t.id,
-          name: t.name,
-          hostId: t.hostId,
-          maxPlayers: t.maxPlayers,
-          currentPlayers: t.players.length,
-          status: t.status,
-          createdAt: t.createdAt.toISOString(),
-        }));
+        .map(serializeTournamentListItem);
 
       return reply.status(200).send(response);
     },

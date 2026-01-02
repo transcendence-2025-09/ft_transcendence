@@ -1,21 +1,24 @@
 import { v7 as uuidv7 } from "uuid";
+import { MAX_PLAYERS } from "../constants.js";
 import type { GameOptions, Tournament } from "../types.js";
 
+/**
+ * トーナメント基本操作マネージャー
+ * - 作成・取得・削除
+ * - プレイヤー参加管理
+ */
 export function createTournamentManager(tournaments: Map<string, Tournament>) {
   return {
-    /**
-     * トーナメントを作成
-     * @param name トーナメント名
-     * @param hostId ホストのユーザーID
-     * @param gameOptions ゲームオプション
-     * @param maxPlayers 最大プレイヤー数
-     * @returns 作成されたトーナメント
-     */
+    // ===================
+    // トーナメント操作
+    // ===================
+
+    /** トーナメントを作成 */
     createTournament(
       name: string,
       hostId: number,
       gameOptions: GameOptions,
-      maxPlayers: number = 4,
+      maxPlayers: number = MAX_PLAYERS,
     ): Tournament {
       const tournament: Tournament = {
         id: uuidv7(),
@@ -32,30 +35,26 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
       return tournament;
     },
 
-    /**
-     * トーナメントを取得
-     * @param tournamentId トーナメントID
-     * @returns トーナメント（存在しない場合はundefined）
-     */
+    /** トーナメントを取得 */
     getTournament(tournamentId: string): Tournament | undefined {
       return tournaments.get(tournamentId);
     },
 
-    /**
-     * 全トーナメントを取得
-     * @returns 全トーナメントの配列
-     */
+    /** 全トーナメントを取得 */
     getAllTournaments(): Tournament[] {
       return Array.from(tournaments.values());
     },
 
-    /**
-     * プレイヤーをトーナメントに参加させる
-     * @param tournamentId トーナメントID
-     * @param userId ユーザーID
-     * @param alias プレイヤーのエイリアス名
-     * @returns 成功した場合true、トーナメントが存在しないか満員の場合false
-     */
+    /** トーナメントを削除 */
+    deleteTournament(tournamentId: string): boolean {
+      return tournaments.delete(tournamentId);
+    },
+
+    // ===================
+    // プレイヤー参加管理
+    // ===================
+
+    /** プレイヤーをトーナメントに参加させる */
     joinTournament(
       tournamentId: string,
       userId: number,
@@ -73,31 +72,13 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
       return true;
     },
 
-    /**
-     * トーナメントが準備完了状態かチェック
-     * @param tournamentId トーナメントID
-     * @returns 準備完了している場合true
-     */
+    /** トーナメントが準備完了状態かチェック */
     isReady(tournamentId: string): boolean {
       const tournament = tournaments.get(tournamentId);
       return tournament?.status === "ready";
     },
 
-    /**
-     * トーナメントを削除
-     * @param tournamentId トーナメントID
-     * @returns 削除された場合true
-     */
-    deleteTournament(tournamentId: string): boolean {
-      return tournaments.delete(tournamentId);
-    },
-
-    /**
-     * トーナメントへの参加をキャンセル
-     * @param tournamentId トーナメントID
-     * @param userId ユーザーID
-     * @returns 成功した場合true、トーナメントが存在しないかプレイヤーが参加していない場合false
-     */
+    /** トーナメントへの参加をキャンセル */
     cancelJoinTournament(tournamentId: string, userId: number): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;

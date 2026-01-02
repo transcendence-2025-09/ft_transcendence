@@ -1,60 +1,81 @@
-import { Type } from "@fastify/type-provider-typebox";
+import { z } from "zod";
 
-// 共通スキーマ定義
-export const ErrorSchema = Type.Object({ error: Type.String() });
+// ===================
+// 共通スキーマ
+// ===================
 
-export const TournamentStatusSchema = Type.Union([
-  Type.Literal("waiting"),
-  Type.Literal("ready"),
-  Type.Literal("in_progress"),
-  Type.Literal("completed"),
+export const ErrorSchema = z.object({ error: z.string() });
+
+export const TournamentStatusSchema = z.enum([
+  "waiting",
+  "ready",
+  "in_progress",
+  "completed",
 ]);
 
-export const PlayerSchema = Type.Object({
-  userId: Type.Number(),
-  alias: Type.String(),
+export const PlayerSchema = z.object({
+  userId: z.number(),
+  alias: z.string(),
 });
 
-export const MatchStatusSchema = Type.Union([
-  Type.Literal("pending"),
-  Type.Literal("in_progress"),
-  Type.Literal("completed"),
+export const MatchStatusSchema = z.enum([
+  "pending",
+  "in_progress",
+  "completed",
 ]);
 
-export const MatchRoundSchema = Type.Union([
-  Type.Literal("semifinals"),
-  Type.Literal("finals"),
-  Type.Literal("third_place"),
-]);
+export const MatchRoundSchema = z.enum(["semifinals", "finals", "third_place"]);
 
-export const GameOptionsSchema = Type.Object({
-  ballSpeed: Type.Number(),
-  ballRadius: Type.Number(),
+export const GameOptionsSchema = z.object({
+  ballSpeed: z.number(),
+  ballRadius: z.number(),
 });
 
-export const MatchSchema = Type.Object({
-  id: Type.String(),
+// ===================
+// マッチスキーマ
+// ===================
+
+export const ScoreSchema = z.object({
+  leftPlayer: z.number(),
+  rightPlayer: z.number(),
+});
+
+export const MatchSchema = z.object({
+  id: z.string(),
   round: MatchRoundSchema,
   leftPlayer: PlayerSchema,
   rightPlayer: PlayerSchema,
   status: MatchStatusSchema,
-  score: Type.Optional(
-    Type.Object({
-      leftPlayer: Type.Number(),
-      rightPlayer: Type.Number(),
-    }),
-  ),
-  winnerId: Type.Optional(Type.Number()),
+  score: ScoreSchema.optional(),
+  winnerId: z.number().optional(),
   gameOptions: GameOptionsSchema,
 });
 
-export const TournamentSchema = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  hostId: Type.Number(),
-  maxPlayers: Type.Number(),
-  players: Type.Array(PlayerSchema),
+// ===================
+// トーナメントスキーマ
+// ===================
+
+export const TournamentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  hostId: z.number(),
+  maxPlayers: z.number(),
+  players: z.array(PlayerSchema),
   status: TournamentStatusSchema,
-  createdAt: Type.String(),
+  createdAt: z.string(),
   gameOptions: GameOptionsSchema,
+});
+
+// ===================
+// リスト用スキーマ
+// ===================
+
+export const TournamentListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  hostId: z.number(),
+  maxPlayers: z.number(),
+  currentPlayers: z.number(),
+  status: TournamentStatusSchema,
+  createdAt: z.string(),
 });

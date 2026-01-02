@@ -1,13 +1,18 @@
 import { v7 as uuidv7 } from "uuid";
+import {
+  MAX_PLAYERS,
+  REQUIRED_FINAL_PLAYERS,
+  REQUIRED_SEMIFINAL_MATCHES,
+} from "../constants.js";
 import type { GameOptions, Match, Player, Tournament } from "../types.js";
 
-const REQUIRED_SEMIFINAL_MATCHES = 2;
-const REQUIRED_FINAL_PLAYERS = 2;
-
+/**
+ * マッチ管理マネージャー
+ * - セミファイナル・ファイナル・3位決定戦の生成
+ * - マッチの開始・結果登録
+ */
 export function createMatchManager(tournaments: Map<string, Tournament>) {
-  /**
-   * 特定のマッチを取得する
-   */
+  /** 特定のマッチを取得する */
   function getMatch(
     tournamentId: string,
     matchId: string,
@@ -21,9 +26,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     return { tournament, match };
   }
 
-  /**
-   * セミファイナルマッチから勝者を判定する
-   */
+  /** セミファイナルマッチから勝者を判定する */
   function getWinner(semifinal: Match): Player | null {
     if (!semifinal.score) return null;
 
@@ -32,9 +35,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       : semifinal.rightPlayer;
   }
 
-  /**
-   * セミファイナルマッチから敗者を判定する
-   */
+  /** セミファイナルマッチから敗者を判定する */
   function getLoser(semifinal: Match): Player | null {
     const winner = getWinner(semifinal);
     if (!winner) return null;
@@ -44,9 +45,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       : semifinal.leftPlayer;
   }
 
-  /**
-   * マッチを作成する
-   */
+  /** マッチを作成する */
   function createMatch(
     round: "semifinals" | "finals" | "third_place",
     leftPlayer: Player,
@@ -63,9 +62,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     };
   }
 
-  /**
-   * セミファイナルが全て完了しているかチェック
-   */
+  /** セミファイナルが全て完了しているかチェック */
   function areSemifinalsCompleted(matches: Match[]): boolean {
     const semifinalMatches = matches.filter((m) => m.round === "semifinals");
 
@@ -75,18 +72,14 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     );
   }
 
-  /**
-   * ファイナルマッチが既に存在するかチェック
-   */
+  /** ファイナルマッチが既に存在するかチェック */
   function hasFinalMatches(matches: Match[]): boolean {
     return matches.some(
       (m) => m.round === "finals" || m.round === "third_place",
     );
   }
 
-  /**
-   * セミファイナルマッチから勝者と敗者を抽出
-   */
+  /** セミファイナルマッチから勝者と敗者を抽出 */
   function extractWinnersAndLosers(matches: Match[]): {
     winners: Player[];
     losers: Player[];
@@ -106,9 +99,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     return { winners, losers };
   }
 
-  /**
-   * ファイナルマッチと3位決定戦を自動生成する
-   */
+  /** ファイナルマッチと3位決定戦を生成する */
   function generateFinalMatches(tournament: Tournament): void {
     if (!areSemifinalsCompleted(tournament.matches)) return;
     if (hasFinalMatches(tournament.matches)) return;
@@ -135,16 +126,16 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     }
   }
 
+  // ===================
+  // 公開API
+  // ===================
+
   return {
-    /**
-     * セミファイナルマッチを生成する
-     * @param tournamentId トーナメントID
-     * @returns 成功した場合true
-     */
+    /** セミファイナルマッチを生成する */
     generateMatches(tournamentId: string): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
-      if (tournament.players.length < 4) return false;
+      if (tournament.players.length < MAX_PLAYERS) return false;
 
       // セミファイナル2試合を生成
       const match1 = createMatch(
@@ -165,22 +156,13 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       return true;
     },
 
-    /**
-     * マッチ一覧を取得
-     * @param tournamentId トーナメントID
-     * @returns マッチ配列（トーナメントが存在しない場合はundefined）
-     */
+    /** マッチ一覧を取得 */
     getMatches(tournamentId: string): Match[] | undefined {
       const tournament = tournaments.get(tournamentId);
       return tournament?.matches;
     },
 
-    /**
-     * マッチを開始する
-     * @param tournamentId トーナメントID
-     * @param matchId マッチID
-     * @returns 成功した場合true
-     */
+    /** マッチを開始する */
     startMatch(tournamentId: string, matchId: string): boolean {
       const result = getMatch(tournamentId, matchId);
       if (!result) return false;
@@ -192,14 +174,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       return true;
     },
 
-    /**
-     * 試合結果を登録する
-     * @param tournamentId トーナメントID
-     * @param matchId マッチID
-     * @param winnerId 勝者のユーザーID
-     * @param score スコア
-     * @returns 更新されたマッチ（失敗した場合はundefined）
-     */
+    /** 試合結果を登録する */
     submitMatchResult(
       tournamentId: string,
       matchId: string,
@@ -222,7 +197,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       match.winnerId = winnerId;
       match.status = "completed";
 
-      // セミファイナルの両方のマッチが完了したら、ファイナルと3位決定戦を自動生成
+      // セミファイナルの両方のマッチが完了したら、ファイナルと3位決定戦を生成
       generateFinalMatches(tournament);
 
       return match;
