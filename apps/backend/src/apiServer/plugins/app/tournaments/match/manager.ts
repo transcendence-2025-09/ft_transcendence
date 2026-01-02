@@ -1,5 +1,6 @@
 import { v7 as uuidv7 } from "uuid";
 import {
+  MAX_PLAYERS,
   REQUIRED_FINAL_PLAYERS,
   REQUIRED_SEMIFINAL_MATCHES,
 } from "../constants.js";
@@ -134,7 +135,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     generateMatches(tournamentId: string): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
-      if (tournament.players.length < 4) return false;
+      if (tournament.players.length < MAX_PLAYERS) return false;
 
       // セミファイナル2試合を生成
       const match1 = createMatch(

@@ -1,4 +1,5 @@
 import { v7 as uuidv7 } from "uuid";
+import { MAX_PLAYERS } from "../constants.js";
 import type { GameOptions, Tournament } from "../types.js";
 
 /**
@@ -17,7 +18,7 @@ export function createTournamentManager(tournaments: Map<string, Tournament>) {
       name: string,
       hostId: number,
       gameOptions: GameOptions,
-      maxPlayers: number = 4,
+      maxPlayers: number = MAX_PLAYERS,
     ): Tournament {
       const tournament: Tournament = {
         id: uuidv7(),

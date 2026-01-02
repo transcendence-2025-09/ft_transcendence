@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import { MEMORY_RETENTION_MS } from "./constants.js";
+import { MAX_PLAYERS, MEMORY_RETENTION_MS } from "./constants.js";
 import { createMatchManager } from "./match/manager.js";
 import { createTournamentRepository } from "./repository.js";
 import { createTournamentManager } from "./tournament/manager.js";
@@ -72,12 +72,12 @@ export function createTournamentsManager(fastify: FastifyInstance) {
     startMatch: matchManager.startMatch,
 
     // --- トーナメント進行 ---
-    /** トーナメント開始（ホストのみ、4人必要） */
+    /** トーナメント開始（ホストのみ、MAX_PLAYERS人必要） */
     startTournament(tournamentId: string, userId: number): boolean {
       const tournament = tournaments.get(tournamentId);
       if (!tournament) return false;
       if (tournament.hostId !== userId) return false;
-      if (tournament.players.length < 4) return false;
+      if (tournament.players.length < MAX_PLAYERS) return false;
 
       tournament.status = "in_progress";
       matchManager.generateMatches(tournamentId);
