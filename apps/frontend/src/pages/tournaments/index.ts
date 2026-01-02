@@ -31,7 +31,6 @@ function createTournamentsPage() {
       </div>
     </div>
 
-    <!-- 新規作成モーダル -->
     <div id="createModal" class="hidden fixed inset-0 items-center justify-center">
       <div class="bg-white p-6 rounded-lg max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">トーナメント作成</h2>
@@ -72,6 +71,7 @@ function createTournamentsPage() {
     </div>
   `;
 
+  // DOM要素の取得
   const tournamentsList = el.querySelector(
     "#tournamentsList",
   ) as HTMLDivElement;
@@ -85,56 +85,112 @@ function createTournamentsPage() {
     "#tournamentName",
   ) as HTMLInputElement;
   const ballSpeedSelect = el.querySelector("#ballSpeed") as HTMLSelectElement;
-  const ballRadiusSelect = el.querySelector("#ballRadius") as HTMLSelectElement;
+  const ballRadiusSelect = el.querySelector(
+    "#ballRadius",
+  ) as HTMLSelectElement;
 
-  // トーナメント一覧を読み込む
-  async function loadTournaments() {
+  // ===================
+  // トーナメント操作
+  // ===================
+
+  /** トーナメントカードのHTMLを生成 */
+  function createTournamentCardHtml(tournament: Tournament): string {
+    const name = escapeHtml(tournament.name);
+    const status = escapeHtml(getStatusLabel(tournament.status));
+    const date = formatDate(tournament.createdAt);
+
+    return `
+      <div class="border border-gray-300 rounded p-4 hover:shadow-lg transition-shadow cursor-pointer" data-id="${tournament.id}">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-xl font-semibold">${name}</h3>
+            <p class="text-sm text-gray-600">プレイヤー: ${tournament.currentPlayers}/${tournament.maxPlayers}</p>
+            <p class="text-sm text-gray-600">ステータス: ${status}</p>
+          </div>
+          <span class="text-xs text-gray-500">${date}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /** トーナメント一覧を描画し、クリックイベントを設定 */
+  function renderTournamentsList(tournaments: Tournament[]): void {
+    if (tournaments.length === 0) {
+      showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
+      return;
+    }
+
+    tournamentsList.innerHTML = tournaments
+      .map((t) => createTournamentCardHtml(t))
+      .join("");
+
+    tournamentsList.querySelectorAll("[data-id]").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = card.getAttribute("data-id");
+        if (id) navigateTo(`/tournaments/${id}`);
+      });
+    });
+  }
+
+  /** トーナメント一覧を読み込む（初回読み込み用） */
+  async function loadTournaments(): Promise<void> {
     try {
       showLoading(tournamentsList);
       const tournaments = await fetchAllTournaments();
-
-      if (tournaments.length === 0) {
-        showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
-        return;
-      }
-
-      tournamentsList.innerHTML = tournaments
-        .map((t: Tournament) => {
-          const name = escapeHtml(t.name);
-          const status = escapeHtml(getStatusLabel(t.status));
-          const date = formatDate(t.createdAt);
-
-          return `
-            <div class="border border-gray-300 rounded p-4 hover:shadow-lg transition-shadow cursor-pointer" data-id="${t.id}">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h3 class="text-xl font-semibold">${name}</h3>
-                  <p class="text-sm text-gray-600">プレイヤー: ${t.currentPlayers}/${t.maxPlayers}</p>
-                  <p class="text-sm text-gray-600">ステータス: ${status}</p>
-                </div>
-                <span class="text-xs text-gray-500">${date}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-
-      // トーナメントカードのクリックイベントを追加
-      tournamentsList.querySelectorAll("[data-id]").forEach((card) => {
-        card.addEventListener("click", (e) => {
-          e.preventDefault();
-          const id = card.getAttribute("data-id");
-          if (id) navigateTo(`/tournaments/${id}`);
-        });
-      });
+      renderTournamentsList(tournaments);
     } catch (error) {
       showError(tournamentsList);
       console.error("Failed to load tournaments:", error);
     }
   }
 
-  // モーダルをbody直下に生成
-  createTournamentBtn.addEventListener("click", () => {
+  /** トーナメント一覧を更新（ポーリング用） */
+  async function refreshTournamentsList(): Promise<void> {
+    try {
+      const tournaments = await fetchAllTournaments();
+      renderTournamentsList(tournaments);
+    } catch (error) {
+      console.error("トーナメント一覧の更新に失敗しました:", error);
+    }
+  }
+
+  /** トーナメント作成処理 */
+  async function handleCreateTournament(): Promise<void> {
+    const name = tournamentNameInput.value.trim();
+    if (!name) {
+      alert("トーナメント名を入力してください");
+      return;
+    }
+
+    const gameOptions = {
+      ballSpeed: Number(ballSpeedSelect.value),
+      ballRadius: Number(ballRadiusSelect.value),
+    };
+
+    try {
+      await createTournament(name, gameOptions);
+      const createdTournament = await fetchAllTournaments();
+      const newTournament = createdTournament.find((t) => t.name === name);
+      if (newTournament) {
+        navigateTo(`/tournaments/${newTournament.id}`);
+      } else {
+        console.error("作成したトーナメントが見つかりませんでした");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`作成に失敗しました: ${errorMessage}`);
+      console.error("Failed to create tournament:", error);
+    }
+  }
+
+  // ===================
+  // モーダル関連
+  // ===================
+
+  /** モーダルを開く */
+  function openModal(): void {
     const overlay = document.createElement("div");
     overlay.setAttribute(
       "class",
@@ -144,108 +200,47 @@ function createTournamentsPage() {
     overlay.style.setProperty("backdrop-filter", "blur(4px)");
     overlay.style.zIndex = "9999";
 
-    // モーダル本体を移動
     createModal.classList.remove("hidden");
-    createModal.style.margin = "auto"; // モーダルを中央に配置
-    createModal.style.position = "relative"; // モーダルの位置を調整
-    createModal.style.maxWidth = "500px"; // モーダルの最大幅を設定
-    createModal.style.width = "100%"; // モーダルの幅を設定
+    createModal.style.margin = "auto";
+    createModal.style.position = "relative";
+    createModal.style.maxWidth = "500px";
+    createModal.style.width = "100%";
     overlay.appendChild(createModal);
     document.body.appendChild(overlay);
     document.body.style.overflow = "hidden";
 
-    const close = () => {
+    const closeModal = () => {
       if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
       document.body.style.overflow = "";
     };
 
-    cancelBtn.addEventListener("click", close);
+    cancelBtn.addEventListener("click", closeModal);
     overlay.addEventListener("click", (ev) => {
-      if (ev.target === overlay) close();
+      if (ev.target === overlay) closeModal();
     });
-    createBtn.addEventListener("click", async () => {
-      const name = tournamentNameInput.value.trim();
-      if (!name) {
-        alert("トーナメント名を入力してください");
-        return;
-      }
-
-      const gameOptions = {
-        ballSpeed: Number(ballSpeedSelect.value),
-        ballRadius: Number(ballRadiusSelect.value),
-      };
-
-      try {
-        await createTournament(name, gameOptions);
-        const createdTournament = await fetchAllTournaments(); // トーナメント一覧を再取得
-        const newTournament = createdTournament.find((t) => t.name === name);
-        if (newTournament) {
-          navigateTo(`/tournaments/${newTournament.id}`); // 作成したトーナメントの詳細ページに遷移
-        } else {
-          console.error("作成したトーナメントが見つかりませんでした");
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
-        alert(`作成に失敗しました: ${errorMessage}`);
-        console.error("Failed to create tournament:", error);
-      }
-    });
-  });
-
-  // 一覧だけを部分更新（イベントリスナーを再設定）
-  async function refreshTournamentsList() {
-    try {
-      const tournaments = await fetchAllTournaments();
-
-      if (tournaments.length === 0) {
-        showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
-        return;
-      }
-
-      tournamentsList.innerHTML = tournaments
-        .map((t: Tournament) => {
-          const name = escapeHtml(t.name);
-          const status = escapeHtml(getStatusLabel(t.status));
-          const date = formatDate(t.createdAt);
-
-          return `
-            <div class="border border-gray-300 rounded p-4 hover:shadow-lg transition-shadow cursor-pointer" data-id="${t.id}">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h3 class="text-xl font-semibold">${name}</h3>
-                  <p class="text-sm text-gray-600">プレイヤー: ${t.currentPlayers}/${t.maxPlayers}</p>
-                  <p class="text-sm text-gray-600">ステータス: ${status}</p>
-                </div>
-                <span class="text-xs text-gray-500">${date}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-
-      // トーナメントカードのクリックイベントを追加
-      tournamentsList.querySelectorAll("[data-id]").forEach((card) => {
-        card.addEventListener("click", (e) => {
-          e.preventDefault();
-          const id = card.getAttribute("data-id");
-          if (id) navigateTo(`/tournaments/${id}`);
-        });
-      });
-    } catch (error) {
-      console.error("トーナメント一覧の更新に失敗しました:", error);
-    }
+    createBtn.addEventListener("click", () => handleCreateTournament());
   }
 
-  // 5秒ごとに一覧を自動更新
+  // ===================
+  // イベントリスナー設定
+  // ===================
+
+  createTournamentBtn.addEventListener("click", openModal);
+
+  // ===================
+  // 自動更新（ポーリング）
+  // ===================
+
   const autoRefreshInterval = window.setInterval(() => {
     refreshTournamentsList();
   }, 5000);
 
-  // 初期読み込み
+  // ===================
+  // 初期化・クリーンアップ
+  // ===================
+
   loadTournaments();
 
-  // コンポーネントを作成してアンマウント時に自動更新を停止
   const component = componentFactory(el);
   const originalUnmount = component.unmount;
   component.unmount = () => {
