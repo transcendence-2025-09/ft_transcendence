@@ -72,39 +72,39 @@ export function formatDate(dateString: string): string {
 /**
  * 試合結果から勝者を取得
  * @param match - マッチ情報
- * @returns 勝者のPlayer情報（引き分けやスコアがない場合はnull）
+ * @returns 勝者のPlayer情報（勝者が決まっていない場合はnull）
  */
 export function getWinner(match: {
   leftPlayer: Player;
   rightPlayer: Player;
-  score?: { leftPlayer: number; rightPlayer: number };
+  winnerId?: number;
 }): Player | null {
-  if (!match.score) return null;
-  if (match.score.leftPlayer > match.score.rightPlayer) {
+  if (!match.winnerId) return null;
+  if (match.leftPlayer.userId === match.winnerId) {
     return match.leftPlayer;
   }
-  if (match.score.rightPlayer > match.score.leftPlayer) {
+  if (match.rightPlayer.userId === match.winnerId) {
     return match.rightPlayer;
   }
-  return null; // 引き分け
+  return null;
 }
 
 /**
  * 試合結果から敗者を取得
  * @param match - マッチ情報
- * @returns 敗者のPlayer情報（引き分けやスコアがない場合はnull）
+ * @returns 敗者のPlayer情報（勝者が決まっていない場合はnull）
  */
 export function getLoser(match: {
   leftPlayer: Player;
   rightPlayer: Player;
-  score?: { leftPlayer: number; rightPlayer: number };
+  winnerId?: number;
 }): Player | null {
-  if (!match.score) return null;
-  if (match.score.leftPlayer > match.score.rightPlayer) {
+  if (!match.winnerId) return null;
+  if (match.leftPlayer.userId === match.winnerId) {
     return match.rightPlayer;
   }
-  if (match.score.rightPlayer > match.score.leftPlayer) {
+  if (match.rightPlayer.userId === match.winnerId) {
     return match.leftPlayer;
   }
-  return null; // 引き分け
+  return null;
 }

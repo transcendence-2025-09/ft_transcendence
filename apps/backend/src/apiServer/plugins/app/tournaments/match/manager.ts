@@ -219,6 +219,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
       if (!isValidWinner) return undefined;
 
       match.score = score;
+      match.winnerId = winnerId;
       match.status = "completed";
 
       // セミファイナルの両方のマッチが完了したら、ファイナルと3位決定戦を自動生成

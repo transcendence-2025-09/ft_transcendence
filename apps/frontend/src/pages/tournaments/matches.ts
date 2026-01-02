@@ -34,15 +34,10 @@ export function TournamentMatches(ctx: RouteCtx) {
   el.innerHTML = `
     <div class="container mx-auto p-8">
       <div class="max-w-4xl mx-auto">
-        <!-- Header -->
         <div class="mb-6">
           <h1 id="tournamentName" class="text-3xl font-bold text-center mb-2">Remote Tournament</h1>
-          <div class="text-center">
-            <button id="backBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded">&larr; 一覧に戻る</button>
-          </div>
         </div>
 
-        <!-- Tabs -->
         <div class="flex justify-center mb-8 border-b border-gray-300">
           <button id="tabRound1" class="px-8 py-3 font-semibold text-green-600 border-b-2 border-green-600 min-w-[140px] text-center">
             セミファイナル
@@ -55,7 +50,6 @@ export function TournamentMatches(ctx: RouteCtx) {
           </button>
         </div>
 
-        <!-- Matches Container -->
         <div id="matchesContainer" class="space-y-6">
           <p class="text-gray-500 text-center">${ERROR_MESSAGES.LOADING}</p>
         </div>
@@ -63,6 +57,7 @@ export function TournamentMatches(ctx: RouteCtx) {
     </div>
   `;
 
+  // DOM要素の取得
   const tournamentNameEl = el.querySelector(
     "#tournamentName",
   ) as HTMLHeadingElement;
@@ -72,10 +67,10 @@ export function TournamentMatches(ctx: RouteCtx) {
   const tabRound1 = el.querySelector("#tabRound1") as HTMLButtonElement;
   const tabFinals = el.querySelector("#tabFinals") as HTMLButtonElement;
   const tabResults = el.querySelector("#tabResults") as HTMLButtonElement;
-  const backBtn = el.querySelector("#backBtn") as HTMLButtonElement;
 
-  // 戻るボタンのイベントリスナー
-  backBtn.addEventListener("click", () => navigateTo("/tournaments"));
+  // 状態
+  let currentUserId: number | undefined;
+  let pollingInterval: number | null = null;
 
   // タブマネージャーの初期化
   const tabManager = new TabManager(
@@ -85,10 +80,12 @@ export function TournamentMatches(ctx: RouteCtx) {
     tabResults,
   );
 
-  /**
-   * マッチの開始ボタンにイベントリスナーを追加
-   */
-  function attachMatchEventListeners(matches: Match[]) {
+  // ===================
+  // マッチカード操作
+  // ===================
+
+  /** マッチの開始ボタンにイベントリスナーを追加 */
+  function attachMatchEventListeners(matches: Match[]): void {
     matches.forEach((match) => {
       const btn = el.querySelector(
         `#startMatch-${match.id}`,
@@ -99,90 +96,64 @@ export function TournamentMatches(ctx: RouteCtx) {
     });
   }
 
-  /**
-   * 個々のマッチカードを部分更新
-   */
-  function updateMatchCard(match: Match) {
+  /** 個々のマッチカードを部分更新 */
+  function updateMatchCard(match: Match): void {
     const existingCard = el.querySelector(`[data-match-id="${match.id}"]`);
-    if (existingCard) {
-      const newCardHtml = createMatchCard(match, currentUserId);
-      const temp = document.createElement("div");
-      temp.innerHTML = newCardHtml;
-      const newCard = temp.firstElementChild;
-      if (newCard) {
-        existingCard.replaceWith(newCard);
-        // イベントリスナーを再設定
-        const btn = el.querySelector(
-          `#startMatch-${match.id}`,
-        ) as HTMLButtonElement;
-        if (btn) {
-          btn.addEventListener("click", () => handleMatchStart(match));
-        }
+    if (!existingCard) return;
+
+    const newCardHtml = createMatchCard(match, currentUserId);
+    const temp = document.createElement("div");
+    temp.innerHTML = newCardHtml;
+    const newCard = temp.firstElementChild;
+
+    if (newCard) {
+      existingCard.replaceWith(newCard);
+      const btn = el.querySelector(
+        `#startMatch-${match.id}`,
+      ) as HTMLButtonElement;
+      if (btn) {
+        btn.addEventListener("click", () => handleMatchStart(match));
       }
     }
   }
 
-  /**
-   * タブの状態を更新
-   */
-  async function updateTabStates() {
+  // ===================
+  // マッチ操作
+  // ===================
+
+  /** マッチ開始処理 */
+  async function handleMatchStart(match: Match): Promise<void> {
     try {
       const matches = await fetchMatches(tournamentId);
-      const switchTo = tabManager.updateTabStates(matches);
+      const currentMatch = matches.find((m) => m.id === match.id);
 
-      if (switchTo === "finals") {
-        tabManager.setActiveTab("finals");
-        await loadFinals();
-      } else if (switchTo === "results") {
-        tabManager.setActiveTab("results");
-        await loadResults();
-        // 最終結果画面に到達したらポーリングを停止
-        if (pollingInterval !== null) {
-          clearInterval(pollingInterval);
-          pollingInterval = null;
-        }
+      if (!currentMatch) {
+        alert("マッチが見つかりませんでした");
+        return;
       }
+
+      // マッチがすでに開始されている場合は、直接ゲーム画面に遷移
+      if (currentMatch.status === "in_progress") {
+        navigateTo(`/pong/${tournamentId}/${match.id}`);
+        return;
+      }
+
+      await apiStartMatch(tournamentId, match.id);
+      navigateTo(`/pong/${tournamentId}/${match.id}`);
     } catch (error) {
-      console.error("Failed to update tab states:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
+      alert(`エラー: ${errorMessage}`);
+      console.error("Failed to handle match start:", error);
     }
   }
 
-  // 現在のユーザー情報を保持
-  let currentUserId: number | undefined;
+  // ===================
+  // タブコンテンツ読み込み
+  // ===================
 
-  /**
-   * トーナメント情報を読み込む
-   */
-  async function loadTournament() {
-    try {
-      const [tournament, currentUser] = await Promise.all([
-        fetchTournament(tournamentId),
-        getCurrentUser(),
-      ]);
-      currentUserId = currentUser.id;
-      tournamentNameEl.textContent = tournament.name;
-
-      // 初期タブに応じた内容を読み込み
-      const currentTab = tabManager.getCurrentTab();
-      if (currentTab === "finals") {
-        tabManager.setActiveTab("finals");
-        await loadFinals();
-      } else {
-        tabManager.setActiveTab("round1");
-        await loadSemifinals();
-      }
-
-      await updateTabStates();
-    } catch (error) {
-      showError(matchesContainer, ERROR_MESSAGES.TOURNAMENT_NOT_FOUND);
-      console.error("Failed to load tournament:", error);
-    }
-  }
-
-  /**
-   * セミファイナルタブのコンテンツを読み込む
-   */
-  async function loadSemifinals() {
+  /** セミファイナルタブのコンテンツを読み込む */
+  async function loadSemifinals(): Promise<void> {
     try {
       showLoading(matchesContainer);
       const matches = await fetchMatches(tournamentId);
@@ -207,10 +178,8 @@ export function TournamentMatches(ctx: RouteCtx) {
     }
   }
 
-  /**
-   * 決勝タブのコンテンツを読み込む
-   */
-  async function loadFinals() {
+  /** 決勝タブのコンテンツを読み込む */
+  async function loadFinals(): Promise<void> {
     try {
       showLoading(matchesContainer);
       const matches = await fetchMatches(tournamentId);
@@ -259,10 +228,8 @@ export function TournamentMatches(ctx: RouteCtx) {
     }
   }
 
-  /**
-   * 結果タブのコンテンツを読み込む（1位〜4位の順位表示）
-   */
-  async function loadResults() {
+  /** 結果タブのコンテンツを読み込む（1位〜4位の順位表示） */
+  async function loadResults(): Promise<void> {
     try {
       showLoading(matchesContainer);
       const matches = await fetchMatches(tournamentId);
@@ -272,7 +239,6 @@ export function TournamentMatches(ctx: RouteCtx) {
         (m) => m.round === MATCH_ROUND.THIRD_PLACE,
       );
 
-      // 決勝戦と3位決定戦が両方完了していることを確認
       if (!finalsMatch?.score || !thirdPlaceMatch?.score) {
         showInfo(
           matchesContainer,
@@ -281,7 +247,6 @@ export function TournamentMatches(ctx: RouteCtx) {
         return;
       }
 
-      // 順位を計算
       const champion = getWinner(finalsMatch);
       const runnerUp = getLoser(finalsMatch);
       const thirdPlace = getWinner(thirdPlaceMatch);
@@ -306,38 +271,94 @@ export function TournamentMatches(ctx: RouteCtx) {
     }
   }
 
-  /**
-   * マッチ開始処理
-   */
-  async function handleMatchStart(match: Match) {
+  // ===================
+  // タブ状態管理
+  // ===================
+
+  /** タブの状態を更新し、必要に応じて自動遷移 */
+  async function updateTabStates(): Promise<void> {
     try {
-      // 最新のマッチ情報を取得
       const matches = await fetchMatches(tournamentId);
-      const currentMatch = matches.find((m) => m.id === match.id);
+      const switchTo = tabManager.updateTabStates(matches);
 
-      if (!currentMatch) {
-        alert("マッチが見つかりませんでした");
-        return;
+      if (switchTo === "finals") {
+        tabManager.setActiveTab("finals");
+        await loadFinals();
+      } else if (switchTo === "results") {
+        tabManager.setActiveTab("results");
+        await loadResults();
+        if (pollingInterval !== null) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
       }
-
-      // マッチがすでに開始されている場合は、直接ゲーム画面に遷移
-      if (currentMatch.status === "in_progress") {
-        navigateTo(`/pong/${tournamentId}/${match.id}`);
-        return;
-      }
-
-      await apiStartMatch(tournamentId, match.id);
-      // Pongゲーム画面に遷移
-      navigateTo(`/pong/${tournamentId}/${match.id}`);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
-      alert(`エラー: ${errorMessage}`);
-      console.error("Failed to handle match start:", error);
+      console.error("Failed to update tab states:", error);
     }
   }
 
-  // タブクリックイベント
+  // ===================
+  // データ読み込み
+  // ===================
+
+  /** トーナメント情報を読み込む */
+  async function loadTournament(): Promise<void> {
+    try {
+      const [tournament, currentUser] = await Promise.all([
+        fetchTournament(tournamentId),
+        getCurrentUser(),
+      ]);
+      currentUserId = currentUser.id;
+      tournamentNameEl.textContent = tournament.name;
+
+      // 準決勝なのか決勝なのかで読み込み先を変更する
+      const currentTab = tabManager.getCurrentTab();
+      if (currentTab === "finals") {
+        tabManager.setActiveTab("finals");
+        await loadFinals();
+      } else {
+        tabManager.setActiveTab("round1");
+        await loadSemifinals();
+      }
+      await updateTabStates();
+    } catch (error) {
+      showError(matchesContainer, ERROR_MESSAGES.TOURNAMENT_NOT_FOUND);
+      console.error("Failed to load tournament:", error);
+    }
+  }
+
+  /** 現在のタブを部分更新（ポーリング用） */
+  async function refreshCurrentTab(): Promise<void> {
+    try {
+      const matches = await fetchMatches(tournamentId);
+      const currentTab = tabManager.getCurrentTab();
+
+      if (currentTab === "round1") {
+        const semifinalMatches = matches.filter(
+          (m) => m.round === MATCH_ROUND.SEMIFINALS,
+        );
+        for (const match of semifinalMatches) {
+          updateMatchCard(match);
+        }
+      } else if (currentTab === "finals") {
+        const finalsMatch = matches.find((m) => m.round === MATCH_ROUND.FINALS);
+        const thirdPlaceMatch = matches.find(
+          (m) => m.round === MATCH_ROUND.THIRD_PLACE,
+        );
+        if (finalsMatch) updateMatchCard(finalsMatch);
+        if (thirdPlaceMatch) updateMatchCard(thirdPlaceMatch);
+      }
+
+      await updateTabStates();
+    } catch (error) {
+      console.error("Failed to refresh current tab:", error);
+    }
+  }
+
+  // ===================
+  // イベントリスナー設定
+  // ===================
+
   tabRound1.addEventListener("click", () => {
     tabManager.setActiveTab("round1");
     loadSemifinals();
@@ -355,45 +376,19 @@ export function TournamentMatches(ctx: RouteCtx) {
     loadResults();
   });
 
-  // ポーリング: マッチの状態を定期的にチェックして画面を部分更新
-  async function refreshCurrentTab() {
-    try {
-      const matches = await fetchMatches(tournamentId);
-      const currentTab = tabManager.getCurrentTab();
-      if (currentTab === "round1") {
-        // セミファイナルのマッチカードを部分更新
-        const semifinalMatches = matches.filter(
-          (m) => m.round === MATCH_ROUND.SEMIFINALS,
-        );
-        for (const match of semifinalMatches) {
-          updateMatchCard(match);
-        }
-      } else if (currentTab === "finals") {
-        // 決勝・3位決定戦のマッチカードを部分更新
-        const finalsMatch = matches.find((m) => m.round === MATCH_ROUND.FINALS);
-        const thirdPlaceMatch = matches.find(
-          (m) => m.round === MATCH_ROUND.THIRD_PLACE,
-        );
-        if (finalsMatch) updateMatchCard(finalsMatch);
-        if (thirdPlaceMatch) updateMatchCard(thirdPlaceMatch);
-      }
-      await updateTabStates();
-    } catch (error) {
-      console.error("Failed to refresh current tab:", error);
-    }
-  }
+  // ===================
+  // 自動更新（ポーリング）
+  // ===================
 
-  // 5秒ごとに現在のタブを更新
-  let pollingInterval: number | null = window.setInterval(
-    refreshCurrentTab,
-    5000,
-  );
+  pollingInterval = window.setInterval(refreshCurrentTab, 5000);
+
+  // ===================
+  // 初期化・クリーンアップ
+  // ===================
 
   loadTournament();
 
   const component = componentFactory(el);
-
-  // オリジナルのunmountを拡張してポーリングをクリーンアップ
   const originalUnmount = component.unmount;
   component.unmount = () => {
     if (pollingInterval !== null) {

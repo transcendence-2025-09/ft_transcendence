@@ -48,5 +48,6 @@ export type Match = {
     leftPlayer: number; // 左側のプレイヤーのスコア
     rightPlayer: number; // 右側のプレイヤーのスコア
   };
+  winnerId?: number; // 勝者のユーザーID
   gameOptions: GameOptions; // ゲームオプション
 };

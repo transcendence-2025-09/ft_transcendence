@@ -18,6 +18,7 @@ export type Match = {
     leftPlayer: number;
     rightPlayer: number;
   };
+  winnerId?: number;
   gameOptions: GameOptions;
 };
 
