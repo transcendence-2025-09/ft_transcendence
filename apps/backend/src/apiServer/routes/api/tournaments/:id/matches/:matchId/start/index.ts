@@ -1,11 +1,15 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
 import { ErrorSchema } from "../../../../utils/schemas.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // POST /api/tournaments/:id/matches/:matchId/start - 試合開始
@@ -13,14 +17,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
-          matchId: Type.String(),
+        params: z.object({
+          id: z.string(),
+          matchId: z.string(),
         }),
         response: {
-          200: Type.Object({
-            success: Type.Boolean(),
-            matchId: Type.String(),
+          200: z.object({
+            success: z.boolean(),
+            matchId: z.string(),
           }),
           400: ErrorSchema,
           401: ErrorSchema,
@@ -28,10 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Params: { id: string; matchId: string } }>,
-      reply,
-    ) => {
+    async (request, reply) => {
       const { id, matchId } = request.params;
 
       const tournament = tournamentsManager.getTournament(id);

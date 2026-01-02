@@ -1,11 +1,19 @@
 import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import type { FastifyRequest } from "fastify";
-import { ErrorSchema, MatchSchema } from "../../../../utils/schemas.js";
+  type FastifyPluginAsyncZod,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
+import {
+  ErrorSchema,
+  MatchSchema,
+  ScoreSchema,
+} from "../../../../utils/schemas.js";
 
-const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+const plugin: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
+
   const { tournamentsManager } = fastify;
 
   // POST /api/tournaments/:id/matches/:matchId/result - 試合結果送信
@@ -13,20 +21,17 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/",
     {
       schema: {
-        params: Type.Object({
-          id: Type.String(),
-          matchId: Type.String(),
+        params: z.object({
+          id: z.string(),
+          matchId: z.string(),
         }),
-        body: Type.Object({
-          winnerId: Type.Number(),
-          score: Type.Object({
-            leftPlayer: Type.Number(),
-            rightPlayer: Type.Number(),
-          }),
+        body: z.object({
+          winnerId: z.number(),
+          score: ScoreSchema,
         }),
         response: {
-          200: Type.Object({
-            success: Type.Boolean(),
+          200: z.object({
+            success: z.boolean(),
             match: MatchSchema,
           }),
           400: ErrorSchema,
@@ -35,15 +40,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Params: { id: string; matchId: string } }>,
-      reply,
-    ) => {
+    async (request, reply) => {
       const { id, matchId } = request.params;
-      const { winnerId, score } = request.body as {
-        winnerId: number;
-        score: { leftPlayer: number; rightPlayer: number };
-      };
+      const { winnerId, score } = request.body;
 
       const tournament = tournamentsManager.getTournament(id);
       if (!tournament) {
