@@ -79,11 +79,30 @@ export function createTournamentRepository(db: Database) {
               match.gameOptions.ballRadius,
             ],
           );
+
+          console.log("Match saved to database:", {
+            id: match.id,
+            tournament_id: tournament.id,
+            round: match.round,
+            player1_id: match.leftPlayer.userId,
+            player2_id: match.rightPlayer.userId,
+            player1_score: match.score.leftPlayer,
+            player2_score: match.score.rightPlayer,
+            winner_id: match.winnerId,
+            ball_speed: match.gameOptions.ballSpeed,
+            ball_radius: match.gameOptions.ballRadius,
+          });
         }
         await db.run("COMMIT");
-        console.log(
-          `Tournament ${tournament.id} saved to database. Winner: ${winnerId}`,
-        );
+        console.log("Tournament saved to database:", {
+          id: tournament.id,
+          name: tournament.name,
+          hostId: tournament.hostId,
+          winnerId,
+          matchesCount: tournament.matches.filter(
+            (m) => m.status === "completed",
+          ).length,
+        });
       } catch (error) {
         await db.run("ROLLBACK");
         console.error(`Failed to save tournament ${tournament.id}:`, error);
