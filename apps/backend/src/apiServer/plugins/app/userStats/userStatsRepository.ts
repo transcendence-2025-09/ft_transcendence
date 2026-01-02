@@ -1,6 +1,6 @@
 import {
-  type MatchesResponse,
-  MatchesResponseSchema,
+  type Matches,
+  MatchesSchema,
   type UserStatsResponse,
   UserStatsResponseSchema,
 } from "@transcendence/shared";
@@ -48,15 +48,34 @@ export function createUserStatsRepository(fastify: FastifyInstance) {
         } else {
           // 1.2. 存在する場合はmatchesテーブルから集計して更新
           const matchStats = await fastify.db.all(
-            "SELECT * FROM matches WHERE player1_id = ? OR player2_id = ?",
+            `SELECT
+              m.id,
+              m.tournament_id,
+              m.round,
+              m.player1_id,
+              m.player2_id,
+              u1.name AS player1_name,
+              u2.name AS player2_name,
+              m.player1_score,
+              m.player2_score,
+              m.winner_id,
+              m.played_at,
+              m.ball_speed,
+              m.ball_radius
+            FROM matches m
+            LEFT JOIN users u1 ON m.player1_id = u1.id
+            LEFT JOIN users u2 ON m.player2_id = u2.id
+            WHERE m.player1_id = ? OR m.player2_id = ?
+            ORDER BY m.played_at DESC;
+            `,
             [user_id, user_id],
           );
-          const parsed = MatchesResponseSchema.array().safeParse(matchStats);
+          const parsed = MatchesSchema.array().safeParse(matchStats);
           if (!parsed.success) {
             console.error("Matches data validation failed", parsed.error);
             return null;
           }
-          const matches: MatchesResponse[] = parsed.data;
+          const matches: Matches[] = parsed.data;
 
           const number_of_matches = matches.length;
           const number_of_wins = matches.filter(
