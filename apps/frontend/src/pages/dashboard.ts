@@ -4,6 +4,7 @@ import {
   type UserStatsResponse,
   UserStatsResponseSchema,
 } from "@transcendence/shared";
+import Chart from "chart.js/auto";
 import type { ElComponent } from "../factory/componentFactory";
 import { componentFactory } from "../factory/componentFactory";
 import { fetchAndParse } from "../utils/fetchAndParse";
@@ -274,9 +275,6 @@ export const Dashboard = async (): Promise<ElComponent> => {
       // すべてのグラフを描画
       const loadChartLibrary = async () => {
         try {
-          const ChartModule = await import("chart.js/auto");
-          const Chart = ChartModule.default;
-
           matchesData.matches.forEach(
             (match: {
               id: string;
