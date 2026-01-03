@@ -1,6 +1,6 @@
 import type { WebSocket } from "@fastify/websocket";
+import type { WsMessage } from "@transcendence/shared";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
-import type { WsMessage } from "../types/pong.js";
 import { PongServer } from "./PongServer.js";
 
 //部屋ごとのPongサーバーインスタンスを管理するマップ
