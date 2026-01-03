@@ -1,7 +1,7 @@
+import fastifyHttpProxy from "@fastify/http-proxy";
+import fastifyWebsocket from "@fastify/websocket";
 import Fastify, { type FastifyInstance } from "fastify";
 import { pongLogic } from "./pong/index.js";
-import fastifyWebsocket from "@fastify/websocket";
-import fastifyHttpProxy from "@fastify/http-proxy";
 import "dotenv/config";
 
 //Fastify serverの初期化
