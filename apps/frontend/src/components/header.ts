@@ -1,7 +1,5 @@
-import type { ElComponent } from "../factory/componentFactory";
-import { componentFactory } from "../factory/componentFactory";
-import { eh } from "../factory/elementFactory";
-import { getRouter } from "../routing/instance";
+import { componentFactory, type ElComponent, eh } from "@/factory";
+import { getRouter } from "@/routing";
 
 const HeaderEl = eh<"header">(
   "header",

@@ -1,9 +1,8 @@
 import * as BABYLON from "@babylonjs/core";
 import { MeResponseSchema } from "@transcendence/shared";
-import type { Match, Player } from "../../../pages/tournaments/types";
-import { navigateTo } from "../../../pages/tournaments/utils";
-import type { RouteCtx } from "../../../routing/routeList";
-import { fetchAndParse } from "../../../utils/fetchAndParse";
+import { type Match, navigateTo, type Player } from "@/pages";
+import type { RouteCtx } from "@/routing";
+import { fetchAndParse } from "@/utils";
 import {
   makeBall,
   makeBallMaterial,

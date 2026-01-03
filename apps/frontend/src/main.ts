@@ -1,11 +1,7 @@
 import "../style.css";
-import { Footer } from "./components/footer";
-import { Header } from "./components/header";
-import type { ElComponent } from "./factory/componentFactory";
-import { layoutFactory } from "./factory/layoutFactory";
-import { mainSlotFactory } from "./factory/mainSlotFactory";
-import { initializeRouter } from "./routing/instance";
-import { routeList } from "./routing/routeList";
+import { Footer, Header } from "@/components";
+import { type ElComponent, layoutFactory, mainSlotFactory } from "@/factory";
+import { initializeRouter, routeList } from "@/routing";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("#app not found");

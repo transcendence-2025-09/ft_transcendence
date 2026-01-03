@@ -1,4 +1,4 @@
-import { eh } from "../../factory/elementFactory";
+import { eh } from "@/factory";
 import { loadUserInfo } from "./actionsRow";
 import { enable2fa, get2faQrCode } from "./api";
 import { closeModal, openModal } from "./modal";

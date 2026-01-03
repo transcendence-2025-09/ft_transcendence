@@ -1,5 +1,4 @@
-import { componentFactory } from "../../factory/componentFactory";
-import { pageFactory } from "../../factory/pageFactory";
+import { componentFactory, pageFactory } from "@/factory";
 import { createTournament, fetchAllTournaments } from "./api";
 import { ERROR_MESSAGES } from "./constants";
 import type { Tournament } from "./types";

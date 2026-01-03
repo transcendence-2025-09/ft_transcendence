@@ -1,12 +1,13 @@
-import { pongBackGroundFactory } from "../../components/pong/pongBackGround";
-import { pongGame } from "../../components/pong/pongGame";
-import { pongHeader } from "../../components/pong/pongHeader";
-import type { PongPlayerRowComponent } from "../../components/pong/pongPlayerRow";
-import { pongPlayerRow } from "../../components/pong/pongPlayerRow";
-import type { ElComponent } from "../../factory/componentFactory";
-import { pageFactory } from "../../factory/pageFactory";
-import type { RouteCtx } from "../../routing/routeList";
-import type { Match } from "../tournaments/types";
+import {
+  type PongPlayerRowComponent,
+  pongBackGroundFactory,
+  pongGame,
+  pongHeader,
+  pongPlayerRow,
+} from "@/components/pong";
+import { type ElComponent, pageFactory } from "@/factory";
+import type { Match } from "@/pages";
+import type { RouteCtx } from "@/routing";
 import { PongGame } from "./logic/pongGame";
 
 const pongPageComp = (ctx?: RouteCtx): ElComponent => {

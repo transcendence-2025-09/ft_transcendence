@@ -1,6 +1,4 @@
-import type { ElComponent } from "../../factory/componentFactory";
-import { componentFactory } from "../../factory/componentFactory";
-import { eh } from "../../factory/elementFactory";
+import { componentFactory, type ElComponent, eh } from "@/factory";
 
 // 名前を動的に変えたいので、ElComponent にメソッドを足した拡張型を作る
 export type PongPlayerRowComponent = ElComponent & {

@@ -1,6 +1,6 @@
 import { MeResponseSchema } from "@transcendence/shared";
-import { eh } from "../../factory/elementFactory";
-import { fetchAndParse } from "../../utils/fetchAndParse";
+import { eh } from "@/factory";
+import { fetchAndParse } from "@/utils";
 import { openDisableModal } from "./disableModal";
 import { openEnableModal } from "./enableModal";
 
