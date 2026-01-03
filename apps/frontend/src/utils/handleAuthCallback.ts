@@ -1,4 +1,4 @@
-import type { RouteCtx } from "../../routing/routeList";
+import type { RouteCtx } from "../routing/routeList";
 
 export async function handleAuthCallback(_ctx: RouteCtx) {
   const result = await authCallback();

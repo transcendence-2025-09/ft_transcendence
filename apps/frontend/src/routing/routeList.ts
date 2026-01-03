@@ -1,5 +1,4 @@
 import type { ElComponent } from "../factory/componentFactory";
-import { handleAuthCallback } from "../features";
 import { Set2FA } from "../pages/2faSettings";
 import { Validate2FA } from "../pages/2faValidate";
 import { NotFound } from "../pages/404";
@@ -11,6 +10,7 @@ import { Tournaments } from "../pages/tournaments";
 import { TournamentDetail } from "../pages/tournaments/detail";
 import { TournamentMatches } from "../pages/tournaments/matches";
 import { User } from "../pages/user/user";
+import { handleAuthCallback } from "../utils/handleAuthCallback";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
