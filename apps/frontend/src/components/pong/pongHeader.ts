@@ -1,6 +1,4 @@
-import type { ElComponent } from "../../factory/componentFactory";
-import { componentFactory } from "../../factory/componentFactory";
-import { eh } from "../../factory/elementFactory";
+import { componentFactory, type ElComponent, eh } from "@/factory";
 
 export const pongHeader = (): ElComponent => {
   const header = eh("div", {

@@ -1,7 +1,4 @@
-import type { ElComponent } from "../factory/componentFactory";
-import { componentFactory } from "../factory/componentFactory";
-import { eh } from "../factory/elementFactory";
-import { pageFactory } from "../factory/pageFactory";
+import { componentFactory, type ElComponent, eh, pageFactory } from "@/factory";
 
 const titleEl = eh<"div">("div", {}, eh<"p">("p", {}, "404 Not Found."));
 

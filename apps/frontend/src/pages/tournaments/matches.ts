@@ -1,8 +1,7 @@
 import { MeResponseSchema } from "@transcendence/shared";
-import { componentFactory } from "../../factory/componentFactory";
-import { pageFactory } from "../../factory/pageFactory";
-import type { RouteCtx } from "../../routing/routeList";
-import { fetchAndParse } from "../../utils/fetchAndParse";
+import { componentFactory, pageFactory } from "@/factory";
+import type { RouteCtx } from "@/routing";
+import { fetchAndParse } from "@/utils";
 import {
   startMatch as apiStartMatch,
   fetchMatches,

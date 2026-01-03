@@ -1,4 +1,4 @@
-import { eh } from "../../factory/elementFactory";
+import { eh } from "@/factory";
 
 export const modalOverlayEl = eh("div", {
   className:
