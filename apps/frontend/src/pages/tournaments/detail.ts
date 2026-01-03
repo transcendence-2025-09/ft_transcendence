@@ -1,7 +1,7 @@
 import { MeResponseSchema } from "@transcendence/shared";
 import { componentFactory, pageFactory } from "@/factory";
 import type { RouteCtx } from "@/routing";
-import { fetchAndParse } from "@/utils";
+import { fetchAndParse, navigateTo } from "@/utils";
 import {
   startTournament as apiStartTournament,
   cancelJoinTournament,
@@ -14,7 +14,7 @@ import {
   ERROR_MESSAGES,
 } from "./constants";
 import type { Player, Tournament } from "./types";
-import { escapeHtml, navigateTo, showError, showLoading } from "./utils";
+import { escapeHtml, showError, showLoading } from "./utils";
 
 export function TournamentDetail(ctx: RouteCtx) {
   const tournamentId = ctx.params.id;

@@ -1,4 +1,5 @@
 import { componentFactory, pageFactory } from "@/factory";
+import { navigateTo } from "@/utils";
 import { createTournament, fetchAllTournaments } from "./api";
 import { ERROR_MESSAGES } from "./constants";
 import type { Tournament } from "./types";
@@ -6,7 +7,6 @@ import {
   escapeHtml,
   formatDate,
   getStatusLabel,
-  navigateTo,
   showError,
   showInfo,
   showLoading,

@@ -1,7 +1,7 @@
 import { MeResponseSchema } from "@transcendence/shared";
 import { componentFactory, pageFactory } from "@/factory";
 import type { RouteCtx } from "@/routing";
-import { fetchAndParse } from "@/utils";
+import { fetchAndParse, navigateTo } from "@/utils";
 import {
   startMatch as apiStartMatch,
   fetchMatches,
@@ -15,14 +15,7 @@ import {
 } from "./matchCard";
 import { TabManager, type TabType } from "./tabManager";
 import type { Match } from "./types";
-import {
-  getLoser,
-  getWinner,
-  navigateTo,
-  showError,
-  showInfo,
-  showLoading,
-} from "./utils";
+import { getLoser, getWinner, showError, showInfo, showLoading } from "./utils";
 
 export function TournamentMatches(ctx: RouteCtx) {
   const tournamentId = ctx.params.id;

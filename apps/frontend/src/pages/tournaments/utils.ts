@@ -11,16 +11,6 @@ export function getStatusLabel(status: string): string {
 }
 
 /**
- * SPAルーターを使用してURLに遷移
- * @param url - 遷移先のURL
- */
-export function navigateTo(url: string): void {
-  const link = document.createElement("a");
-  link.href = url;
-  link.click();
-}
-
-/**
  * コンテナにエラーメッセージを表示
  * @param container - 表示先のHTML要素
  * @param message - エラーメッセージ（デフォルト: 汎用エラーメッセージ）
