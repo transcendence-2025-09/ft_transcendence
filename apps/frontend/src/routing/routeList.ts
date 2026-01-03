@@ -1,16 +1,17 @@
-import type { ElComponent } from "../factory/componentFactory";
-import { Set2FA } from "../pages/2faSettings";
-import { Validate2FA } from "../pages/2faValidate";
-import { NotFound } from "../pages/404";
-import { About } from "../pages/about";
-import { Dashboard } from "../pages/dashboard/dashboard";
-import { Home } from "../pages/main";
-import { pongPage } from "../pages/pong/pong";
-import { Tournaments } from "../pages/tournaments";
-import { TournamentDetail } from "../pages/tournaments/detail";
-import { TournamentMatches } from "../pages/tournaments/matches";
-import { User } from "../pages/user/user";
-import { handleAuthCallback } from "../utils/handleAuthCallback";
+import type { ElComponent } from "@/factory";
+import {
+  About,
+  Dashboard,
+  Home,
+  NotFound,
+  pongPage,
+  Set2FA,
+  TournamentDetail,
+  TournamentMatches,
+  Tournaments,
+  Validate2FA,
+} from "@/pages";
+import { handleAuthCallback } from "@/utils";
 
 // { id: 15 } みたいなデータ。ユーザーidとかを扱うとき
 export type Params = Record<string, string>;
@@ -82,11 +83,6 @@ export const routeList: Route[] = [
     meta: { title: "tournamentMatches", protected: true },
     path: "/tournaments/:id/matches",
     viewFactory: (ctx: RouteCtx) => TournamentMatches(ctx),
-  },
-  {
-    meta: { title: "user", protected: true },
-    path: "/user/:id",
-    viewFactory: (ctx: RouteCtx) => User(ctx),
   },
   {
     meta: { title: "dashboard", protected: true, layout: "app" },
