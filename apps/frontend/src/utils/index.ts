@@ -1,2 +1,2 @@
+export * from "./fetchAndParse";
 export * from "./handleAuthCallback";
-export * from "./redirect42";

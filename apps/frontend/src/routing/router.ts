@@ -1,7 +1,6 @@
 import { MeResponseSchema } from "@transcendence/shared";
-import type { ElComponent } from "../factory/componentFactory";
-import type { Layout } from "../factory/layoutFactory";
-import { fetchAndParse } from "../utils/fetchAndParse";
+import type { ElComponent, Layout } from "@/factory";
+import { fetchAndParse } from "@/utils";
 import type { Params, Route, RouteCtx } from "./routeList";
 
 export type RouteProps = {

@@ -5,9 +5,9 @@ import {
   UserStatsResponseSchema,
 } from "@transcendence/shared";
 import Chart from "chart.js/auto";
-import type { ElComponent } from "../factory/componentFactory";
-import { componentFactory } from "../factory/componentFactory";
-import { fetchAndParse } from "../utils/fetchAndParse";
+import type { ElComponent } from "../../factory/componentFactory";
+import { componentFactory } from "../../factory/componentFactory";
+import { fetchAndParse } from "../../utils/fetchAndParse";
 
 const renderOverview = (stats: UserStatsResponse | null) => {
   if (!stats)
