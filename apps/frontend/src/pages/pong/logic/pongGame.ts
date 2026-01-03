@@ -1,4 +1,11 @@
 import * as BABYLON from "@babylonjs/core";
+import type {
+  MatchData,
+  MatchResult,
+  MatchState,
+  Snap,
+  WsMessage,
+} from "@transcendence/shared";
 import { MeResponseSchema } from "@transcendence/shared";
 import type { Match, Player } from "@/pages";
 import type { RouteCtx } from "@/routing";
@@ -19,8 +26,7 @@ import {
   makePaddle,
   makePaddleMaterial,
   makeScene,
-} from "./babylon";
-import { clamp, lerp } from "./calculate";
+} from "../babylon";
 import {
   makeGUI,
   makeLeftReadyTextGUI,
@@ -37,14 +43,8 @@ import {
   makeWinnerNameGUI,
   makeWinnerOverlayGUI,
   makeWinnerTitleGUI,
-} from "./gui";
-import type {
-  MatchData,
-  MatchResult,
-  MatchState,
-  Snap,
-  WsMessage,
-} from "./types";
+} from "../gui";
+import { clamp, lerp } from "./calculate";
 
 export class PongGame {
   private width: number;
@@ -259,7 +259,7 @@ export class PongGame {
     //Gameサーバーから送られてきた試合結果情報を元に状態を更新
     this.leftScore = data.leftScore;
     this.rightScore = data.rightScore;
-    this.winnerId = Number(data.winnerId);
+    this.winnerId = data.winnerId;
     this.isFinish = data.isFinish;
     //終了時間を記録
     this.finishTime = performance.now();
