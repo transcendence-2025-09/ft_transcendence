@@ -1,13 +1,15 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { pongLogic } from "./pong/index.js";
+import fastifyWebsocket from "@fastify/websocket";
+import fastifyHttpProxy from "@fastify/http-proxy";
 import "dotenv/config";
 
 //Fastify serverの初期化
 const app: FastifyInstance = Fastify({ logger: true });
 
 // WebSocketとHTTP Proxyの登録
-app.register(import("@fastify/websocket"));
-app.register(require("@fastify/http-proxy"), {
+app.register(fastifyWebsocket);
+app.register(fastifyHttpProxy, {
   upstream: "http://localhost:3000",
   prefix: "/api",
   http2: false,
