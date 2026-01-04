@@ -1,4 +1,8 @@
-import { MeResponseSchema } from "@transcendence/shared";
+import {
+  MeResponseSchema,
+  type Player,
+  type Tournament,
+} from "@transcendence/shared";
 import { componentFactory, pageFactory } from "@/factory";
 import type { RouteCtx } from "@/routing";
 import { fetchAndParse, navigateTo } from "@/utils";
@@ -13,7 +17,6 @@ import {
   BALL_SPEED_LABELS,
   ERROR_MESSAGES,
 } from "./constants";
-import type { Player, Tournament } from "./types";
 import { escapeHtml, showError, showLoading } from "./utils";
 
 export function TournamentDetail(ctx: RouteCtx) {
