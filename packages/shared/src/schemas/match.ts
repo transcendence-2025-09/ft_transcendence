@@ -30,8 +30,19 @@ export const MatchSchema = z.object({
   gameOptions: GameOptionsSchema,
 });
 
+export const MatchListResponseSchema = z.object({
+  matches: z.array(MatchSchema),
+});
+
+export const MatchStartResponseSchema = z.object({
+  success: z.boolean(),
+  matchId: z.string(),
+});
+
 export type MatchStatus = z.infer<typeof MatchStatusSchema>;
 export type MatchRound = z.infer<typeof MatchRoundSchema>;
 export type GameOptions = z.infer<typeof GameOptionsSchema>;
 export type Score = z.infer<typeof ScoreSchema>;
 export type Match = z.infer<typeof MatchSchema>;
+export type MatchListResponse = z.infer<typeof MatchListResponseSchema>;
+export type MatchStartResponse = z.infer<typeof MatchStartResponseSchema>;
