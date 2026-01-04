@@ -47,31 +47,6 @@ export async function startMatch(
 }
 
 /**
- * マッチ結果を送信
- */
-export async function submitMatchResult(
-  tournamentId: string,
-  matchId: string,
-  winnerId: number,
-  score: { leftPlayer: number; rightPlayer: number },
-): Promise<void> {
-  const response = await fetch(
-    `/api/tournaments/${tournamentId}/matches/${matchId}/result`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ winnerId, score }),
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to submit match result");
-  }
-}
-
-/**
  * トーナメント一覧を取得
  */
 export async function fetchAllTournaments(): Promise<Tournament[]> {
