@@ -1,3 +1,4 @@
+import type { Match } from "@transcendence/shared";
 import {
   type PongPlayerRowComponent,
   pongBackGroundFactory,
@@ -6,7 +7,6 @@ import {
   pongPlayerRow,
 } from "@/components/pong";
 import { type ElComponent, pageFactory } from "@/factory";
-import type { Match } from "@transcendence/shared";
 import type { RouteCtx } from "@/routing";
 import { PongGame } from "./logic/pongGame";
 
