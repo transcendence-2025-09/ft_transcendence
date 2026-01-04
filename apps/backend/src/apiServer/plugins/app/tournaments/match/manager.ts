@@ -175,7 +175,7 @@ export function createMatchManager(tournaments: Map<string, Tournament>) {
     },
 
     /** 試合結果を登録する */
-    submitMatchResult(
+    resolveMatch(
       tournamentId: string,
       matchId: string,
       winnerId: number,

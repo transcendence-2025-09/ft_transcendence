@@ -85,13 +85,13 @@ export function createTournamentsManager(fastify: FastifyInstance) {
     },
 
     /** 試合結果を登録 + トーナメント完了時にDB保存 */
-    submitMatchResult(
+    resolveAndSaveMatch(
       tournamentId: string,
       matchId: string,
       winnerId: number,
       score: { leftPlayer: number; rightPlayer: number },
     ): Match | undefined {
-      const match = matchManager.submitMatchResult(
+      const match = matchManager.resolveMatch(
         tournamentId,
         matchId,
         winnerId,
@@ -133,14 +133,6 @@ export function createTournamentsManager(fastify: FastifyInstance) {
   };
 }
 
-// ===================
-// プラグイン登録
-// ===================
-
-/**
- * Fastifyプラグインとして登録
- * fastify.tournamentsManager で各ルートからアクセス可能になる
- */
 export default fp(async (fastify) => {
   fastify.decorate("tournamentsManager", createTournamentsManager(fastify));
 });

@@ -1,20 +1,5 @@
 // トーナメント画面の共通定数
 
-/** トーナメントステータスの定数 */
-export const TOURNAMENT_STATUS = {
-  WAITING: "waiting",
-  READY: "ready",
-  IN_PROGRESS: "in_progress",
-  COMPLETED: "completed",
-} as const;
-
-/** マッチステータスの定数 */
-export const MATCH_STATUS = {
-  PENDING: "pending",
-  IN_PROGRESS: "in_progress",
-  COMPLETED: "completed",
-} as const;
-
 /** マッチラウンドの定数 */
 export const MATCH_ROUND = {
   SEMIFINALS: "semifinals",
