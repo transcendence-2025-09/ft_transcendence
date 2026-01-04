@@ -1,10 +1,13 @@
 import {
+  ErrorResponseSchema,
+  JoinTournamentResponseSchema,
+} from "@transcendence/shared";
+import {
   type FastifyPluginAsyncZod,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { ErrorSchema, TournamentSchema } from "../../utils/schemas.js";
 import { serializeTournament } from "../../utils/serializers.js";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
@@ -25,13 +28,10 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           alias: z.string(),
         }),
         response: {
-          200: z.object({
-            success: z.boolean(),
-            tournament: TournamentSchema,
-          }),
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
+          200: JoinTournamentResponseSchema,
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
         },
       },
     },

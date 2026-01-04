@@ -1,15 +1,16 @@
 import "dotenv/config";
 import {
+  CreateTournamentResponseSchema,
+  ErrorResponseSchema,
+  GameOptionsSchema,
+  TournamentListItemSchema,
+} from "@transcendence/shared";
+import {
   type FastifyPluginAsyncZod,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { z } from "zod";
-import {
-  ErrorSchema,
-  GameOptionsSchema,
-  TournamentListItemSchema,
-} from "./utils/schemas.js";
 import { serializeTournamentListItem } from "./utils/serializers.js";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
@@ -28,11 +29,9 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           gameOptions: GameOptionsSchema,
         }),
         response: {
-          200: z.object({
-            tournamentId: z.string(),
-          }),
-          401: ErrorSchema,
-          400: ErrorSchema,
+          200: CreateTournamentResponseSchema,
+          401: ErrorResponseSchema,
+          400: ErrorResponseSchema,
         },
       },
     },
@@ -58,7 +57,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
       schema: {
         response: {
           200: z.array(TournamentListItemSchema),
-          401: ErrorSchema,
+          401: ErrorResponseSchema,
         },
       },
     },
