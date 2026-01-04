@@ -1,13 +1,14 @@
 import * as BABYLON from "@babylonjs/core";
-import type {
-  MatchData,
-  MatchResult,
-  MatchState,
-  Snap,
-  WsMessage,
+import {
+  type Match,
+  type MatchData,
+  type MatchResult,
+  type MatchState,
+  MeResponseSchema,
+  type Player,
+  type Snap,
+  type WsMessage,
 } from "@transcendence/shared";
-import { MeResponseSchema } from "@transcendence/shared";
-import type { Match, Player } from "@/pages";
 import type { RouteCtx } from "@/routing";
 import { fetchAndParse, navigateTo } from "@/utils";
 import {
