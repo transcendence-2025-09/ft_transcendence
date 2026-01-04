@@ -1,10 +1,13 @@
 import {
+  ErrorResponseSchema,
+  MatchStartResponseSchema,
+} from "@transcendence/shared";
+import {
   type FastifyPluginAsyncZod,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { ErrorSchema } from "../../../../utils/schemas.js";
 
 const plugin: FastifyPluginAsyncZod = async (fastify) => {
   fastify.setValidatorCompiler(validatorCompiler);
@@ -22,13 +25,10 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
           matchId: z.string(),
         }),
         response: {
-          200: z.object({
-            success: z.boolean(),
-            matchId: z.string(),
-          }),
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
+          200: MatchStartResponseSchema,
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
         },
       },
     },
