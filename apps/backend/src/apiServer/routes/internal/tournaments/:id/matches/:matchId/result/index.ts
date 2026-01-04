@@ -51,7 +51,7 @@ const plugin: FastifyPluginAsyncZod = async (fastify) => {
         return reply.status(404).send({ error: "Tournament not found" });
       }
 
-      const match = tournamentsManager.submitMatchResult(
+      const match = tournamentsManager.resolveAndSaveMatch(
         tournamentId,
         matchId,
         winnerId,
