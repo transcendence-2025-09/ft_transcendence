@@ -2,7 +2,7 @@ import { componentFactory, pageFactory } from "@/factory";
 import { navigateTo } from "@/utils";
 import { createTournament, fetchAllTournaments } from "./api";
 import { ERROR_MESSAGES } from "./constants";
-import type { Tournament } from "./types";
+import type { TournamentListItem } from "@transcendence/shared";
 import {
   escapeHtml,
   formatDate,
@@ -92,7 +92,7 @@ function createTournamentsPage() {
   // ===================
 
   /** トーナメントカードのHTMLを生成 */
-  function createTournamentCardHtml(tournament: Tournament): string {
+  function createTournamentCardHtml(tournament: TournamentListItem): string {
     const name = escapeHtml(tournament.name);
     const status = escapeHtml(getStatusLabel(tournament.status));
     const date = formatDate(tournament.createdAt);
@@ -112,7 +112,7 @@ function createTournamentsPage() {
   }
 
   /** トーナメント一覧を描画し、クリックイベントを設定 */
-  function renderTournamentsList(tournaments: Tournament[]): void {
+  function renderTournamentsList(tournaments: TournamentListItem[]): void {
     if (tournaments.length === 0) {
       showInfo(tournamentsList, ERROR_MESSAGES.NO_TOURNAMENTS);
       return;
@@ -171,14 +171,8 @@ function createTournamentsPage() {
     };
 
     try {
-      await createTournament(name, gameOptions);
-      const createdTournament = await fetchAllTournaments();
-      const newTournament = createdTournament.find((t) => t.name === name);
-      if (newTournament) {
-        navigateTo(`/tournaments/${newTournament.id}`);
-      } else {
-        console.error("作成したトーナメントが見つかりませんでした");
-      }
+      const tournamentId = await createTournament(name, gameOptions);
+      navigateTo(`/tournaments/${tournamentId}`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC;
