@@ -1,5 +1,5 @@
+import type { Player } from "@transcendence/shared";
 import { ERROR_MESSAGES, STATUS_LABELS } from "./constants";
-import type { Player } from "./types";
 
 /**
  * ステータスの日本語ラベルを取得
