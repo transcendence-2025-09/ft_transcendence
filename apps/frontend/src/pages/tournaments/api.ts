@@ -60,11 +60,9 @@ export async function startMatch(
  * トーナメント一覧を取得
  */
 export async function fetchAllTournaments(): Promise<TournamentListItem[]> {
-  return await fetchAndParse(
-    "/api/tournaments",
-    TournamentListResponseSchema,
-    { credentials: "include" },
-  );
+  return await fetchAndParse("/api/tournaments", TournamentListResponseSchema, {
+    credentials: "include",
+  });
 }
 
 /**

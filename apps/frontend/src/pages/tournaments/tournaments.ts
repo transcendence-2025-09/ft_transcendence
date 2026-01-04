@@ -1,8 +1,8 @@
+import type { TournamentListItem } from "@transcendence/shared";
 import { componentFactory, pageFactory } from "@/factory";
 import { navigateTo } from "@/utils";
 import { createTournament, fetchAllTournaments } from "./api";
 import { ERROR_MESSAGES } from "./constants";
-import type { TournamentListItem } from "@transcendence/shared";
 import {
   escapeHtml,
   formatDate,
