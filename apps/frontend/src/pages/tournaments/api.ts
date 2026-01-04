@@ -1,4 +1,14 @@
-import type { GameOptions, Match, Tournament } from "./types";
+import {
+  CreateTournamentResponseSchema,
+  type GameOptions,
+  type Match,
+  type Tournament,
+  type TournamentListItem,
+  TournamentListResponseSchema,
+  TournamentMatchesResponseSchema,
+  TournamentSchema,
+} from "@transcendence/shared";
+import { fetchAndParse } from "@/utils";
 
 /**
  * トーナメント情報を取得
@@ -6,23 +16,23 @@ import type { GameOptions, Match, Tournament } from "./types";
 export async function fetchTournament(
   tournamentId: string,
 ): Promise<Tournament> {
-  const response = await fetch(`/api/tournaments/${tournamentId}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch tournament");
-  }
-  return await response.json();
+  return await fetchAndParse(
+    `/api/tournaments/${tournamentId}`,
+    TournamentSchema,
+    { credentials: "include" },
+  );
 }
 
 /**
  * マッチ一覧を取得
  */
 export async function fetchMatches(tournamentId: string): Promise<Match[]> {
-  const response = await fetch(`/api/tournaments/${tournamentId}/matches`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch matches");
-  }
-  const data = await response.json();
-  return data.matches || [];
+  const data = await fetchAndParse(
+    `/api/tournaments/${tournamentId}/matches`,
+    TournamentMatchesResponseSchema,
+    { credentials: "include" },
+  );
+  return data.matches;
 }
 
 /**
@@ -49,12 +59,10 @@ export async function startMatch(
 /**
  * トーナメント一覧を取得
  */
-export async function fetchAllTournaments(): Promise<Tournament[]> {
-  const response = await fetch("/api/tournaments");
-  if (!response.ok) {
-    throw new Error("Failed to fetch tournaments");
-  }
-  return await response.json();
+export async function fetchAllTournaments(): Promise<TournamentListItem[]> {
+  return await fetchAndParse("/api/tournaments", TournamentListResponseSchema, {
+    credentials: "include",
+  });
 }
 
 /**
@@ -63,20 +71,18 @@ export async function fetchAllTournaments(): Promise<Tournament[]> {
 export async function createTournament(
   name: string,
   gameOptions: GameOptions,
-): Promise<Tournament> {
-  const response = await fetch("/api/tournaments", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ name, gameOptions }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to create tournament");
-  }
-
-  return await response.json();
+): Promise<string> {
+  const data = await fetchAndParse(
+    "/api/tournaments",
+    CreateTournamentResponseSchema,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name, gameOptions }),
+    },
+  );
+  return data.tournamentId;
 }
 
 /**

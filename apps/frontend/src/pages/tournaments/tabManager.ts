@@ -1,5 +1,5 @@
+import type { Match } from "@transcendence/shared";
 import { MATCH_ROUND } from "./constants";
-import type { Match } from "./types";
 
 export type TabType = "round1" | "finals" | "results";
 

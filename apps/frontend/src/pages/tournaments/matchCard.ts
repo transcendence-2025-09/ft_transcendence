@@ -1,4 +1,4 @@
-import type { Match } from "./types";
+import type { Match } from "@transcendence/shared";
 import { escapeHtml } from "./utils";
 
 /**
