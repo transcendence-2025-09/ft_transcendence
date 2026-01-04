@@ -1,3 +1,5 @@
+import type { Player } from "./common.js";
+
 export type MatchData = {
   width: number;
   height: number;
@@ -14,11 +16,6 @@ export type MatchData = {
   leftPlayer: Player | null;
   rightPlayer: Player | null;
   clientUserId: number | null;
-};
-
-export type Player = {
-  userId: number;
-  alias: string;
 };
 
 export type PlayerInput = {
