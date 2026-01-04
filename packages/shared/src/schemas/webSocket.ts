@@ -18,7 +18,6 @@ export type MatchData = {
   clientUserId: number | null;
 };
 
-
 export type PlayerInput = {
   up: boolean;
   down: boolean;
