@@ -1,4 +1,4 @@
-import { componentFactory, type ElComponent, eh, pageFactory } from "@/factory";
+import { componentFactory, type ElComponent, pageFactory } from "@/factory";
 import { ensureAuth, type RouteCtx } from "@/routing";
 import { TwoFactorRequiredError } from "@/utils/errors";
 import { handleOAuthWithPopup, mockLogin } from "./services";
@@ -9,85 +9,58 @@ export const Login = async (ctx: RouteCtx): Promise<ElComponent> => {
   if (isLoggedIn) {
     window.location.href = "/dashboard";
     // リダイレクト中は空のコンポーネントを返す
-    return pageFactory([componentFactory(eh("div"))]);
+    const emptyDiv = document.createElement("div");
+    return pageFactory([componentFactory(emptyDiv)]);
   }
 
   const nextUrl = ctx.query.get("next");
 
-  // 大きなタイトル
-  const titleEl = eh<"h1">(
-    "h1",
-    { className: "text-6xl font-bold text-black mb-8" },
-    "ft_transcendence",
-  );
+  const el = document.createElement("div");
+  el.innerHTML = `
+    <div class="min-h-screen bg-white flex flex-col justify-center items-center">
+      ${
+        nextUrl
+          ? `
+        <div id="loginBanner" class="fixed top-0 left-0 right-0 z-50 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-center justify-center shadow-sm">
+          <span>ログインしていないか、セッションが切れました。再度ログインしてください。</span>
+          <button type="button" id="bannerCloseBtn" class="ml-4 text-amber-600 hover:text-amber-800 transition-colors" aria-label="閉じる">✕</button>
+        </div>
+      `
+          : ""
+      }
+      
+      <h1 class="text-6xl font-bold text-black mb-8">ft_transcendence</h1>
+      <button id="signInBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200">
+        Sign in with 42
+      </button>
+    </div>
+  `;
 
-  // Sign in with 42 ボタン
-  const signInButtonEl = eh<"button">(
-    "button",
-    {
-      className:
-        "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200",
-    },
-    "Sign in with 42",
-  );
+  // バナークローズボタンのイベントリスナー
+  const bannerCloseBtn = el.querySelector(
+    "#bannerCloseBtn",
+  ) as HTMLButtonElement | null;
+  if (bannerCloseBtn) {
+    bannerCloseBtn.addEventListener("click", () => {
+      const banner = el.querySelector("#loginBanner");
+      if (banner) banner.classList.add("hidden");
+    });
+  }
 
-  // --- ログイン要求バナー ---
-  const bannerCloseButtonEl = eh(
-    "button",
-    {
-      type: "button",
-      className: "ml-4 text-amber-600 hover:text-amber-800 transition-colors",
-      "aria-label": "閉じる",
-    },
-    "✕",
-  );
-
-  const loginRequiredBannerEl = eh(
-    "div",
-    {
-      className: nextUrl
-        ? "fixed top-0 left-0 right-0 z-50 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-center justify-center shadow-sm"
-        : "hidden",
-    },
-    eh(
-      "span",
-      {},
-      "ログインしていないか、セッションが切れました。再度ログインしてください。",
-    ),
-    bannerCloseButtonEl,
-  );
-
-  bannerCloseButtonEl.addEventListener("click", () => {
-    loginRequiredBannerEl.classList.add("hidden");
-  });
-
-  // 中央配置のコンテナ
-  const containerEl = eh<"div">(
-    "div",
-    {
-      className:
-        "min-h-screen bg-white flex flex-col justify-center items-center",
-    },
-    loginRequiredBannerEl,
-    titleEl,
-    signInButtonEl,
-  );
-
-  const Container: ElComponent = componentFactory(containerEl);
-
-  // Sign in ボタンにイベントリスナーを追加
-  signInButtonEl.addEventListener("click", async () => {
+  // Sign in ボタンのイベントリスナー
+  const signInBtn = el.querySelector("#signInBtn") as HTMLButtonElement;
+  signInBtn.addEventListener("click", async () => {
     // 既に処理中の場合は何もしない
-    if (signInButtonEl.disabled) return;
+    if (signInBtn.disabled) return;
 
-    const originalText = signInButtonEl.textContent;
-    const originalClassName = signInButtonEl.className;
+    const originalText = signInBtn.textContent;
+    const originalClassName = signInBtn.className;
 
     try {
       // ボタンを無効化
-      signInButtonEl.disabled = true;
-      signInButtonEl.textContent = "サインイン中...";
-      signInButtonEl.className =
+      signInBtn.disabled = true;
+      signInBtn.textContent = "サインイン中...";
+      signInBtn.className =
         "bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg cursor-not-allowed opacity-50";
 
       // 開発環境ではモック認証、本番環境では42認証
@@ -117,11 +90,11 @@ export const Login = async (ctx: RouteCtx): Promise<ElComponent> => {
       alert(errorMessage);
 
       // ボタンを元に戻す
-      signInButtonEl.disabled = false;
-      signInButtonEl.textContent = originalText;
-      signInButtonEl.className = originalClassName;
+      signInBtn.disabled = false;
+      signInBtn.textContent = originalText;
+      signInBtn.className = originalClassName;
     }
   });
 
-  return pageFactory([Container]);
+  return pageFactory([componentFactory(el)]);
 };
