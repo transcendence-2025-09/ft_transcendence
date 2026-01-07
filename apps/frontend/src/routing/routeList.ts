@@ -2,7 +2,7 @@ import type { ElComponent } from "@/factory";
 import {
   About,
   Dashboard,
-  Home,
+  Login,
   NotFound,
   pongPage,
   Set2FA,
@@ -50,9 +50,9 @@ export type Route = {
 //pageを追加するときはここにどんどん追加していく。not foundは必ず1番下に記述すること
 export const routeList: Route[] = [
   {
-    meta: { title: "Home", layout: "none", protected: false },
+    meta: { title: "login", layout: "none", protected: false },
     path: "/",
-    viewFactory: (ctx: RouteCtx) => Home(ctx),
+    viewFactory: (ctx: RouteCtx) => Login(ctx),
   },
   {
     meta: { title: "about", protected: false },

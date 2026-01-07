@@ -3,6 +3,6 @@ export * from "./2faValidate";
 export * from "./404";
 export * from "./about";
 export * from "./dashboard";
-export * from "./main";
+export * from "./login";
 export * from "./pong";
 export * from "./tournaments";
