@@ -1,12 +1,6 @@
 import { componentFactory, type ElComponent, eh, pageFactory } from "@/factory";
 import { ensureAuth, type RouteCtx } from "@/routing";
-
-class TwoFactorRequiredError extends Error {
-  constructor() {
-    super("Two-factor authentication required");
-    this.name = "TwoFactorRequiredError";
-  }
-}
+import { TwoFactorRequiredError } from "@/utils/errors";
 
 // ポップアップでOAuth認証を処理する関数
 const handleOAuthWithPopup = async (): Promise<void> => {
