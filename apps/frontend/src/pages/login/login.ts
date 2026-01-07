@@ -2,6 +2,7 @@ import { componentFactory, type ElComponent, pageFactory } from "@/factory";
 import { ensureAuth, type RouteCtx } from "@/routing";
 import { TwoFactorRequiredError } from "@/utils/errors";
 import { handleOAuthWithPopup, mockLogin } from "./services";
+import { loginTemplate } from "./ui";
 
 export const Login = async (ctx: RouteCtx): Promise<ElComponent> => {
   // 既にログイン済みの場合はダッシュボードへリダイレクト
@@ -16,25 +17,7 @@ export const Login = async (ctx: RouteCtx): Promise<ElComponent> => {
   const nextUrl = ctx.query.get("next");
 
   const el = document.createElement("div");
-  el.innerHTML = `
-    <div class="min-h-screen bg-white flex flex-col justify-center items-center">
-      ${
-        nextUrl
-          ? `
-        <div id="loginBanner" class="fixed top-0 left-0 right-0 z-50 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-center justify-center shadow-sm">
-          <span>ログインしていないか、セッションが切れました。再度ログインしてください。</span>
-          <button type="button" id="bannerCloseBtn" class="ml-4 text-amber-600 hover:text-amber-800 transition-colors" aria-label="閉じる">✕</button>
-        </div>
-      `
-          : ""
-      }
-      
-      <h1 class="text-6xl font-bold text-black mb-8">ft_transcendence</h1>
-      <button id="signInBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200">
-        Sign in with 42
-      </button>
-    </div>
-  `;
+  el.innerHTML = loginTemplate(nextUrl);
 
   // バナークローズボタンのイベントリスナー
   const bannerCloseBtn = el.querySelector(
