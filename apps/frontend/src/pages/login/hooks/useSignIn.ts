@@ -36,11 +36,7 @@ export const useSignInHandler = (
         return;
       }
 
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "認証に失敗しました。もう一度お試しください。";
-      alert(errorMessage);
+      alert("認証に失敗しました。もう一度お試しください。");
 
       signInBtn.disabled = false;
       signInBtn.textContent = originalText;
