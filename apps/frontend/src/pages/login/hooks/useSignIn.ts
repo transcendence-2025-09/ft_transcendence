@@ -1,4 +1,16 @@
-import { TwoFactorRequiredError } from "@/utils/errors";
+import {
+  AuthCancelledError,
+  AuthFailedError,
+  AuthTimeoutError,
+  OAuthConfigError,
+  PopupBlockedError,
+  TwoFactorRequiredError,
+} from "@/utils/errors";
+import {
+  ErrorMessages,
+  ProgressSignInText,
+  SignInButtonStyles,
+} from "../constants";
 import { handleOAuthWithPopup, mockLogin } from "../services";
 
 export const useSignInHandler = (
@@ -17,9 +29,8 @@ export const useSignInHandler = (
 
     try {
       signInBtn.disabled = true;
-      signInBtn.textContent = "サインイン中...";
-      signInBtn.className =
-        "bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg cursor-not-allowed opacity-50";
+      signInBtn.textContent = ProgressSignInText;
+      signInBtn.className = SignInButtonStyles.loading;
 
       if (import.meta.env.DEV) {
         await mockLogin();
@@ -34,9 +45,19 @@ export const useSignInHandler = (
       if (error instanceof TwoFactorRequiredError) {
         window.location.href = "/auth/2fa/validate";
         return;
+      } else if (error instanceof OAuthConfigError) {
+        alert(ErrorMessages.systemError);
+      } else if (error instanceof PopupBlockedError) {
+        alert(ErrorMessages.popupBlocked);
+      } else if (error instanceof AuthCancelledError) {
+        alert(ErrorMessages.authCancelled);
+      } else if (error instanceof AuthTimeoutError) {
+        alert(ErrorMessages.authTimeout);
+      } else if (error instanceof AuthFailedError) {
+        alert(ErrorMessages.authFailed);
+      } else {
+        alert(ErrorMessages.unknownError);
       }
-
-      alert("認証に失敗しました。もう一度お試しください。");
 
       signInBtn.disabled = false;
       signInBtn.textContent = originalText;

@@ -1,4 +1,11 @@
-import { TwoFactorRequiredError } from "@/utils/errors";
+import {
+  AuthCancelledError,
+  AuthFailedError,
+  AuthTimeoutError,
+  OAuthConfigError,
+  PopupBlockedError,
+  TwoFactorRequiredError,
+} from "@/utils/errors";
 
 // ポップアップでOAuth認証を処理する関数
 export const handleOAuthWithPopup = async (): Promise<void> => {
@@ -8,11 +15,7 @@ export const handleOAuthWithPopup = async (): Promise<void> => {
 
     // 環境変数の確認
     if (!clientId || !redirectUri) {
-      reject(
-        new Error(
-          `OAuth設定が不完全です。環境変数を確認してください。clientId: ${clientId}, redirectUri: ${redirectUri}`,
-        ),
-      );
+      reject(new OAuthConfigError());
       return;
     }
 
@@ -39,7 +42,7 @@ export const handleOAuthWithPopup = async (): Promise<void> => {
     );
 
     if (!popup) {
-      reject(new Error("ポップアップがブロックされました"));
+      reject(new PopupBlockedError());
       return;
     }
 
@@ -49,7 +52,7 @@ export const handleOAuthWithPopup = async (): Promise<void> => {
         clearInterval(checkClosed);
         window.removeEventListener("message", messageListener);
         // ポップアップが閉じられた場合、キャンセルと見なす
-        reject(new Error("認証がキャンセルされました"));
+        reject(new AuthCancelledError());
       }
     }, 1000);
 
@@ -74,7 +77,7 @@ export const handleOAuthWithPopup = async (): Promise<void> => {
         clearInterval(checkClosed);
         popup.close();
         window.removeEventListener("message", messageListener);
-        reject(new Error(event.data.error || "認証に失敗しました"));
+        reject(new AuthFailedError());
       }
     };
 
@@ -86,7 +89,7 @@ export const handleOAuthWithPopup = async (): Promise<void> => {
         clearInterval(checkClosed);
         popup.close();
         window.removeEventListener("message", messageListener);
-        reject(new Error("認証がタイムアウトしました"));
+        reject(new AuthTimeoutError());
       }
     }, 30000);
   });
