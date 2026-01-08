@@ -14,8 +14,7 @@ export const pongPlayerRow = (): PongPlayerRowComponent => {
     "div",
     {
       className:
-        "justify-self-start bg-white text-black font-semibold " +
-        "rounded-2xl shadow-lg/20 shadow-black/40 w-36 py-4",
+        "justify-self-start bg-white text-black font-semibold rounded-2xl shadow-lg/20 shadow-black/40 w-36 py-4",
     },
     "Player1",
   );
@@ -24,9 +23,7 @@ export const pongPlayerRow = (): PongPlayerRowComponent => {
     "div",
     {
       className:
-        "justify-self-center text-emerald-300 " +
-        "text-xs font-semibold tracking-wide rounded-full border border-emerald-500/40 " +
-        "bg-emerald-500/10 px-4 py-1",
+        "justify-self-center text-emerald-300 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1",
     },
     "LIVE",
   );
@@ -35,8 +32,7 @@ export const pongPlayerRow = (): PongPlayerRowComponent => {
     "div",
     {
       className:
-        "justify-self-end bg-white text-black font-semibold " +
-        "rounded-2xl shadow-lg/20 shadow-black/40 w-36 py-4",
+        "justify-self-end bg-white text-black font-semibold rounded-2xl shadow-lg/20 shadow-black/40 w-36 py-4",
     },
     "Player2",
   );
