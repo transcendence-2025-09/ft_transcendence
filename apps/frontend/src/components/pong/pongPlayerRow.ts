@@ -7,7 +7,7 @@ export type PongPlayerRowComponent = ElComponent & {
 
 export const pongPlayerRow = (): PongPlayerRowComponent => {
   const container = eh("div", {
-    className: "grid grid-cols-3 items-center text-center w-full",
+    className: "grid grid-cols-3 items-center text-center w-full flex-shrink-0",
   });
 
   const player1 = eh(

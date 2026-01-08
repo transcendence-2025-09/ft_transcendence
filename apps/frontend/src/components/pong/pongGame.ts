@@ -5,7 +5,7 @@ export const pongGame = (): ElComponent => {
     id: "game",
     // 属性の width/height は外す or 最小にして、JSで後から決める
     className:
-      "mx-auto block w-full max-w-[1000px] aspect-[15/11] bg-black rounded-lg shadow-lg outline-none",
+      "mx-auto block w-full max-w-[1000px] flex-1 bg-black rounded-lg shadow-lg outline-none",
   });
   return componentFactory(canvas);
 };

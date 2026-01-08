@@ -4,7 +4,7 @@ export const pongHeader = (): ElComponent => {
   const header = eh("div", {
     className:
       "w-full flex justify-start items-center h-12 px-4 sm:px-6 \
-		border-b border-white/10",
+		flex-shrink-0 border-b border-white/10",
   });
 
   const button = eh("button", {
