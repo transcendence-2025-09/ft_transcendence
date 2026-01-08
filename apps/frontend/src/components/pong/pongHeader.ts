@@ -13,11 +13,12 @@ export const pongHeader = (): ElComponent => {
 		inline-flex items-center gap-1",
   });
 
-  const arrow = document.createTextNode("←");
-  const text = document.createTextNode("Back");
-  button.append(arrow, text);
+  button.append(document.createTextNode("←Back"));
   button.addEventListener("click", () => {
-    history.back();
+    const confirmed = confirm("ゲームを終了しますか?(敗北になります)");
+    if (confirmed) {
+      history.back();
+    }
   });
 
   header.appendChild(button);
