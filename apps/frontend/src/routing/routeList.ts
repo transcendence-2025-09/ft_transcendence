@@ -60,12 +60,12 @@ export const routeList: Route[] = [
     viewFactory: () => About,
   },
   {
-    meta: { title: "testpong", protected: false },
+    meta: { title: "testpong", layout: "none", protected: false },
     path: "/pong",
     viewFactory: () => pongPage(),
   },
   {
-    meta: { title: "pong", protected: true },
+    meta: { title: "pong", layout: "none", protected: true },
     path: "/pong/:tournamentId/:matchId",
     viewFactory: (ctx: RouteCtx) => pongPage(ctx),
   },
