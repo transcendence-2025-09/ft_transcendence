@@ -6,7 +6,7 @@ import {
 } from "@transcendence/shared";
 
 //backend serverへの内部APIクライアント
-export class InternalApiClient {
+class InternalApiClient {
   private baseUrl: string;
   private apiSecret: string;
 

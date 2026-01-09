@@ -2,15 +2,6 @@ import path from "node:path";
 import fastifyAutoload from "@fastify/autoload";
 import type { FastifyInstance, FastifyPluginOptions } from "fastify";
 
-export const options = {
-  ajv: {
-    customOptions: {
-      coerceTypes: true,
-      removeAdditional: true,
-    },
-  },
-};
-
 export default async function serviceApp(
   fastify: FastifyInstance,
   opts: FastifyPluginOptions,
