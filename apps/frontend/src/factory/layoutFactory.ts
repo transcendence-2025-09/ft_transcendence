@@ -5,6 +5,7 @@ import type { MainSlot } from "./mainSlotFactory";
 export type LayoutProps = {
   header: ElComponent;
   main: MainSlot;
+  footer: ElComponent;
 };
 
 export type Layout = ElComponent & {
@@ -24,19 +25,21 @@ export const layoutFactory = (props: LayoutProps): Layout => {
     el: container,
     mount(target, anchor = null) {
       if (mounted) return;
-      //まずはcontainerにheader, mainを積む
-      container.append(props.header.el, props.main.el);
+      //まずはcontainerにheader, main, footerを積む
+      container.append(props.header.el, props.main.el, props.footer.el);
       //それをtarget(#app)にinsert
       target.insertBefore(container, anchor);
       //各componentをmount
       props.header.mount(container);
       props.main.mount(container);
+      props.footer.mount(container);
       mounted = true;
     },
     unmount() {
       if (!mounted) return;
       //unmountは逆順に行なっていく
       currentPage?.unmount();
+      props.footer.unmount();
       props.main.unmount();
       props.header.unmount();
       container.remove();

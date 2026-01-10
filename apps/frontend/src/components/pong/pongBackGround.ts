@@ -3,12 +3,11 @@ import { componentFactory, type ElComponent, eh } from "@/factory";
 export const pongBackGroundFactory = (): ElComponent => {
   const root = eh("div", {
     className:
-      "h-dvh flex flex-col items-center justify-start text-white diagonal-bg overflow-hidden",
+      "min-h-dvh flex items-center justify-center text-white diagonal-bg",
   });
 
   const content = eh("div", {
-    className:
-      "w-full h-full flex flex-col items-center justify-start px-4 sm:px-6 gap-4 overflow-hidden",
+    className: "w-full px-4 sm:px-6 py-6 space-y-6",
     id: "pong-container",
   });
   const slotAnchor = document.createComment("pong-slot");
