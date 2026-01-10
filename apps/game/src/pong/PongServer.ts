@@ -367,14 +367,17 @@ export class PongServer {
     // 現在の速度を計算
     const speed = Math.hypot(vx, vy);
     if (speed === 0) return;
+    const targetSpeed =
+      speed >= this.ballMaxSpeed
+        ? speed
+        : Math.min(this.ballMaxSpeed, speed * this.ballAccel);
     // 加速後の速度を計算
-    const newSpeed = Math.min(this.ballMaxSpeed, speed * this.ballAccel);
 
     const nx = vx / speed;
     const ny = vy / speed;
 
-    this.ballVelX = nx * newSpeed;
-    this.ballVelY = ny * newSpeed;
+    this.ballVelX = nx * targetSpeed;
+    this.ballVelY = ny * targetSpeed;
   };
 
   //点が入った後の初期位置へのリセット
